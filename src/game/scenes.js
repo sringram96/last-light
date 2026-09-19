@@ -63,7 +63,55 @@ function canalSet(){
  for(const z of [17,38]){box(-12,-1.4,z,-7,-.2,z+8,mat('wood',2));box(-11.5,-.2,z+2,-7.5,1.6,z+6,mat('tram',1));}
  bench(3,18);box(7,0,24,11,2.8,30,mat('tram',6));
 }
-const builders={station:stationSet,pump:pumpSet,roof:roofSet,chase:chaseSet,canal:canalSet};
+function officeSet(){
+ // Night Division: a small office, one lamp, a case board, and a window onto the city below.
+ floor(-8,-6,8,16,0,'plank',2);wall(-8,16,-8,-6,5,'brick',2);wall(8,-6,8,16,5,'brick',2);
+ box(-8,0,16,-5,5,16.3,mat('brick',2));box(5,0,16,8,5,16.3,mat('brick',2));box(-5,0,16,5,1,16.3,mat('brick',2));box(-5,4.2,16,5,5,16.3,mat('brick',2));
+ box(-5.1,.9,15.9,5.1,1.1,16.4,mat('metal'));box(-5.1,4.1,15.9,5.1,4.3,16.4,mat('metal'));for(const x of [-1.7,1.7])box(x-.06,1,16,x+.06,4.2,16.3,mat('metal'));
+ box(-5,3.3,16.05,5,4.2,16.15,mat('blind',4));
+ quad([-8,5,-6],[8,5,-6],[8,5,16],[-8,5,16],mat('ceiling'),[0,-1,0]);
+ for(const x of [-8,8])box(x-.12,2.2,-6,x+.12,2.4,16,mat('metal'));
+ box(-2.6,0,7,2.6,1.05,9.6,mat('wood',2));box(-2.7,1.05,6.9,2.7,1.14,9.7,mat('metal'));box(-2.1,.05,7.2,-.3,1,9.4,mat('metal'));
+ floor(-4.5,4.5,4.5,12.5,.01,'carpet',3);
+ box(1.5,1.14,8.6,2.2,1.3,9.2,mat('metal'));box(1.78,1.3,8.85,1.92,2.05,8.95,mat('metal'));box(1.5,2.05,8.55,2.2,2.3,9.25,mat('lamp',2));lamps.push([1.85,8.9]);
+ box(-1.5,1.14,7.5,.6,1.22,8.9,mat('paper',6));box(-.5,1.14,9,.6,1.8,9.5,mat('screen',1));box(-2.3,1.14,9.1,-1.7,1.5,9.5,mat('metal'));
+ box(-.6,0,10.3,.6,.55,11.1,mat('wood',2));box(-.6,.55,11,.6,1.9,11.2,mat('wood',2));
+ box(-7.95,1.4,2.5,-7.7,4.3,10.5,mat('board',2));
+ for(const z of [1,2.6,4.2])box(6.9,0,z,8,3.2,z+1.4,mat('metal'));
+ box(6.7,0,7,8,4.4,13,mat('metal'));for(let y=.5;y<4;y+=1.1)box(6.6,y,7.1,7.1,y+.8,12.9,mat('paper',6));
+ box(-7.9,0,11.5,-5.9,2.8,15.5,mat('metal'));box(-7.8,2.8,11.6,-6,3.2,15.4,mat('paper',6));
+ box(-6.5,0,-2,-6.3,2.6,-1.8,mat('metal'));box(-6.9,2.2,-2.4,-5.9,2.6,-1.4,mat('wood',2));
+ box(-8,0,-5.9,-5,4,-5.7,mat('door',2));pendant(-3,-3,3.8);pendant(5.5,13.5,3.8);
+ const cityStart=surfaces.length;cityRow(24,110,16,-14,14);cityRow(30,120,18,4,18);cityRow(40,130,20,22,24);cityRow(34,125,19,-30,20);
+ for(let i=cityStart;i<surfaces.length;i++){for(const v of surfaces[i].v)v[1]-=6;surfaces[i].mat={...surfaces[i].mat,baseY:-6};}
+}
+function clubSet(){
+ // The Filament: neon and velvet, a stage, a long bar and Vale's booth at the back.
+ floor(-12,-4,12,22,0,'carpet',3);wall(-12,22,-12,-4,6,'velvet',3);wall(12,-4,12,22,6,'brick');wall(12,22,-12,22,6,'velvet',3);
+ quad([-12,6,-4],[12,6,-4],[12,6,22],[-12,6,22],mat('ceiling'),[0,-1,0]);
+ box(8,0,4,11.5,1.1,12,mat('wood',2));box(7.9,1.1,3.9,11.6,1.2,12.1,mat('metal'));box(11.5,0,3.5,11.9,3.6,12.5,mat('metal'));
+ box(11.45,1.25,3.6,11.55,1.3,12.4,mat('neon',1));box(11.45,2.5,3.6,11.55,2.55,12.4,mat('neon',3));
+ for(let z=4.3;z<12;z+=.8)box(11.3,1.3,z-.12,11.5,2.1,z+.12,mat('glass',1));
+ box(-5,0,16,5,.8,21,mat('wood',2));box(-5.2,.8,15.9,5.2,.86,21.1,mat('metal'));box(-5.3,4.8,15.8,5.3,5,16,mat('neon',3));
+ for(const x of [-5.6,5.6])box(x-.15,0,15.8,x+.15,6,16.1,mat('metal'));
+ for(const [x,z] of [[-6,6],[-3,11],[2,8],[-7,13],[3,13]]){box(x-.7,.9,z-.7,x+.7,1,z+.7,mat('metal'));box(x-.1,0,z-.1,x+.1,.9,z+.1,mat('metal'));box(x-.15,1,z-.15,x+.15,1.3,z+.15,mat('lamp',2));lamps.push([x,z]);}
+ box(-11.9,3,2,-11.7,4.2,9,mat('neon',1));box(11.7,3.6,14,11.9,4.4,19,mat('neon',3));
+ for(const z of [13.5,16.5])box(11.6,1.5,z,11.8,3.2,z+2.5,mat('screen',1));
+ box(6.5,0,14.6,11.5,1.4,15.4,mat('velvet',3));box(7,0,12.6,10.5,.95,14,mat('wood',2));box(7.1,.95,12.7,10.4,1,13.9,mat('metal'));
+ for(const x of [-8,8])for(const z of [1,9])pillar(x,z,6);
+ box(11.7,0,17,12,3.6,19,mat('door',2));
+ for(const z of [2,9,15])pendant(0,z,4.2);
+}
+function tunnelSet(){
+ // The Undercity: a storm drain running under the elevated road, lit by emergency neon.
+ floor(-6,-60,6,1000,0,'drain');floor(-7.5,-60,-6,1000,-.35,'water',1);floor(6,-60,7.5,1000,-.35,'water',1);
+ wall(-7.5,1000,-7.5,-60,7,'sewer',5);wall(7.5,-60,7.5,1000,7,'sewer',5);
+ quad([-7.5,7,-60],[7.5,7,-60],[7.5,7,1000],[-7.5,7,1000],mat('sewer',5),[0,-1,0]);
+ for(const x of [-7.3,7.3])box(x-.2,5.2,-60,x+.2,5.6,1000,mat('pipe',2));
+ for(let z=-40;z<1000;z+=20){box(-1.5,6.7,z,1.5,6.95,z+.6,mat('neon',1));box(-7.45,2.5,z+7,-7.25,3.2,z+8.5,mat('neon',3));box(7.25,2.5,z+13,7.45,3.2,z+14.5,mat('neon',1));}
+ for(let z=-50;z<1000;z+=45)box(-7.5,0,z,-6,3,z+.4,mat('grate'));
+}
+const builders={office:officeSet,station:stationSet,pump:pumpSet,roof:roofSet,club:clubSet,chase:chaseSet,tunnel:tunnelSet,canal:canalSet};
 function setScene(name){
  if(name===sceneName)return false;
  if(!sceneCache[name]){surfaces.length=0;lamps.length=0;builders[name]();sceneCache[name]={surfaces:surfaces.slice(),lamps:lamps.slice()};}
@@ -78,7 +126,8 @@ function car(x,z,hue=1,y=0,large=false){
  for(const dx of [-w*.7,w*.7]){box(x+dx-.22,y+.58,z-l-.06,x+dx+.22,y+.83,z-l,mat('tail',3));box(x+dx-.22,y+.65,z+l,x+dx+.22,y+.88,z+l+.06,mat('lamp',2));}
 }
 function extended(){return !['brief','watch','ready','follow','danger','qte','result','evidence','deduce','arrival','ending'].includes(state.phase);}
-function sceneFor(p){return p.startsWith('station')?'station':p.startsWith('pump')?'pump':p.startsWith('roof')?'roof':p.startsWith('chase')?'chase':p.startsWith('canal')?'canal':'street';}
+function sceneFor(p){for(const name of ['office','station','pump','roof','club','chase','tunnel','canal'])if(p.startsWith(name))return name;return 'street';}
+const moving=()=>sceneName==='chase'||sceneName==='tunnel';
 const look=(x,y,z,tx,ty,tz)=>({x,y,z,yaw:Math.atan2(tx-x,tz-z),pitch:Math.atan2(ty-y,Math.hypot(tx-x,tz-z))});
 function caseShot(){
  const p=state.phase;
@@ -92,22 +141,40 @@ function caseShot(){
  if(sceneName==='chase'){
   const d=state.distance;
   if(p==='chaseBank')return look(-13,3.5,d-10,0,1.3,d+6);
-  if(p==='chaseFinish'&&state.pursuit==='ramp')return look(-9,7,d-14,-8,-1,d+9);
   return look(-.6,p==='chaseEntry'?5:3.3,d-11,.3,1.2,d+13);
+ }
+ if(sceneName==='office'){
+  // A slow push-in from the door, a low shot across the desk, then the window and the city.
+  if(p==='officeEntry')return look(-1.6,1.7,4.4,-1.8,1.3,9.2);
+  if(p==='officeFile')return look(2.3,1.45,6.4,-1.6,1.2,8.8);
+  return look(-2.2,2.2,6,0,2.4,16);
+ }
+ if(sceneName==='club'){
+  if(p==='clubEntry')return look(-1.5,1.7,5,3,1.3,13);
+  if(p==='clubFace')return look(-4,4.8,4,7,1.2,13);
+  if(p==='clubQte')return look(-2.5,1.3,7.5,6.5,1.5,12);
+  return look(2,2.3,8,9.5,1.3,16);
+ }
+ if(sceneName==='tunnel'){
+  const d=state.distance;
+  if(p==='tunnelQte')return look(-6,2.4,d-9,.5,1,d+12);
+  if(p==='tunnelFinish')return state.caught?look(2,3.2,d+24,-.5,1,d-2):look(-.5,2.6,d-8,.5,1,d+16);
+  return look(-.5,2.4,d-10,0,1,d+14);
  }
  return look(-1.2,3.1,5,3,1.5,15);
 }
 function sceneStart(name){
- return name==='station'?look(5,10,-4,0,0,24):name==='pump'?look(-4.5,1.8,-7,2,1.5,18):name==='roof'?look(-12,6,-5,1.3,1.5,15):name==='chase'?look(-7,9,state.distance-15,0,1,state.distance+16):look(8,2.3,7,3,1,15);
+ const d=state.distance;
+ return {office:look(-3.2,2.1,1.5,-1.8,1.2,9),station:look(5,10,-4,0,0,24),pump:look(-4.5,1.8,-7,2,1.5,18),roof:look(-12,6,-5,1.3,1.5,15),club:look(-9,2.2,-3,2,1.5,12),chase:look(-7,9,d-15,0,1,d+16),tunnel:look(-5,3,d-12,0,1,d+18)}[name]||look(8,2.3,7,3,1,15);
 }
 function casePose(){
- const duration={stationEntry:7,pumpEntry:6,pumpDanger:2,roofEntry:8,canalEntry:7}[state.phase]||1.5;
- if(sceneName==='chase'){
-  const target=caseShot(),u=reduce?1:span(state.phase==='chaseEntry'?5:1.1);
+ const duration={stationEntry:7,pumpEntry:6,pumpDanger:2,roofEntry:8,canalEntry:7,officeEntry:8,officeFile:5,officeWindow:6,clubEntry:8,clubFace:2}[state.phase]||1.5;
+ if(moving()){
+  const target=caseShot(),u=reduce?1:span(/Entry/.test(state.phase)?5:1.1);
   const origin={...transitionFrom,z:transitionFrom.z+state.distance-(state.phaseDistance||state.distance)};
   for(const k of Object.keys(camera))camera[k]=mix(origin[k],target[k],u);
  }else{const target=caseShot(),u=reduce?1:span(duration);for(const k of Object.keys(camera))camera[k]=mix(transitionFrom[k],target[k],u);}
- state.moving=/Entry|Bank|Finish|Result/.test(state.phase);
+ state.moving=/Entry|Bank|Finish|Result|File|Window/.test(state.phase);
 }
 function caseBlocking(){
  const p=state.phase,others=[];let rook=null,courier=null;
@@ -132,6 +199,21 @@ function caseBlocking(){
   rook={x:2,z:14,pose:'watch'};others.push({x:3.4,z:15.2,pose:'stand',hue:2});
   if(state.choice==='person')courier={x:4.8,z:16.5,pose:'stand'};
   if(state.caught)others.push({x:6.2,z:19.2,pose:'stand',hue:3});
+ }
+ if(sceneName==='office'){
+  // Seated at the desk: the sprite sinks below the floor plane and the desk hides the rest.
+  const u=p==='officeWindow'&&!reduce?span(4):p==='officeWindow'?1:0;
+  rook=u>0?{x:mix(-3.3,-1.2,u),z:mix(9.6,14.3,u),pose:u<1?'walk':'watch'}:{x:-3.3,z:9.6,pose:'read'};
+ }
+ if(sceneName==='club'){
+  const u=p==='clubEntry'&&!reduce?span(8):1,v=p==='clubResult'&&!reduce?span(4):p==='clubResult'?1:0;
+  rook={x:mix(-1,.5,u),z:mix(-2,9,u),pose:u<1?'walk':'watch'};
+  if(p==='clubQte'||(p==='clubResult'&&state.club==='duck'))rook={x:.5,z:9,pose:'crouch'};
+  if(p==='clubResult'&&state.club==='vault')rook={x:mix(.5,7.4,v),z:mix(9,12.4,v),pose:v<1?'walk':'reach'};
+  if(p==='clubResult'&&state.club==='late')rook={x:.5,z:9,pose:'crouch',lean:.3*(1-v)};
+  const vale=p==='clubResult'?{x:mix(9,11,v),z:mix(14,18,v),pose:'walk',hue:3}:{x:9,z:14,pose:'stand',hue:3};
+  const guard=['clubFace','clubQte'].includes(p)?{x:6.5,z:11,pose:'stumble',lean:-.4,hue:0}:{x:6.5,z:11.5,pose:'stand',hue:0};
+  others.push(vale,guard,{x:-5,z:5.5,pose:'stand',hue:4},{x:-2.5,z:10.5,pose:'stand',hue:0},{x:2.6,z:7.5,pose:'stand',hue:4},{x:0,y:.8,z:18.5,pose:'stand',hue:6});
  }
  return{rook,courier,book:null,others};
 }
@@ -178,7 +260,32 @@ function caseGeometry(){
    }else surfaces[0]=sceneCache.chase.surfaces[0];
   }
  }
+ if(sceneName==='tunnel'){
+  const d=state.distance,p=state.phase,fork=forkZ(),u=p==='tunnelFinish'?span(4):0,vale=tunnelVale();
+  const rookX=p==='tunnelFinish'?mix(-1.8,state.tunnel==='left'?-3.6:state.caught?1:-1.8,u):-1.8;
+  car(rookX,d,1,0);box(rookX-.45,2.07,d-.2,rookX+.45,2.15,d+.2,mat('lamp',2));
+  car(vale.x,vale.z,3,0);
+  if(['tunnelQte','tunnelFinish'].includes(p)){
+   // The drain forks around a brick pier; a service gate closes the left branch when the shortcut fails.
+   box(-1,0,fork,1,7,fork+30,mat('brick'));box(-2.6,5.4,fork-.4,2.6,6.4,fork,mat('highway-sign',1));
+   if(p==='tunnelFinish'&&state.tunnel==='left'&&!state.caught)box(-7.5,0,fork+24,-1,6.8,fork+24.6,mat('grate'));
+  }
+ }
+ if(sceneName==='club'){
+  // The bottle crosses the room during the prompt and bursts on the neon if it is not answered.
+  const p=state.phase;
+  if(p==='clubQte'){const u=clamp(state.event/caseDuration(),0,1),x=mix(6,.8,u),y=1.4+Math.sin(u*Math.PI)*1.6,z=mix(11,9.4,u);box(x-.12,y-.2,z-.12,x+.12,y+.2,z+.12,mat('glass',1));}
+  if(p==='clubResult'&&state.club==='vault')for(let i=0;i<4;i++)box(7.4+i*.5,1,12.9+hash(i,2)*.6,7.7+i*.5,1.08,13.2+hash(i,2)*.6,mat('lamp',2));
+ }
  return caseBlocking();
+}
+// The fork is fixed where the prompt began, so the pier does not move when the finish phase resets the phase distance.
+let tunnelFork=0;
+function forkZ(){return tunnelFork||(state.phaseDistance||state.distance)+30;}
+function tunnelVale(){
+ const d=state.distance,p=state.phase,u=p==='tunnelFinish'?span(4):0;
+ const z=p==='tunnelFinish'?(state.caught?d+9+(1-u)*8:d+17+state.gap*7+state.event*9):d+16+state.gap*7;
+ return{x:p==='tunnelFinish'&&state.tunnel==='left'&&state.caught?3.2:1.6,z};
 }
 function caseLabels(){
  if(sceneName==='station'){worldLabel([0,5.25,43.2],'PUMP ROOM 4',2);worldLabel([0,2.2,19.1],'MAINTENANCE',2);}
@@ -190,4 +297,14 @@ function caseLabels(){
   if(state.phase==='chaseQteB')worldLabel([0,5.1,state.distance+28],'BRIDGE LIFTING',2);
  }
  if(sceneName==='canal')worldLabel([9,3.5,24],'CITY MEDIC',2);
+ if(sceneName==='office'){worldLabel([-7.7,4.5,6.2],'CASE BOARD',2);worldLabel([0,4.6,16.2],'NIGHT DIVISION',1);if(state.phase!=='officeEntry')worldLabel([-.4,1.55,8.3],'I. BELL',6);}
+ if(sceneName==='club'){
+  worldLabel([0,5.5,16],'THE FILAMENT',3);worldLabel([11.6,4.7,16.5],'NO EXIT',3);
+  if(state.phase!=='clubEntry')worldLabel([9,3.4,14],'VALE',3);
+  if(state.phase==='clubQte'){worldLabel([.5,1.85,9],'[1]',2);worldLabel([8.3,2,10.5],'[2]',2);}
+ }
+ if(sceneName==='tunnel'){
+  const vale=tunnelVale();worldLabel([vale.x,3.3,vale.z],'VALE',3);
+  if(state.phase==='tunnelQte'){const f=forkZ();worldLabel([3.4,4.6,f-1],'[1]',2);worldLabel([-3.4,4.6,f-1],'[2]',2);worldLabel([0,6.3,f-.5],'CANAL GATE',1);}
+ }
 }

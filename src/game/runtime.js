@@ -71,13 +71,21 @@ function actor(a,isRook=false){
  const bottom=cam([a.x,.16+(a.y||0),a.z]),top=cam([a.x+(a.lean||0),height+(a.y||0),a.z]);if(bottom.z<.4)return;
  const ap=project(top),bp=project(bottom),h=bp.y-ap.y,w=h*(ch/cw)*.41;
  if(h<1)return;
+ spriteRects.push({x0:Math.floor(Math.min(ap.x,bp.x)-w/2)-1,x1:Math.ceil(Math.max(ap.x,bp.x)+w/2)+1,y0:Math.floor(ap.y)-1,y1:Math.ceil(bp.y)+1});
+ const inkFor=g=>(isRook?(g==='~'?2:g==='o'||g==='>'?6:1):(a.hue??6))*20+(isRook?14:11);
+ const detail=g=>g==='o'||g==='.'||g==='>';
  for(let y=Math.max(0,Math.floor(ap.y));y<=Math.min(H-1,Math.ceil(bp.y));y++){
   const u=clamp((y-ap.y)/h,0,.999),row=rows[Math.floor(u*rows.length)],cx=mix(ap.x,bp.x,u),left=cx-w/2;
   for(let x=Math.floor(left);x<left+w;x++){
-   const col=clamp(Math.floor((x-left)/w*cols),0,cols-1),g=row[col]||' ';if(g===' ')continue;
-   const hue=isRook?(g==='~'?2:g==='o'||g==='>'?6:1):(a.hue??6);
-   pixel(x,y,mix(top.z,bottom.z,u)-.06,g,hue*20+(isRook?14:11));
+   const col=clamp(Math.floor((x-left)/w*cols),0,cols-1),g=row[col]||' ';if(g===' '||detail(g))continue;
+   pixel(x,y,mix(top.z,bottom.z,u)-.06,g,inkFor(g));
   }
+ }
+ // Facial details are stamped once at the centre of their sprite cell, so a close-up never grows a second pair of eyes.
+ for(let r=0;r<rows.length;r++)for(let c=0;c<cols;c++){
+  const g=rows[r][c]||' ';if(!detail(g))continue;
+  const u=clamp((r+.5)/rows.length,0,.999),yc=ap.y+u*h,cx=mix(ap.x,bp.x,u),xc=cx-w/2+(c+.5)*w/cols;
+  pixel(Math.floor(xc),Math.floor(yc),Math.min(top.z,bottom.z)-.1,g,inkFor(g));
  }
 }
 function geometry(){
@@ -100,17 +108,18 @@ function geometry(){
  }
  return a;
 }
+let spriteRects=[];
 function render(){
- if(!W||!H)return;frame++;zbuf.fill(Infinity);chars.fill(' ');ink.fill(0);
+ if(!W||!H)return;frame++;zbuf.fill(Infinity);chars.fill(' ');ink.fill(0);spriteRects=[];
  sy=Math.sin(camera.yaw);cy=Math.cos(camera.yaw);sp=Math.sin(camera.pitch);cp=Math.cos(camera.pitch);
  const cast=geometry();
  for(const s of surfaces){
   const a=s.v[0],f=s.n[0]*(camera.x-a[0])+s.n[1]*(camera.y-a[1])+s.n[2]*(camera.z-a[2]);if(f<-.01&&s.mat.kind!=='cable')continue;
   const poly=clip(s.v.map(cam));if(poly.length<3)continue;const proj=poly.map(project);for(let i=1;i<proj.length-1;i++)triangle(proj[0],proj[i],proj[i+1],s.mat,s.n);
  }
- // Rain is rendered before people, so it does not cover their faces.
- if(['street','roof','chase','canal'].includes(sceneName))for(let i=0;i<125;i++){
-  const x=hash(i,3)*22-11,z=camera.z+hash(i,7)*37,y=fract(hash(i,11)-state.t*.25)*16,p=cam([x,y,z]);if(p.z<.4)continue;
+ // Rain is rendered before people, so it does not cover their faces. In the office it falls only beyond the window.
+ if(['street','roof','chase','canal','office'].includes(sceneName))for(let i=0;i<125;i++){
+  const x=hash(i,3)*22-11,z=camera.z+hash(i,7)*37,y=fract(hash(i,11)-state.t*.25)*16,p=cam([x,y,z]);if(p.z<.4||(sceneName==='office'&&z<16.6))continue;
   const q=project(p);pixel(q.x,q.y,p.z,'/',7*20+7);
  }
  actor(cast.courier);actor(cast.rook,true);for(const a of cast.others||[])actor(a);
@@ -153,7 +162,7 @@ function deduce(correct){
  if(correct){enter('arrival');return;}state.wrong=true;ui();
 }
 function reset(){
- Object.assign(state,{t:0,paused:false,mono:state.mono,travel:0,moving:false,phase:'brief',event:0,watched:false,choice:'',untimed:state.untimed,clues:[],wrong:false,decoded:false,radio:false,twist:false,rescue:'',gap:0,pursuit:'',caught:false,distance:20,endingSeen:false,firstMove:'',phaseDistance:20});
+ Object.assign(state,{t:0,paused:false,mono:state.mono,travel:0,moving:false,phase:'brief',event:0,watched:false,choice:'',untimed:state.untimed,clues:[],wrong:false,decoded:false,radio:false,twist:false,rescue:'',gap:0,pursuit:'',caught:false,distance:20,endingSeen:false,firstMove:'',phaseDistance:20,club:'',tunnel:'',reaction:0});
  setScene('street');
  Object.assign(camera,startShot);transitionFrom={...startShot};el.journal.open=false;lastTime=0;ui();render();
 }
@@ -166,7 +175,8 @@ function timer(){
   const left=Math.max(0,caseDuration()-state.event),n=Math.ceil(left/caseDuration()*10);
   el.timer.textContent=state.untimed?'TAKE YOUR TIME':'['+'='.repeat(n)+'.'.repeat(10-n)+'] '+left.toFixed(1)+'s';
   if(!state.untimed&&left<=3){el.timer.className='lc-timer lc-urgent';tickCue(left);}
- }else el.timer.textContent=['follow','danger','result','arrival',...liveCase].includes(state.phase)?'LIVE':'YOUR MOVE';
+ }else if(['result','pumpResult','clubResult','chaseBank','chaseFinish','tunnelFinish'].includes(state.phase)&&state.reaction>0)el.timer.textContent='REACTION '+state.reaction.toFixed(1)+'s';
+ else el.timer.textContent=['follow','danger','result','arrival',...liveCase].includes(state.phase)?'LIVE':'YOUR MOVE';
 }
 function ui(){
  el.actions.replaceChildren();keys=[];el.outcome.hidden=state.phase!=='ending';
@@ -213,9 +223,9 @@ function ui(){
  el.pause.textContent=state.paused?'[RESUME]':'[PAUSE]';el.pause.setAttribute('aria-pressed',String(state.paused));
  el.timing.textContent=state.untimed?'[UNTIMED]':'[TIMED]';el.timing.setAttribute('aria-pressed',String(state.untimed));
  el.mono.textContent=state.mono?'[COLOR]':'[MONO]';el.mono.setAttribute('aria-pressed',String(state.mono));
- const sceneDescriptions={street:'A dense 3D ASCII night street, warm lamps and wet tram tracks.',station:'A vaulted station hall, tiled floor, columns, warm pendant lamps and a maintenance desk.',pump:'A flooded machinery chamber. Bell is on a platform and Rook stands by the inlet wheel.',roof:'A high rooftop overlooking deep city streets and flying traffic.',chase:'Rook\'s cyan patrol car pursues Vale\'s red car along an elevated road.',canal:'A quiet canal at first light. Rook and Bell stand near a medical vehicle.'};
+ const sceneDescriptions={office:'A small night-shift office: a desk lamp, a case board, filing cabinets and a rain-streaked window over the city.',street:'A dense 3D ASCII night street, warm lamps and wet tram tracks.',station:'A vaulted station hall, tiled floor, columns, warm pendant lamps and a maintenance desk.',pump:'A flooded machinery chamber. Bell is on a platform and Rook stands by the inlet wheel.',roof:'A high rooftop overlooking deep city streets and flying traffic.',club:'A neon-lit club with velvet curtains, a stage, a long bar, candlelit tables and a booth at the back.',chase:'Rook\'s cyan patrol car pursues Vale\'s red car along an elevated road.',tunnel:'A brick storm drain under the city, lit by emergency neon, with two cars racing through it.',canal:'A quiet canal at first light. Rook and Bell stand near a medical vehicle.'};
  canvas.setAttribute('aria-label',sceneDescriptions[sceneName]+' '+el.caption.textContent);
- const chapter=root.querySelector('.lc-chapter');if(chapter)chapter.textContent=(session.mode==='preview'?'PREVIEW / ':'')+{street:'01 / STATION ROAD',station:'02 / CONCOURSE',pump:'03 / PUMP ROOM',roof:'04 / ROOFTOP',chase:'05 / PURSUIT',canal:'06 / FIRST LIGHT'}[sceneName];
+ const chapter=root.querySelector('.lc-chapter');if(chapter)chapter.textContent=(session.mode==='preview'?'PREVIEW / ':'')+{office:'00 / NIGHT DIVISION',street:'01 / STATION ROAD',station:'02 / CONCOURSE',pump:'03 / PUMP ROOM',roof:'04 / ROOFTOP',club:'05 / THE FILAMENT',chase:'06 / PURSUIT',tunnel:'07 / UNDERCITY',canal:'08 / FIRST LIGHT'}[sceneName];
  presentUI();
  timer();
 }
@@ -264,9 +274,9 @@ function tick(now){
  requestAnimationFrame(tick);
 }
 ui();pose();resize();
-const reelBox=root.querySelector('.lc-reel-actions');if(reelBox){reelBox.replaceChildren();for(const [name,label] of [['street','STREET'],['station','STATION'],['pump','FLOOD'],['roof','ROOFTOP'],['chase','CHASE'],['canal','DAWN']]){const b=document.createElement('button');b.type='button';b.className='cursor-interaction';b.textContent='['+label+']';b.addEventListener('click',()=>{reel(name);const d=root.querySelector('.lc-reel');if(d)d.open=false;});reelBox.appendChild(b);}}
+const reelBox=root.querySelector('.lc-reel-actions');if(reelBox){reelBox.replaceChildren();for(const [name,label] of [['office','OFFICE'],['street','STREET'],['station','STATION'],['pump','FLOOD'],['roof','ROOFTOP'],['club','CLUB'],['chase','CHASE'],['tunnel','UNDERCITY'],['canal','DAWN']]){const b=document.createElement('button');b.type='button';b.className='cursor-interaction';b.textContent='['+label+']';b.addEventListener('click',()=>{reel(name);const d=root.querySelector('.lc-reel');if(d)d.open=false;});reelBox.appendChild(b);}}
 new ResizeObserver(resize).observe(canvas);
 if(typeof IntersectionObserver!=='undefined')new IntersectionObserver(es=>{visible=es[0].isIntersecting&&es[0].intersectionRatio>.15;lastTime=0;},{threshold:.15}).observe(canvas);
 requestAnimationFrame(tick);
-root.cinemaAudit=()=>({state:JSON.parse(JSON.stringify(state)),session:{...session},scene:sceneName,camera:{...camera},columns:W,rows:H,frame,cast:blocking(),nonASCII:chars.filter(g=>g.charCodeAt(0)<32||g.charCodeAt(0)>126).length,card:cardText,route:routeSteps(),board:boardEntries(),reflex:reflexes(),records:saveStore.readRecords()});
+root.cinemaAudit=()=>({state:JSON.parse(JSON.stringify(state)),session:{...session},scene:sceneName,camera:{...camera},columns:W,rows:H,frame,cast:blocking(),nonASCII:chars.filter(g=>g.charCodeAt(0)<32||g.charCodeAt(0)>126).length,card:cardText,route:routeSteps(),board:boardEntries(),reflex:reflexes(),records:saveStore.readRecords(),sprites:spriteRects.map(r=>({...r}))});
 })();

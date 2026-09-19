@@ -30,7 +30,8 @@ npm test         # Save-system, story-route and renderer regression checks
 - **GET READY** warns that a reaction is coming. During quick-time events, click an action, press **1** or **2**, or use the arrow keys (left/up for the first move, right/down for the second).
 - The header keeps a **REFLEX** tally of prompts answered in time. The closing report names the ending, the reflex score and a grade.
 - **Case File** shows the route taken, the persons of interest and the evidence gathered.
-- **Case Records** on the menu lists endings found (of five) and discoveries (of nine). Records survive new cases.
+- **Case Records** on the menu lists endings found (of five) and discoveries (of eleven). Records survive new cases.
+- After a landed move, the status line shows your reaction time.
 - **Untimed** removes reaction deadlines. **Mono** changes to monochrome. **Sound** enables short synthesized cues. All three preferences persist.
 - **Menu** pauses the story and provides resume and scene-preview controls.
 - **Scene Reel** previews locations without overwriting story progress or records.
@@ -39,12 +40,15 @@ Reduced-motion settings use stable shots, shortened travel, untimed prompts and 
 
 ## Current playable case
 
+0. **Night Division:** a skippable prologue cutscene in Rook's office: the desk, the case board, and the Bell file.
 1. **Station Road:** tail a courier and choose whom or what to save.
 2. **Concourse:** inspect a maintenance tape or follow the knocking immediately.
 3. **Pump Room 4:** rescue Bell; your response changes the evidence recovered.
 4. **Rooftop:** listen to radio traffic and optionally uncover Nell's confession.
-5. **Elevated Road:** optional pursuit with lane changes, a bridge jump or a descending ramp.
-6. **Canal:** an ending reflecting the evidence, witnesses and pursuit outcome.
+5. **The Filament:** a neon club where Vale's bodyguard throws a bottle. Duck, or vault the bar and pocket a chip that ties the batteries to Vale's tables.
+6. **Elevated Road:** the pursuit, with a lane change and a lifting bridge.
+7. **The Undercity:** taking the lower ramp drops into the storm drains, where a fork decides the arrest.
+8. **Canal:** an ending reflecting the evidence, witnesses and pursuit outcome.
 
 Missed action prompts continue the story. The prototype has a complete short case; it is the foundation for a larger game, not a store-ready release.
 

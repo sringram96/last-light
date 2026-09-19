@@ -10,6 +10,8 @@ The scene builders create 3D surfaces and lights. The camera transforms and proj
 
 `case.js` owns the case phases and branch decisions. `runtime.js` retains the approved opening and calls the case code for later locations. A phase starts with `enter()`, updates the visible choices, and records a checkpoint. Timed movement and quick-time prompts advance through the animation loop. Quiet choices wait for the player.
 
+Nine sets exist: office, street, station, pump room, roof, club, elevated road, undercity and canal. The office is a prologue cutscene that leads into the street. Pursuing Vale goes through the club before the road, and the lower ramp at the bridge leads into the undercity, whose fork decides the arrest. Each set is built once and cached; the road and the undercity move with the pursuit distance.
+
 ## Presentation
 
 `presentation.js` owns everything that makes a beat feel like a game without touching the scene: a five-row block font for chapter cards and stingers, the typed narration, the case file (route, persons of interest, evidence), the reflex tally and the case records. `enter()` reports each phase change and whether the scene changed; the presentation layer decides whether that is a chapter card, a landed or missed stinger, a warning, or nothing. Everything it draws is HTML placed below the canvas. `audio.js` synthesizes short cues from oscillators when the sound preference is on; it has no assets and is silent by default.

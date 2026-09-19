@@ -6,7 +6,7 @@ else if(kind==='tiles'){
  if(Math.abs(x)<2.5){hue=2;lum=.65;g=fract(z*2)<.12?'=':':';}
 }
 else if(kind==='wall'||kind==='brick'){
- hue=kind==='wall'?2:0;lum=.37+grain*.15;g=fract(y*2)<.10?'-':fract(x*.8+z*.8+Math.floor(y*2)*.5)<.055?'|':grain>.6?':':'.';
+ hue=kind==='wall'?2:(mat.hue||0);lum=.37+grain*.15;g=fract(y*2)<.10?'-':fract(x*.8+z*.8+Math.floor(y*2)*.5)<.055?'|':grain>.6?':':'.';
  if(kind==='wall'&&y>3&&y<9){const u=fract((Math.abs(n[0])>.5?z:x)/6);if(u>.2&&u<.8){hue=4;lum=.48;g=u<.23||u>.77?'|':fract(y*2)<.06?'=':'+';}}
  if(kind==='wall'&&(y<.25||Math.abs(y-2.7)<.1||Math.abs(y-10.2)<.13)){hue=2;lum=.9;g='=';}
 }
@@ -35,4 +35,18 @@ else if(kind==='car'){lum=.64+grain*.14;g=mat.roof?'=':fract(y*6)<.14?'=':grain>
 else if(kind==='glass'){lum=.35;g=mat.roof?'=':fract((x+z)*1.5)<.06?'|':'/';}
 else if(kind==='tail'){hue=3;lum=1.3;g='#';}
 else if(kind==='gap'){hue=4;lum=.13;g='.';}
+// Interiors and the undercity. Floors that carry lamps use the same pool lighting as the street.
+else if(kind==='plank'||kind==='carpet'||kind==='drain'){
+ if(kind==='plank'){hue=2;lum=.4+grain*.14;g=fract(z*1.6)<.1?'-':fract(x*.9)<.07?'|':grain>.7?':':'.';}
+ else if(kind==='carpet'){hue=3;lum=.28+grain*.1;g=grain>.8?'+':grain>.5?':':'.';if(Math.abs(x)<1.2&&z<16){hue=2;lum=.4;g=fract(z*2)<.15?'=':':';}}
+ else{hue=7;lum=.3+grain*.12;g=grain>.6?':':'.';if(Math.abs(x)<.08){hue=0;lum=.55;g='|';}if(fract(z*.08)<.02){lum=.5;g='=';}if(Math.abs(x)>4.2&&fract(x*3)<.3){hue=5;lum=.4;g='~';}}
+ for(let i=0;i<lamps.length;i++){const l=lamps[i],d=(x-l[0])**2+(z-l[1])**2;if(d<22){const a=(1-d/22);if(a>.25){hue=2;lum=Math.max(lum,.3+a*.55);if(grain>.6)g='=';}}}
+}
+else if(kind==='blind'){hue=4;lum=fract(y*4)<.45?.9:.25;g=fract(y*4)<.45?'=':'-';}
+else if(kind==='board'){hue=2;lum=.3;g='.';const c=hash(Math.floor(z*1.6),Math.floor(y*2.2));if(c>.55){hue=6;lum=.75;g=fract(y*2.2)<.3?'-':'=';}if(fract(z*1.6)<.06&&c>.55){hue=3;lum=.9;g='+';}}
+else if(kind==='paper'){hue=6;lum=mat.roof?.95:.7;g=mat.roof?(fract(z*7)<.4?'-':' '):'=';if(g===' ')g='.';}
+else if(kind==='screen'){hue=1;lum=.5+.4*(fract(y*6-state.t*.4)<.5?1:0);g=fract(y*6-state.t*.4)<.5?'=':'-';if(mat.roof){lum=.4;g='=';}}
+else if(kind==='neon'){const on=hash(Math.floor(state.t*6),mat.hue)>.08;hue=mat.hue;lum=on?1.45:.4;g=on?(mat.roof?'=':'#'):'-';}
+else if(kind==='velvet'){hue=3;lum=.28+(fract(x*.9+z*.9)<.5?.16:0)+grain*.06;g=fract((x+z)*.9)<.12?'|':grain>.6?':':'.';if(y<.4){hue=2;lum=.6;g='=';}}
+else if(kind==='sewer'){hue=5;lum=.36+grain*.14;g=fract(y*1.5)<.12?'-':fract(z*.6+Math.floor(y*1.5)*.5)<.06?'|':grain>.86?'~':grain>.5?':':'.';if(y>5.6){lum=.2;g=grain>.5?':':'.';}}
 else
