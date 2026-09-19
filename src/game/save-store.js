@@ -3,7 +3,7 @@ function createSaveStore(storage, validPhases) {
  const SAVE='last-light/save/v1', SETTINGS='last-light/settings/v1', RECORDS='last-light/records/v1', LEGACY='the-last-light-case-v2';
  const phases=new Set(validPhases);
  const booleans=['watched','wrong','decoded','radio','twist','caught','endingSeen'];
- const enums={choice:['','person','book','missed'],rescue:['','valve','pull','late'],pursuit:['','chasing','stay','ramp','jump','late'],firstMove:['','dodge','brake','late']};
+ const enums={choice:['','person','book','missed'],rescue:['','valve','pull','late'],pursuit:['','chasing','stay','ramp','jump','late'],firstMove:['','dodge','brake','late'],club:['','duck','vault','late'],tunnel:['','right','left','late']};
  const numbers={t:[0,86400],distance:[0,950],phaseDistance:[0,950],gap:[0,2]};
  let memory=null,settingsMemory=null,recordsMemory=null,durable=true;
  const copy=v=>v===null?null:JSON.parse(JSON.stringify(v));

@@ -26,12 +26,14 @@ function card(text,tone='chapter',seconds=3){
  hud.card.textContent=banner(text);hud.card.className='lc-card lc-card--'+tone;hud.card.hidden=false;fitCard();
 }
 function clearCard(){cardText='';cardTone='';cardLeft=0;if(hud.card){hud.card.hidden=true;hud.card.textContent='';}}
-const chapterCards={street:'STATION ROAD',station:'NORTH STATION',pump:'PUMP ROOM 4',roof:'ABOVE THE CITY',chase:'THE PURSUIT',canal:'FIRST LIGHT'};
+const chapterCards={office:'NIGHT DIVISION',street:'STATION ROAD',station:'NORTH STATION',pump:'PUMP ROOM 4',roof:'ABOVE THE CITY',club:'THE FILAMENT',chase:'THE PURSUIT',tunnel:'THE UNDERCITY',canal:'FIRST LIGHT'};
 function chapterCard(){card(chapterCards[sceneName]||'LAST LIGHT','chapter',3);cue('chapter');}
 // Each story beat can announce itself like an arcade laserdisc cut: a windup warning, a landed move or a miss.
 function stingerFor(phase){
  switch(phase){
-  case 'danger':case 'pumpDanger':return['GET READY','warn',2];
+  case 'danger':case 'pumpDanger':case 'clubFace':return['GET READY','warn',2];
+  case 'clubResult':return state.club==='duck'?['DUCKED','hit']:state.club==='vault'?['OVER THE BAR','hit']:['HIT','miss'];
+  case 'tunnelFinish':return state.caught?['GOT HIM','hit']:['GONE','miss'];
   case 'ready':return['NOTED','hit',1.6];
   case 'result':return state.choice==='person'?['CAUGHT','hit']:state.choice==='book'?['SAVED','hit']:['TOO LATE','miss'];
   case 'stationReady':return['DECODED','hit',1.6];
@@ -49,10 +51,10 @@ function presentEnter(phase,sceneChanged,wasEndingSeen){
  if(sceneChanged){chapterCard();return;}
  const s=stingerFor(phase);
  if(s){card(s[0],s[1],s[2]||1.8);cue({warn:'danger',hit:'hit',miss:'miss',chapter:'chapter'}[s[1]]);}
- else if(['chaseQteA','chaseQteB'].includes(phase))cue('danger');
+ else if(['chaseQteA','chaseQteB','tunnelQte'].includes(phase))cue('danger');
 }
 // Story order lets the case file describe how far the investigation has come.
-const phaseOrder=['brief','watch','ready','follow','danger','qte','result','evidence','deduce','arrival','ending','stationEntry','stationQuiet','stationListen','stationReady','pumpEntry','pumpFind','pumpDanger','pumpQte','pumpResult','pumpTruth','roofEntry','roofQuiet','roofListen','roofSignal','roofConfession','chaseEntry','chaseQteA','chaseBank','chaseQteB','chaseFinish','canalEntry','canalEnd'];
+const phaseOrder=['officeEntry','officeFile','officeWindow','brief','watch','ready','follow','danger','qte','result','evidence','deduce','arrival','ending','stationEntry','stationQuiet','stationListen','stationReady','pumpEntry','pumpFind','pumpDanger','pumpQte','pumpResult','pumpTruth','roofEntry','roofQuiet','roofListen','roofSignal','roofConfession','clubEntry','clubFace','clubQte','clubResult','chaseEntry','chaseQteA','chaseBank','chaseQteB','chaseFinish','tunnelEntry','tunnelQte','tunnelFinish','canalEntry','canalEnd'];
 function reached(phase){return phaseOrder.indexOf(state.phase)>=phaseOrder.indexOf(phase);}
 function routeSteps(){
  const steps=[];
@@ -66,8 +68,10 @@ function routeSteps(){
  if(state.pursuit==='stay')steps.push('Stayed with Bell');
  else if(state.pursuit){
   steps.push('Pursued Vale');
+  if(reached('clubResult'))steps.push({duck:'Ducked the bottle',vault:'Went over the bar',late:'Took the bottle'}[state.club]);
   if(reached('chaseBank'))steps.push({dodge:'Dove right',brake:'Braked',late:'Clipped the carrier'}[state.firstMove]);
-  if(reached('chaseFinish'))steps.push({ramp:'Took the ramp',jump:'Jumped the gap',late:'Stopped at the bridge'}[state.pursuit]);
+  if(reached('chaseQteB')&&state.pursuit!=='chasing')steps.push({ramp:'Took the ramp',jump:'Jumped the gap',late:'Stopped at the bridge'}[state.pursuit]);
+  if(state.pursuit==='ramp'&&reached('tunnelFinish'))steps.push({right:'Followed right',left:'Cut left',late:'Braked at the fork'}[state.tunnel]);
  }
  return steps.filter(Boolean);
 }
@@ -84,18 +88,23 @@ function reflexes(){
  const count=(done,hit)=>{if(done){faced++;if(hit)hits++;}};
  count(reached('result'),state.choice!=='missed');
  count(reached('pumpResult'),state.rescue!=='late');
- if(state.pursuit&&state.pursuit!=='stay'){count(reached('chaseBank'),state.firstMove!=='late');count(reached('chaseFinish'),state.pursuit!=='late');}
+ if(state.pursuit&&state.pursuit!=='stay'){
+  count(reached('clubResult'),state.club!=='late');
+  count(reached('chaseBank'),state.firstMove!=='late');
+  count(state.pursuit!=='ramp'&&state.pursuit!=='chasing'&&reached('chaseFinish'),state.pursuit!=='late');
+  count(state.pursuit==='ramp'&&reached('tunnelFinish'),state.tunnel!=='late');
+ }
  return{faced,hits,grade:!faced?'-':hits===faced?'A':hits/faced>=.75?'B':hits/faced>=.5?'C':'D'};
 }
 const endings=[['arrest-ledger','THE CLEAN ARREST'],['arrest-word','WORD AGAINST WORD'],['home','THE LAMPLIGHTER HOME'],['paper','THE PAPER TRAIL'],['dark','A VOICE IN THE DARK']];
-const discoveries=[['observe',"Studied the courier's limp"],['witness','Made Nell a witness'],['record','Read the intact dispatch entry'],['tape','Decoded the maintenance tape'],['ledger',"Recovered Vale's signed ledger"],['band','Heard the bridge operator'],['confession',"Recorded Nell's confession"],['ramp','Cut Vale off on the service ramp'],['jump','Cleared the lifting bridge']];
+const discoveries=[['observe',"Studied the courier's limp"],['witness','Made Nell a witness'],['record','Read the intact dispatch entry'],['tape','Decoded the maintenance tape'],['ledger',"Recovered Vale's signed ledger"],['band','Heard the bridge operator'],['confession',"Recorded Nell's confession"],['ramp','Cut Vale off on the service ramp'],['jump','Cleared the lifting bridge'],['chip','Pocketed a Filament chip'],['undercity','Ran Vale down in the storm drains']];
 function endingId(){
  if(state.pursuit==='stay')return 'home';
  const ledger=state.rescue==='valve';
  return state.caught?(ledger?'arrest-ledger':'arrest-word'):(ledger?'paper':'dark');
 }
 function discovered(){
- const found={observe:state.watched,witness:state.choice==='person',record:state.choice==='book',tape:state.decoded,ledger:state.rescue==='valve',band:state.radio,confession:state.twist,ramp:state.pursuit==='ramp'&&state.caught,jump:state.pursuit==='jump'&&state.caught};
+ const found={observe:state.watched,witness:state.choice==='person',record:state.choice==='book',tape:state.decoded,ledger:state.rescue==='valve',band:state.radio,confession:state.twist,ramp:state.pursuit==='ramp'&&state.caught&&state.tunnel==='left',jump:state.pursuit==='jump'&&state.caught,chip:state.club==='vault',undercity:state.pursuit==='ramp'&&state.caught};
  return discoveries.filter(([id])=>found[id]).map(([id])=>id);
 }
 function recordCase(){saveStore.record({ending:endingId(),discoveries:discovered()});}

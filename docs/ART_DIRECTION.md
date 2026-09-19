@@ -23,4 +23,12 @@ The approved reference is a dense, textured 3D world rendered entirely through p
 - A camera must communicate what the player can act on. Frame the relevant person, mechanism, vehicle or hazard clearly.
 - Ambient motion should add life without obscuring actors or evidence.
 
-The three files in `reference/` record the approved street study, opening and complete six-location prototype. The renderer regression check compares the actual first-frame glyph output with the complete-case reference at phone and desktop widths. It does not replace visual review of new camera movement or composition.
+The three files in `reference/` record the approved street study, opening and complete six-location prototype. The renderer regression check compares the actual first-frame glyph output with the complete-case reference at phone and desktop widths, ignoring only the cells inside character sprites. It does not replace visual review of new camera movement or composition.
+
+## Characters
+
+Character sprites are text poses projected into the scene. Body glyphs fill their screen band when a character is close to the camera; facial details (eyes, mouth) are stamped once at the centre of their sprite cell, so a close-up never shows a second pair of eyes. Keep faces to the `o`, `.` and `>` glyphs so this rule keeps working.
+
+## Sets
+
+Each set has its own camera language: the street tracks, the concourse cranes, the pump room stays low, the roof sweeps, the office pushes in slowly and then sits low over the desk, the club dollies past the bar and cranes over the booth, the elevated road and the undercity chase from behind, from the side and head-on. Interiors are lit by the same lamp pools as the street. Neon is the only surface allowed to flicker.
