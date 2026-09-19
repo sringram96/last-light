@@ -1,0 +1,766 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>The Last Light - A Cinematic ASCII Mystery</title><style>body{margin:0;background:#03070b}main{max-width:1024px;margin:auto}.cursor-interaction{cursor:pointer}</style></head><body><main>
+<div id="last-light-cinema" aria-label="The Last Light: a cinematic ASCII detective game">
+<style>
+#last-light-cinema{color-scheme:dark;background:#03070b;color:#dce1da;padding:14px;box-sizing:border-box;width:100%;font:12px/1.6 ui-monospace,Consolas,"Liberation Mono",monospace}
+#last-light-cinema *{box-sizing:border-box}
+#last-light-cinema .lc-top,#last-light-cinema .lc-status,#last-light-cinema .lc-actions,#last-light-cinema .lc-options{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px 18px}
+#last-light-cinema .lc-top{padding:2px 2px 10px;color:#d8ba87;letter-spacing:2px}
+#last-light-cinema .lc-small{font-size:11px;color:#99abb5;letter-spacing:0}
+#last-light-cinema canvas{display:block;width:100%;background:#03070b;touch-action:pan-y}
+#last-light-cinema button{font:inherit;background:transparent;border:0;border-radius:0;color:#dbe0d6;min-height:44px;padding:8px 0;text-align:left}
+#last-light-cinema button:hover,#last-light-cinema button:focus-visible{color:#ffd391}
+#last-light-cinema button[aria-pressed="true"]{color:#efc789}
+#last-light-cinema button:disabled{color:#829097}
+#last-light-cinema .lc-actions{justify-content:flex-start;gap:0 22px;min-height:44px}
+#last-light-cinema .lc-status{padding-top:10px;color:#efc789;font-size:11px}
+#last-light-cinema .lc-timer{font-variant-numeric:tabular-nums;white-space:nowrap}
+#last-light-cinema .lc-caption{min-height:40px;margin:6px 0;color:#d1dcde;max-width:65em}
+#last-light-cinema .lc-options{justify-content:flex-end;gap:0 18px;font-size:11px}
+#last-light-cinema .lc-options button{color:#99abb5}
+#last-light-cinema .lc-journal summary{min-height:44px;padding:10px 0;color:#d8ba87;font-size:11px}
+#last-light-cinema .lc-reel summary{min-height:44px;padding:10px 0;color:#99abb5;font-size:11px}
+#last-light-cinema .lc-reel-actions{display:flex;flex-wrap:wrap;gap:0 22px}
+#last-light-cinema .lc-clues{padding:0;list-style:none;margin:0 0 8px;color:#b4c6cc}
+#last-light-cinema .lc-clues li{padding:5px 0;max-width:65em}
+#last-light-cinema .lc-outcome{margin:8px 0;color:#d8ba87}
+#last-light-cinema [hidden]{display:none!important}
+@media(max-width:440px){#last-light-cinema{padding:10px;font-size:11px}#last-light-cinema .lc-top{letter-spacing:1px}#last-light-cinema .lc-actions{gap:0 16px}}
+</style>
+<div class="lc-top"><span>THE LAST LIGHT</span><span class="lc-small lc-chapter">01 / STATION ROAD</span></div>
+<canvas role="img" aria-label="A dense three-dimensional night street rendered entirely in ASCII, with moving camera, warm lamps, wet tram tracks, trees, and the station clock tower."></canvas>
+<div class="lc-status"><span class="lc-phase"></span><span class="lc-timer" aria-hidden="true"></span></div>
+<p class="lc-caption" aria-live="polite"></p>
+<p class="lc-outcome" hidden></p>
+<div class="lc-actions" role="group" aria-label="Story choices"></div>
+<div class="lc-options"><button type="button" class="lc-timing cursor-interaction" aria-pressed="false">[TIMED]</button><button type="button" class="lc-mono cursor-interaction" aria-pressed="false">[MONO]</button><button type="button" class="lc-pause cursor-interaction" aria-pressed="false">[PAUSE]</button></div>
+<details class="lc-journal" hidden><summary class="cursor-interaction">CASE NOTES</summary><ul class="lc-clues"></ul></details>
+<details class="lc-reel"><summary class="cursor-interaction">SCENE REEL / START FROM A LOCATION</summary><p class="lc-small">Starts a fresh preview route and replaces your current progress.</p><div class="lc-reel-actions" role="group" aria-label="Start a preview route at a location"></div></details>
+<script>
+
+(() => {
+const root=document.getElementById('last-light-cinema'), canvas=root.querySelector('canvas'), ctx=canvas.getContext('2d');
+const el=Object.fromEntries(['actions','caption','phase','timer','pause','timing','mono','journal','clues','outcome'].map(k=>[k,root.querySelector('.lc-'+k)]));
+const reduce=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+let W=168,H=66,cw=4.2,ch=7.2,dpr=1,fx=100,fy=60,zbuf,chars,ink,frame=0,lastFrame=0,lastTime=0,visible=true;
+const camera={x:-.8,y:2.05,z:-5,yaw:.035,pitch:.085};
+const state={t:0,paused:false,mono:false,travel:0,moving:false,phase:'brief',event:0,watched:false,choice:'',untimed:reduce,clues:[],wrong:false};
+let keys=[],transitionFrom={...camera};
+let sy=0,cy=1,sp=0,cp=1;
+const palettes=[],gray=[];
+const hues=[[129,160,181],[83,186,184],[255,190,94],[195,109,103],[100,134,210],[92,153,111],[220,228,216],[104,134,151]];
+for(let h=0;h<hues.length;h++)for(let i=0;i<20;i++){const b=.18+Math.pow(i/19,.72)*1.35;palettes.push('rgb('+hues[h].map(v=>Math.min(255,Math.round(v*b))).join(',')+')');const v=Math.min(245,Math.round(22+Math.pow(i/19,.78)*223));gray.push('rgb('+[v,v+Math.min(5,255-v),v+Math.min(6,255-v)].join(',')+')');}
+const fract=n=>n-Math.floor(n), clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+const hash=(a,b,c=0)=>fract(Math.sin(a*127.1+b*311.7+c*74.7)*43758.5453);
+const mix=(a,b,t)=>a+(b-a)*t;
+const smooth=t=>t*t*(3-2*t);
+const glyphs='.,:;=+xX%#@';
+const surfaces=[],lamps=[];
+function quad(a,b,c,d,mat,n){surfaces.push({v:[a,b,c,d],mat,n});}
+function box(x0,y0,z0,x1,y1,z1,mat){
+quad([x0,y0,z0],[x1,y0,z0],[x1,y1,z0],[x0,y1,z0],mat,[0,0,-1]);
+quad([x1,y0,z1],[x0,y0,z1],[x0,y1,z1],[x1,y1,z1],mat,[0,0,1]);
+quad([x0,y0,z1],[x0,y0,z0],[x0,y1,z0],[x0,y1,z1],mat,[-1,0,0]);
+quad([x1,y0,z0],[x1,y0,z1],[x1,y1,z1],[x1,y1,z0],mat,[1,0,0]);
+quad([x0,y1,z0],[x1,y1,z0],[x1,y1,z1],[x0,y1,z1],{...mat,roof:true},[0,1,0]);
+}
+function ellipsoid(cx,cy,cz,rx,ry,rz,mat){
+const rings=7,steps=10,point=(i,j)=>{const p=-Math.PI/2+Math.PI*i/rings,a=Math.PI*2*j/steps;return[cx+Math.cos(p)*Math.cos(a)*rx,cy+Math.sin(p)*ry,cz+Math.cos(p)*Math.sin(a)*rz]};
+for(let i=0;i<rings;i++)for(let j=0;j<steps;j++){const mid=point(i+.5,j+.5),n=[(mid[0]-cx)/rx,(mid[1]-cy)/ry,(mid[2]-cz)/rz];const l=Math.hypot(...n);quad(point(i,j),point(i,j+1),point(i+1,j+1),point(i+1,j),mat,n.map(v=>v/l));}
+}
+function building(x,z,w,d,h,hue,seed){const m={kind:'building',hue,seed,x,z,w,d,h};box(x,0,z,x+w,h,z+d,m);box(x-.1,h,z-.1,x+w+.1,h+.25,z+d+.1,{kind:'stone',hue,seed});if(h>13)box(x+w*.22,h+.25,z+d*.25,x+w*.68,h+1.5,z+d*.7,{kind:'stone',hue,seed});}
+// The geometry, surface patterns and lighting all share world coordinates.
+quad([-90,0,-18],[90,0,-18],[90,0,125],[-90,0,125],{kind:'road',hue:7},[0,1,0]);
+box(-8,.01,-12,-4.8,.18,69,{kind:'paving',hue:0});box(4.8,.01,-12,8,.18,69,{kind:'paving',hue:0});
+building(-18,-9,10,12,17,1,3);building(-20,6,12,12,25,0,7);building(-17,22,9,10,18,3,11);building(-22,36,14,12,30,4,17);
+building(8,-10,12,15,22,4,23);building(8,9,11,12,16,0,29);building(8,25,15,11,26,1,31);building(8,41,12,13,20,3,37);
+building(-34,18,10,13,34,4,41);building(25,13,13,17,33,0,47);building(-25,56,17,18,36,1,53);building(12,65,18,15,39,4,61);
+// Station facade, tower and roofline.
+building(-8,39,16,6,8,0,65);box(-2.2,8,40,2.2,19,44,{kind:'tower',hue:0,seed:71});box(-2.45,16,39.75,2.45,16.45,44.25,{kind:'stone',hue:6});box(-2.45,18.8,39.75,2.45,19.2,44.25,{kind:'stone',hue:6});
+const peak=[0,23,42],rim=[[-2.5,19.2,39.5],[2.5,19.2,39.5],[2.5,19.2,44.5],[-2.5,19.2,44.5]];
+for(let i=0;i<4;i++){const a=rim[i],b=rim[(i+1)%4],cross=[(b[1]-a[1])*(peak[2]-a[2])-(b[2]-a[2])*(peak[1]-a[1]),(b[2]-a[2])*(peak[0]-a[0])-(b[0]-a[0])*(peak[2]-a[2]),(b[0]-a[0])*(peak[1]-a[1])-(b[1]-a[1])*(peak[0]-a[0])];const len=Math.hypot(...cross);quad(a,b,peak,peak,{kind:'metal',hue:1},cross.map(v=>v/len));}
+box(-1.6,0,38.8,1.6,4.3,39,{kind:'door',hue:2});
+// Shopfront awnings, a newsstand and street furniture.
+box(-8.9,3.5,-3,-6.8,3.78,3,{kind:'awning',hue:2});box(-8.2,.2,1,-6.6,2.9,3.2,{kind:'kiosk',hue:1});
+box(6.7,3.35,11,8.1,3.6,17,{kind:'awning',hue:3});box(7.1,5.5,11.5,7.55,11.8,12.35,{kind:'sign',hue:3});
+for(const x of [-6.15,6.15])for(const z of [1,16,30]){box(x-.055,.15,z-.055,x+.055,4.65,z+.055,{kind:'metal',hue:0});box(x-.34,4.15,z-.34,x+.34,4.7,z+.34,{kind:'lamp',hue:2});box(x-.45,4.7,z-.45,x+.45,4.82,z+.45,{kind:'metal',hue:0});lamps.push([x,z]);}
+for(const [x,z] of [[-6.15,10],[6.3,23],[-6.4,31]]){box(x-.15,.18,z-.15,x+.15,3.7,z+.15,{kind:'bark',hue:5});ellipsoid(x,4.3,z,1.8,2.05,1.6,{kind:'leaves',hue:5,seed:4});}
+for(const [x,z] of [[-5.7,5],[5.6,18]]){box(x-.8,.5,z-.35,x+.8,.7,z+.35,{kind:'wood',hue:2});box(x-.8,.7,z+.28,x+.8,1.2,z+.4,{kind:'wood',hue:2});for(const dx of [-.6,.6])box(x+dx-.07,.18,z-.27,x+dx+.07,.5,z+.27,{kind:'metal',hue:0});}
+// An empty tram at the far stop.
+box(.1,.45,28,2.65,3.3,34,{kind:'tram',hue:3});box(.0,3.3,27.9,2.75,3.55,34.1,{kind:'metal',hue:0});box(.3,.25,28.6,.55,.7,29.1,{kind:'rubber',hue:7});box(2.2,.25,28.6,2.45,.7,29.1,{kind:'rubber',hue:7});
+// Ceiling cables are thin physical surfaces; every visible mark is still a glyph.
+for(const z of [8,21,35])quad([-8,8,z],[8,8,z],[8,8.035,z+.035],[-8,8.035,z+.035],{kind:'cable',hue:0},[0,-1,0]);
+function cam(p){const dx=p[0]-camera.x,dy=p[1]-camera.y,dz=p[2]-camera.z;const xx=dx*cy-dz*sy,zz=dx*sy+dz*cy;return{x:xx,y:dy*cp-zz*sp,z:dy*sp+zz*cp,w:p};}
+function project(p){return{x:W/2+p.x*fx/p.z,y:H/2-p.y*fy/p.z,z:p.z,w:p.w};}
+function clip(poly){let out=[];for(let i=0;i<poly.length;i++){const a=poly[i],b=poly[(i+1)%poly.length],ia=a.z>=.18,ib=b.z>=.18;if(ia)out.push(a);if(ia!==ib){const u=(.18-a.z)/(b.z-a.z);out.push({x:mix(a.x,b.x,u),y:mix(a.y,b.y,u),z:.18,w:a.w.map((v,j)=>mix(v,b.w[j],u))});}}return out;}
+function shade(mat,n,x,y,z,depth){
+ if(mat.baseY)y-=mat.baseY;
+ let hue=mat.hue||0,lum=.65,g=':',kind=mat.kind;
+ const grain=hash(Math.floor(x*3),Math.floor(y*4),Math.floor(z*3));
+ const face=.58+Math.max(0,n[0]*.5+n[1]*.72-n[2]*.45)*.65;
+ // Additional surface types; original street shaders are retained verbatim.
+if(kind==='dispatch'){hue=6;lum=.95;g=mat.roof?'=':fract(y*9)<.16?'-':'.';}
+else if(kind==='hatch'){hue=0;lum=.18;g=fract(x*5)<.09?'|':'.';}
+else if(kind==='tiles'){
+ const a=Math.floor(x*.8),b=Math.floor(z*.8);hue=(a+b)%2?0:2;lum=(a+b)%2?.36:.64;g=fract(x*.8)<.05||fract(z*.8)<.05?'+':grain>.65?':':'.';
+ if(Math.abs(x)<2.5){hue=2;lum=.65;g=fract(z*2)<.12?'=':':';}
+}
+else if(kind==='wall'||kind==='brick'){
+ hue=kind==='wall'?2:0;lum=.37+grain*.15;g=fract(y*2)<.10?'-':fract(x*.8+z*.8+Math.floor(y*2)*.5)<.055?'|':grain>.6?':':'.';
+ if(kind==='wall'&&y>3&&y<9){const u=fract((Math.abs(n[0])>.5?z:x)/6);if(u>.2&&u<.8){hue=4;lum=.48;g=u<.23||u>.77?'|':fract(y*2)<.06?'=':'+';}}
+ if(kind==='wall'&&(y<.25||Math.abs(y-2.7)<.1||Math.abs(y-10.2)<.13)){hue=2;lum=.9;g='=';}
+}
+else if(kind==='column'){hue=0;lum=.55+grain*.12;g=fract((x+z)*8)<.2?'|':':';}
+else if(kind==='ceiling'){hue=4;lum=.3;g=fract(x*.8)<.07?'|':fract(z*.5)<.1?'=':'.';}
+else if(kind==='water'){
+ const r=Math.sin(x*2+z*.6+state.t*1.2)+Math.sin(z*3-x*.6-state.t*.8);hue=1;lum=.22+Math.max(0,r)*.23;g=r>1.1?'=':r>.2?'-':'.';
+ if(Math.abs(x)<2&&kind==='water'){hue=2;lum+=.15;}
+}
+else if(kind==='tank'){lum=.45+grain*.15;g=Math.abs(n[1])>.5?'=':fract(y*2)<.07?'=':fract((x+z)*2)<.05?'|':':';if(Math.abs(y-2.1)<.16){hue=2;lum=.9;g='=';}}
+else if(kind==='pipe'){hue=2;lum=.65;g=fract(z*.8)<.12?'#':'=';}
+else if(kind==='grate'){hue=0;lum=.6;g=fract(x*4)<.3||fract(z*4)<.25?'+':'.';}
+else if(kind==='console'){hue=1;lum=.5;g=':';if(!mat.roof&&y>1.35){hue=2;lum=1;g=fract(x*7)<.25?'|':'=';}}
+else if(kind==='poster'){hue=2;lum=.75;g=fract(y*4)<.32?'=':'.';}
+else if(kind==='roof'){hue=0;lum=.44;g=fract(x*.8)<.025||fract(z*.8)<.03?'=':grain>.65?':':'.';}
+else if(kind==='vent'){hue=0;lum=.58;g=fract(y*7)<.48?'=':'.';if(mat.roof){g=fract(x*5)<.3?'|':'-';}}
+else if(kind==='express'){
+ hue=7;lum=.34+grain*.12;g=grain>.6?':':'.';
+ if(Math.abs(x)<.09&&fract(z*.12)<.5||Math.abs(Math.abs(x)-5.7)<.08){hue=2;lum=1;g='|';}
+ if(Math.abs(x)>5.9){hue=0;lum=.64;g='=';}
+ const r=Math.sin(x*3+z*.07);if(r>.6&&Math.abs(x)>3){hue=x<0?1:3;lum=.6;g='-';}
+}
+else if(kind==='barrier'){hue=Math.floor(z*.7+x*.4)%2?2:0;lum=.8;g=fract(y*6)<.3?'=':'#';}
+else if(kind==='highway-sign'){hue=1;lum=.85;g=fract(x*.6)<.25?'>':'=';}
+else if(kind==='car'){lum=.64+grain*.14;g=mat.roof?'=':fract(y*6)<.14?'=':grain>.5?'+':':';}
+else if(kind==='glass'){lum=.35;g=mat.roof?'=':fract((x+z)*1.5)<.06?'|':'/';}
+else if(kind==='tail'){hue=3;lum=1.3;g='#';}
+else if(kind==='gap'){hue=4;lum=.13;g='.';}
+else
+ if(kind==='road'||kind==='paving'){
+   const u=fract(x*1.25+(Math.floor(z*2)%2)*.5),v=fract(z*2);
+   hue=7;lum=.29+grain*.15;g=(v<.12||u<.09)?'-':grain>.55?':':'.';
+   if(kind==='paving'){lum=.5+grain*.15;g=(fract(x*1.7)<.08||fract(z*1.2)<.08)?'=':'.';}
+   if(kind==='road'&&(Math.abs(Math.abs(x)-1.0)<.055||Math.abs(Math.abs(x)-2.4)<.055)){hue=6;lum=.95;g='|';}
+   if(kind==='road'&&Math.abs(z-7)<1.25&&Math.abs(x)<4.5&&fract(x*.7)<.42){hue=6;lum=.68;g='=';}
+   for(let i=0;i<lamps.length;i++){const l=lamps[i],d=(x-l[0])**2+(z-l[1])**2;if(d<30){const a=(1-d/30);if(a>.28){hue=2;lum=Math.max(lum,.32+a*.53);if(grain>.65)g='=';}}}
+   if(kind==='road'){
+     const ripple=.3*Math.sin(z*4.2+x*3.5+state.t*.75),stripe=Math.sin(x*2.7+z*.38+ripple);
+     if(stripe>.2&&Math.abs(x)>2.6&&Math.abs(x)<4.6){hue=x<0?1:4;lum=.42+.37*stripe;g=grain>.55?'=':'-';}
+   }
+ }else if(kind==='building'){
+   if(mat.roof){g=grain>.5?'=':'-';lum=.46;}
+   else{
+     const u=Math.abs(n[0])>.5?z-mat.z:x-mat.x,wx=fract(u/1.85),wy=fract(y/2.8),bay=Math.floor(u/1.85),floor=Math.floor(y/2.8);
+     lum=.42+grain*.19;g=grain>.82?'x':grain>.57?'+':grain>.2?':':'.';
+     if(wy<.055){lum=.82;g='=';}if(wx<.048){lum=.77;g='|';}
+     if(wx>.23&&wx<.78&&wy>.26&&wy<.81){
+       const lit=hash(bay,floor,mat.seed)>.54;
+       hue=lit?(hash(bay,mat.seed,floor)>.28?2:1):4;lum=lit?1.1:.22;
+       g=lit?'#':':';
+       if(wx>.47&&wx<.53||wy>.52&&wy<.57){g='+';lum=lit?.6:.48;hue=0;}
+       if(wx<.28||wx>.73||wy<.31||wy>.76){g=wy<.31||wy>.76?'=':'|';lum=.67;hue=mat.hue;}
+     }
+     if(y<2.7){lum=.44;g=fract(u*4)<.18?'|':':';if(fract(u/4)>.22&&fract(u/4)<.74&&y>.65&&y<2.2){hue=hash(Math.floor(u/4),0,mat.seed)>.4?2:1;lum=.94;g=y<1.4?'=':'#';}}
+   }
+ }else if(kind==='tower'){
+   lum=.72;g=grain>.3?':':'+';if(fract(y/3)<.05){g='=';lum=1;}
+   if(n[2]<-.5){const dx=x,dy=y-17.55,d=dx*dx+dy*dy;if(d<1.22){hue=2;lum=1;g='o';if(d<.92){hue=6;lum=.2;g='.';}if(Math.abs(dx)<.1&&dy>-.05||Math.abs(dy-dx*.5)<.11&&dx<.05){hue=2;lum=1.15;g='+';}}if(y>9&&y<14&&Math.abs(x)<.8){hue=2;lum=1;g='H';}}
+ }else if(kind==='leaves'){if(grain<.12)return null;g='*+x%&'[Math.floor(grain*5)];lum=.48+grain*.45;}
+ else if(kind==='lamp'){hue=2;lum=1.3;g=grain>.4?'#':'@';}
+ else if(kind==='door'){hue=2;lum=.44;g=fract(x*5)<.18?'|':'.';if(y>2){lum=.98;g='H';}if(Math.abs(x)<.04){lum=1;g='|';}}
+ else if(kind==='tram'){lum=.72;g=grain>.3?'+':':';if(y>1.5&&y<2.85){hue=1;lum=.8;g='=';if(fract(z*1.1)<.1||Math.abs(x-1.35)<.07){hue=6;lum=.9;g='|';}}if(y>.9&&y<1.08){hue=2;lum=1.05;g='=';}if(n[2]<-.5&&y>.65&&y<1.1&&(Math.abs(x-.5)<.18||Math.abs(x-2.25)<.18)){hue=2;lum=1.3;g='@';}}
+ else if(kind==='awning'){lum=.85;g='=';if(Math.floor(z*2)%2){hue=6;lum=.7;}}
+ else if(kind==='kiosk'){lum=.6;g='+';if(y>1&&y<2.5){hue=6;lum=.8;g='H';}}
+ else if(kind==='sign'){hue=3;lum=1;g='#';if(y>5.8&&y<11.5){hue=2;lum=1.2;g='+';}}
+ else if(kind==='bark'){lum=.45;g='|';}
+ else if(kind==='wood'){lum=.58;g=fract(y*7)<.3?'=':'-';}
+ else if(kind==='rubber'){lum=.16;g='#';}
+ else if(kind==='cable'){lum=.7;g='-';}
+ else if(kind==='metal'){lum=.8;g=grain>.5?'=':'+';}
+ else{lum=.75;g=grain>.5?'=':':';}
+ if(kind!=='lamp'&&kind!=='sign')lum*=face;
+ // Distance dims both color and glyph weight while keeping a stable surface texture.
+ const fog=Math.exp(-Math.max(0,depth-7)*.017);lum*=fog;
+ if(depth>52&&g==='#')g='+';if(depth>75)g='.';
+ const level=clamp(Math.round(lum*14),0,19);
+ return[g,hue*20+level];
+}
+function triangle(a,b,c,mat,n){
+ const area=(b.x-a.x)*(c.y-a.y)-(b.y-a.y)*(c.x-a.x);if(Math.abs(area)<.0001)return;
+ const minX=clamp(Math.floor(Math.min(a.x,b.x,c.x)),0,W-1),maxX=clamp(Math.ceil(Math.max(a.x,b.x,c.x)),0,W-1),minY=clamp(Math.floor(Math.min(a.y,b.y,c.y)),0,H-1),maxY=clamp(Math.ceil(Math.max(a.y,b.y,c.y)),0,H-1);
+ const ia=1/a.z,ib=1/b.z,ic=1/c.z;
+ for(let y=minY;y<=maxY;y++)for(let x=minX;x<=maxX;x++){
+   const xx=x+.5,yy=y+.5,u=((b.x-xx)*(c.y-yy)-(b.y-yy)*(c.x-xx))/area,v=((c.x-xx)*(a.y-yy)-(c.y-yy)*(a.x-xx))/area,w=1-u-v;
+   if(u<-.00001||v<-.00001||w<-.00001)continue;
+   const inv=u*ia+v*ib+w*ic,depth=1/inv,idx=y*W+x;if(depth>=zbuf[idx])continue;
+   const aa=u*ia*depth,bb=v*ib*depth,cc=w*ic*depth;
+   const p0=a.w[0]*aa+b.w[0]*bb+c.w[0]*cc,p1=a.w[1]*aa+b.w[1]*bb+c.w[1]*cc,p2=a.w[2]*aa+b.w[2]*bb+c.w[2]*cc;
+   const s=shade(mat,n,p0,p1,p2,depth);if(!s)continue;zbuf[idx]=depth;chars[idx]=s[0];ink[idx]=s[1];
+ }
+}
+function pixel(x,y,z,g,k){x=Math.round(x);y=Math.round(y);if(x<0||x>=W||y<0||y>=H)return;const i=y*W+x;if(z<zbuf[i]){zbuf[i]=z;chars[i]=g;ink[i]=k;}}
+function worldLabel(p,text,hue=2){const v=cam(p);if(v.z<1)return;const s=project(v),start=Math.round(s.x-text.length/2);for(let i=0;i<text.length;i++)if(text[i]!==' ')pixel(start+i,s.y,v.z-.3,text[i],hue*20+16);}
+
+// New sets use the approved renderer: world-fixed textures, depth, occlusion and lamps.
+const sceneCache={street:{surfaces:surfaces.slice(),lamps:lamps.slice()}};
+let sceneName='street',staticCount=surfaces.length;
+Object.assign(state,{decoded:false,radio:false,twist:false,rescue:'',gap:0,pursuit:'',caught:false,distance:20,endingSeen:false});
+const mat=(kind,hue=0)=>({kind,hue});
+function floor(x0,z0,x1,z1,y,kind='tiles',hue=0){quad([x0,y,z0],[x0,y,z1],[x1,y,z1],[x1,y,z0],mat(kind,hue),[0,1,0]);}
+function wall(x0,z0,x1,z1,h,kind='wall',hue=0){
+ const dx=x1-x0,dz=z1-z0,l=Math.hypot(dx,dz);
+ quad([x0,0,z0],[x1,0,z1],[x1,h,z1],[x0,h,z0],mat(kind,hue),[-dz/l,0,dx/l]);
+}
+function pillar(x,z,h=10){box(x-.32,0,z-.32,x+.32,h,z+.32,mat('column'));box(x-.65,0,z-.65,x+.65,.5,z+.65,mat('stone'));box(x-.6,h-.5,z-.6,x+.6,h,z+.6,mat('stone'));}
+function pendant(x,z,y=7){box(x-.04,y,z-.04,x+.04,11,z+.04,mat('metal'));box(x-.5,y-.3,z-.4,x+.5,y+.15,z+.4,mat('lamp',2));lamps.push([x,z]);}
+function bench(x,z){box(x-1.5,.55,z-.35,x+1.5,.8,z+.4,mat('wood',2));box(x-1.5,.8,z+.3,x+1.5,1.5,z+.5,mat('wood',2));for(const a of [-1.2,1.2])box(x+a-.1,0,z-.25,x+a+.1,.55,z+.3,mat('metal'));}
+function cityRow(z0,z1,spacing,x,h0){for(let z=z0,i=0;z<z1;z+=spacing,i++){const h=h0+hash(i,x)*20;building(x,z,7+hash(i,3)*6,spacing-3,h,i%3===0?4:0,i*7+37);}}
+function stationSet(){
+ floor(-13,-15,13,46,0);wall(-13,46,-13,-15,12);wall(13,-15,13,46,12);wall(13,46,-13,46,12);
+ // A high ribbed roof; broad spaces between columns keep the actors readable.
+ for(let z=-8;z<45;z+=9){pillar(-8,z);pillar(8,z);box(-13,10,z-.12,13,10.3,z+.12,mat('metal'));pendant(0,z,7.8);}
+ quad([-13,12,-15],[13,12,-15],[13,12,46],[-13,12,46],mat('ceiling'),[0,-1,0]);
+ for(const x of [-6.5,6.5])for(const z of [9,23,35])bench(x,z);
+ for(const x of [-10,10]){box(x-1.2,0,28,x+1.2,2.2,33,mat('wood',2));box(x-1.4,3,27.8,x+1.4,3.35,33.2,mat('awning',2));}
+ box(-2.5,0,43.6,2.5,4.5,44,mat('hatch'));box(-3,4.7,43.4,3,5.8,43.9,mat('sign'));
+ box(-2.3,0,18.7,2.3,1.15,20.4,mat('wood',2));box(-1.9,1.15,19,1.9,1.24,20.2,mat('dispatch',6));
+ box(-.8,1.24,19.5,.8,1.7,20,mat('console',1));
+ for(const x of [-10,10])box(x-.9,3,15,x+.9,6,15.2,mat('poster',2));
+}
+function pumpSet(){
+ floor(-15,-12,15,36,-.7,'water',1);wall(-15,36,-15,-12,11,'brick');wall(15,-12,15,36,11,'brick');wall(15,36,-15,36,11,'brick');
+ box(-2.6,-.3,-12,2.6,0,20,mat('grate'));box(-2.6,-.3,16,10,0,25,mat('grate'));
+ for(const x of [-2.5,2.5])for(let z=-8;z<16;z+=4){box(x-.035,0,z-.035,x+.035,.8,z+.035,mat('metal'));box(x-.03,.8,z,x+.03,.84,z+4,mat('metal'));}
+ for(const x of [-8,8])for(const z of [7,24]){ellipsoid(x,3,z,2.2,3.5,2.2,mat('tank',1));box(x-.8,5,z-.8,x+.8,7.5,z+.8,mat('metal'));box(x-.27,7.2,-10,x+.27,7.65,33,mat('pipe',2));}
+ for(const z of [-4,12,29]){box(-15,9,z-.18,15,9.4,z+.18,mat('metal'));pendant(0,z,6.5);}
+ box(-1.7,.3,12,-.9,2.3,12.6,mat('console',2));
+ box(3.8,0,17,6.5,1.2,18.5,mat('metal'));box(-2,0,33.6,2,4,34,mat('hatch'));
+ box(5.3,2.3,31,5.6,8,31.3,mat('metal'));box(6.7,2.3,31,7,8,31.3,mat('metal'));for(let y=2.4;y<8;y+=.45)box(5.3,y,31,7,y+.08,31.3,mat('metal'));
+}
+function roofSet(){
+ floor(-16,-14,16,26,0,'roof');for(const x of [-16,16])box(x-.15,0,-14,x+.15,1.15,26,mat('brick'));
+ box(-16,0,25.8,16,1.25,26.2,mat('brick'));box(-12,0,-4,-7,4.2,3,mat('brick'));box(-10.7,0,3.01,-8.4,3,3.2,mat('hatch'));
+ box(7,0,7,11,1.8,12,mat('vent'));box(9,0,-3,12,2,-.5,mat('vent'));
+ for(const x of [-2,2])box(x-.1,0,17,x+.1,3,17.2,mat('metal'));
+ box(-2,2.3,17,2,2.6,17.3,mat('metal'));box(-2.1,0,16.7,2.1,1.2,18,mat('wood',2));box(-.6,1.2,17,.6,1.8,17.5,mat('console',1));
+ box(-5,0,20,-4.85,10,20.2,mat('metal'));for(let y=5;y<10;y+=1.4)box(-7,y,20,-2.8,y+.06,20.1,mat('metal'));
+ const cityStart=surfaces.length;
+ for(const x of [-29,22])cityRow(-15,100,16,x,12);cityRow(39,115,19,-15,19);cityRow(46,125,19,1,23);
+ cityRow(25,130,20,48,28);cityRow(50,145,22,70,20);
+ for(let i=cityStart;i<surfaces.length;i++){for(const v of surfaces[i].v)v[1]-=20;surfaces[i].mat={...surfaces[i].mat,baseY:-20};}
+ // Far traffic travels through actual 3D space behind the parapet.
+ pendant(-12,13,5.5);
+}
+function chaseSet(){
+ floor(-7,-55,7,950,0,'express');
+ for(const x of [-7,7]){box(x-.13,0,-55,x+.13,.65,950,mat('barrier'));for(let z=-30;z<940;z+=24){box(x-.07,.65,z-.08,x+.07,6.5,z+.08,mat('metal'));box(x-.6,6.15,z-.3,x+.6,6.5,z+.3,mat('lamp',2));}}
+ cityRow(-40,930,20,-24,22);cityRow(-40,930,20,15,26);
+ for(let z=36;z<940;z+=80){box(-7,7,z,7,7.3,z+.3,mat('metal'));box(-3.5,5.5,z-.12,3.5,7,z+.15,mat('highway-sign',1));}
+ floor(-100,-50,100,1000,-15,'water',1);
+}
+function canalSet(){
+ floor(-45,-20,-4,130,-1.6,'water',1);floor(-4,-20,25,110,0,'paving');box(-4.3,-1.8,-20,-3.9,.45,110,mat('brick'));
+ for(let z=-6;z<100;z+=12){box(-3.4,0,z-.1,-3.2,4.7,z+.1,mat('metal'));box(-3.7,4.2,z-.3,-2.9,4.7,z+.3,mat('lamp',2));lamps.push([-3.3,z]);}
+ cityRow(-10,125,15,14,12);cityRow(28,140,17,-39,17);
+ box(-45,6,49,25,6.6,54,mat('brick'));for(const x of [-30,-15,0,15])box(x-1,-2,49,x+1,6,54,mat('brick'));
+ for(const z of [17,38]){box(-12,-1.4,z,-7,-.2,z+8,mat('wood',2));box(-11.5,-.2,z+2,-7.5,1.6,z+6,mat('tram',1));}
+ bench(3,18);box(7,0,24,11,2.8,30,mat('tram',6));
+}
+const builders={station:stationSet,pump:pumpSet,roof:roofSet,chase:chaseSet,canal:canalSet};
+function setScene(name){
+ if(name===sceneName)return false;
+ if(!sceneCache[name]){surfaces.length=0;lamps.length=0;builders[name]();sceneCache[name]={surfaces:surfaces.slice(),lamps:lamps.slice()};}
+ surfaces.length=0;surfaces.push(...sceneCache[name].surfaces);lamps.length=0;lamps.push(...sceneCache[name].lamps);staticCount=surfaces.length;sceneName=name;return true;
+}
+function car(x,z,hue=1,y=0,large=false){
+ const w=large?1.45:1.05,l=large?3.6:2.2;
+ box(x-w,y+.35,z-l,x+w,y+1.05,z+l,mat('car',hue));
+ box(x-w*.78,y+1.05,z-l*.52,x+w*.78,y+1.9,z+l*.55,mat('glass',hue));
+ box(x-w*.85,y+1.9,z-l*.55,x+w*.85,y+2.06,z+l*.58,mat('metal',hue));
+ for(const dx of [-w,w])for(const dz of [-l*.67,l*.67])box(x+dx-.16,y+.13,z+dz-.4,x+dx+.16,y+.7,z+dz+.4,mat('rubber'));
+ for(const dx of [-w*.7,w*.7]){box(x+dx-.22,y+.58,z-l-.06,x+dx+.22,y+.83,z-l,mat('tail',3));box(x+dx-.22,y+.65,z+l,x+dx+.22,y+.88,z+l+.06,mat('lamp',2));}
+}
+function extended(){return !['brief','watch','ready','follow','danger','qte','result','evidence','deduce','arrival','ending'].includes(state.phase);}
+function sceneFor(p){return p.startsWith('station')?'station':p.startsWith('pump')?'pump':p.startsWith('roof')?'roof':p.startsWith('chase')?'chase':p.startsWith('canal')?'canal':'street';}
+const look=(x,y,z,tx,ty,tz)=>({x,y,z,yaw:Math.atan2(tx-x,tz-z),pitch:Math.atan2(ty-y,Math.hypot(tx-x,tz-z))});
+function caseShot(){
+ const p=state.phase;
+ if(sceneName==='station')return p==='stationEntry'?look(-3.5,3.1,10,0,1.5,19):look(-3.5,2.9,13,0,1.1,19);
+ if(sceneName==='pump')return ['pumpEntry','pumpFind'].includes(p)?look(-1.5,2.5,3,1.8,1.25,14):p==='pumpTruth'?look(.3,2.7,10.5,3,1.4,16.4):look(-1.7,3.1,8,1.1,1,14);
+ if(sceneName==='roof'){
+  if(p==='roofEntry')return look(-7,4.1,4,1,1.2,15);
+  if(['roofListen','roofSignal'].includes(p))return look(-3.2,2.8,10.3,.1,1.1,16.6);
+  return look(-5.5,4.8,8,1.5,1.5,18);
+ }
+ if(sceneName==='chase'){
+  const d=state.distance;
+  if(p==='chaseBank')return look(-13,3.5,d-10,0,1.3,d+6);
+  if(p==='chaseFinish'&&state.pursuit==='ramp')return look(-9,7,d-14,-8,-1,d+9);
+  return look(-.6,p==='chaseEntry'?5:3.3,d-11,.3,1.2,d+13);
+ }
+ return look(-1.2,3.1,5,3,1.5,15);
+}
+function sceneStart(name){
+ return name==='station'?look(5,10,-4,0,0,24):name==='pump'?look(-4.5,1.8,-7,2,1.5,18):name==='roof'?look(-12,6,-5,1.3,1.5,15):name==='chase'?look(-7,9,state.distance-15,0,1,state.distance+16):look(8,2.3,7,3,1,15);
+}
+function casePose(){
+ const duration={stationEntry:7,pumpEntry:6,pumpDanger:2,roofEntry:8,canalEntry:7}[state.phase]||1.5;
+ if(sceneName==='chase'){
+  const target=caseShot(),u=reduce?1:span(state.phase==='chaseEntry'?5:1.1);
+  const origin={...transitionFrom,z:transitionFrom.z+state.distance-(state.phaseDistance||state.distance)};
+  for(const k of Object.keys(camera))camera[k]=mix(origin[k],target[k],u);
+ }else{const target=caseShot(),u=reduce?1:span(duration);for(const k of Object.keys(camera))camera[k]=mix(transitionFrom[k],target[k],u);}
+ state.moving=/Entry|Bank|Finish|Result/.test(state.phase);
+}
+function caseBlocking(){
+ const p=state.phase,others=[];let rook=null,courier=null;
+ if(sceneName==='station'){
+  const u=p==='stationEntry'&&!reduce?span(7):1;
+  rook={x:mix(-1.6,-1.2,u),z:mix(8,17.2,u),pose:u<1?'walk':'read'};
+  if(state.choice==='person')courier={x:1.3,z:mix(9,18,u),pose:u<1?'walk':'stand'};
+ }
+ if(sceneName==='pump'){
+  const u=p==='pumpEntry'&&!reduce?span(6):1,v=p==='pumpResult'&&!reduce?span(4):p==='pumpTruth'?1:0;
+  rook={x:mix(-.6,1.8,v),z:mix(mix(1,11,u),15.7,v),pose:u<1?'walk':v>0?'support':'watch'};
+  others.push({x:mix(4.8,3.25,v),y:1.2*(1-v),z:mix(17.8,16.2,v),pose:'stand',hue:2});
+  if(state.choice==='person')courier={x:1.5,z:14.5,pose:'watch'};
+ }
+ if(sceneName==='roof'){
+  const u=p==='roofEntry'&&!reduce?span(8):1;
+  rook={x:mix(-8,-1.6,u),z:mix(5,15.8,u),pose:u<1?'walk':'watch'};
+  others.push({x:2.4,z:16.4,pose:'stand',hue:2});
+  if(state.choice==='person')courier={x:1,z:18,pose:'stand'};
+ }
+ if(sceneName==='canal'){
+  rook={x:2,z:14,pose:'watch'};others.push({x:3.4,z:15.2,pose:'stand',hue:2});
+  if(state.choice==='person')courier={x:4.8,z:16.5,pose:'stand'};
+  if(state.caught)others.push({x:6.2,z:19.2,pose:'stand',hue:3});
+ }
+ return{rook,courier,book:null,others};
+}
+function caseGeometry(){
+ surfaces.length=staticCount;
+ if(sceneName==='pump'){
+  const spin=state.phase==='pumpResult'&&state.rescue==='valve'?span(4)*Math.PI:0;
+  const x=-1.25,z=11.88,y=1.35;
+  for(let i=0;i<12;i++){const a=i*Math.PI/6+spin,b=(i+1)*Math.PI/6+spin;quad([x+Math.cos(a)*.6,y+Math.sin(a)*.6,z],[x+Math.cos(b)*.6,y+Math.sin(b)*.6,z],[x+Math.cos(b)*.43,y+Math.sin(b)*.43,z],[x+Math.cos(a)*.43,y+Math.sin(a)*.43,z],mat('lamp',2),[0,0,-1]);}
+  box(-1.3,1.29,11.85,-1.2,1.41,12,mat('metal'));
+ }
+ if(sceneName==='roof'){
+  const d=reduce?4:state.t*3;
+  for(let i=0;i<4;i++)car(-27+fract(i*.27+d*.008)*65,43+i*8,i%2?3:1,3+i*2);
+ }
+ if(sceneName==='chase'){
+  const d=state.distance,p=state.phase,shift=p==='chaseBank'||p==='chaseQteB'||p==='chaseFinish'?state.firstMove==='dodge'?2.4:-2.2:-2.2;
+  let y=0,x=shift;
+  if(p==='chaseBank'&&!reduce)x=mix(-2.2,shift,span(3));
+  if(p==='chaseFinish'&&state.pursuit==='jump'&&state.caught)y=reduce?1.5:Math.sin(clamp((state.event-.5)/4.5,0,1)*Math.PI)*3.2;
+  if(p==='chaseFinish'&&state.pursuit==='ramp'){
+   x=mix(shift,-10.2,span(4));y=-clamp((d-state.phaseDistance-29)/50,0,1)*7.5;
+   const a=state.phaseDistance+16,b=a+64;
+   quad([-7,0,a],[-3,0,a],[-8.2,-8,b],[-12.2,-8,b],mat('express'),[0,1,.12]);
+   for(const side of [-1,1]){const x0=-5+side*2,x1=-10.2+side*2;quad([x0,0,a],[x1,-8,b],[x1,-7.5,b],[x0,.5,a],mat('barrier'),[side,0,0]);}
+   // Open the left guardrail where the service ramp leaves the main deck.
+   for(let i=1;i<=5;i++)surfaces[i]={...sceneCache.chase.surfaces[i],v:sceneCache.chase.surfaces[i].v.map(v=>[v[0],v[1],v[2]>900?a:v[2]])};
+   box(-7.13,0,a+45,-6.87,.65,950,mat('barrier'));
+  }else for(let i=1;i<=5;i++)surfaces[i]=sceneCache.chase.surfaces[i];
+  car(x,d,1,y);box(x-.45,y+2.07,d-.2,x+.45,y+2.15,d+.2,mat('lamp',2));
+  const bridgeZ=(state.phaseDistance||d)+26;
+  const valeZ=d+16+state.gap*7,valeY=p==='chaseFinish'&&state.pursuit==='jump'&&state.caught?Math.sin(clamp((valeZ-bridgeZ+7)/32,0,1)*Math.PI)*2.7:0;
+  car(1.6,valeZ,3,valeY);
+  for(let i=0;i<3;i++){const z=d+28+i*24+Math.sin(state.t*.3+i)*5;car(i%2?2.3:-2.3,z,i%2?0:2,0,i===0);}
+  if(['chaseEntry','chaseQteA'].includes(p))car(-2.2,d+13,0,0,true);
+  if(['chaseQteB','chaseFinish'].includes(p)){
+   const z=p==='chaseFinish'?bridgeZ:d+29;for(const dx of [-7,7])box(dx-.3,0,z,dx+.3,6,z+.6,mat('metal'));
+   box(-7,5.5,z,7,5.85,z+.5,mat('barrier'));
+   if(p==='chaseFinish'&&state.pursuit==='jump'&&state.caught){
+    // Split the physical deck so the canal is visible through the gap.
+    surfaces[0]={...surfaces[0],v:[[-7,0,-55],[-7,0,bridgeZ],[7,0,bridgeZ],[7,0,-55]]};
+    floor(-7,bridgeZ+15,7,950,0,'express');
+    box(-7,-1,bridgeZ-1,7,0,bridgeZ,mat('brick'));box(-7,-1,bridgeZ+15,7,0,bridgeZ+16,mat('brick'));
+   }else surfaces[0]=sceneCache.chase.surfaces[0];
+  }
+ }
+ return caseBlocking();
+}
+function caseLabels(){
+ if(sceneName==='station'){worldLabel([0,5.25,43.2],'PUMP ROOM 4',2);worldLabel([0,2.2,19.1],'MAINTENANCE',2);}
+ if(sceneName==='pump'){worldLabel([-1.25,2.65,11.8],'INLET',2);if(!['pumpResult','pumpTruth'].includes(state.phase))worldLabel([4.8,3.9,17.7],'BELL',2);if(state.phase==='pumpQte'){worldLabel([-1.25,3.3,11.8],'[1]',2);worldLabel([4.8,4.5,17.7],'[2]',2);}}
+ if(sceneName==='roof')worldLabel([0,3.2,17],'NORTH / RADIO',2);
+ if(sceneName==='chase'){
+  worldLabel([1.6,3.3,state.distance+16+state.gap*7],'VALE',3);
+  if(state.phase==='chaseQteA')worldLabel([-2.2,3.3,state.distance+13],'FREIGHT',2);
+  if(state.phase==='chaseQteB')worldLabel([0,5.1,state.distance+28],'BRIDGE LIFTING',2);
+ }
+ if(sceneName==='canal')worldLabel([9,3.5,24],'CITY MEDIC',2);
+}
+
+const caseTitles={stationEntry:'02 / NORTH STATION',stationQuiet:'THE DESK IS STILL WARM',stationListen:'READING THE MAINTENANCE TAPE',stationReady:'A USEFUL PRECAUTION',pumpEntry:'03 / PUMP ROOM 4',pumpFind:'BELL IS ALIVE',pumpDanger:'THE PIPE IS GIVING WAY',pumpQte:'THE WATER IS RISING',pumpResult:'OUT OF THE WATER',pumpTruth:'WHY BELL DISAPPEARED',roofEntry:'04 / ABOVE THE CITY',roofQuiet:'A MOMENT TO BREATHE',roofListen:'LISTENING TO THE BAND',roofSignal:'A VOICE IN THE STATIC',roofConfession:'THE FORGED ORDER',chaseEntry:'05 / THE ELEVATED ROAD',chaseQteA:'FREIGHT IN YOUR LANE',chaseBank:'UNDER THE SIGNAL GANTRIES',chaseQteB:'THE BRIDGE IS LIFTING',chaseFinish:'ONE LAST TURN',canalEntry:'06 / FIRST LIGHT',canalEnd:'CASE CLOSED'};
+const liveCase=['stationEntry','pumpEntry','pumpDanger','pumpResult','roofEntry','chaseEntry','chaseBank','chaseFinish','canalEntry'];
+const qtePhases=['qte','pumpQte','chaseQteA','chaseQteB'];
+const saveKey='the-last-light-case-v2';
+function isQte(){return qtePhases.includes(state.phase);}
+function caseDuration(){return state.phase==='pumpQte'?(state.decoded?9:7):state.phase.startsWith('chase')?(state.radio?9:7):qteDuration();}
+function checkpoint(){try{if(state.phase!=='brief')localStorage.setItem(saveKey,JSON.stringify({...state,paused:false,event:0}));}catch(e){}}
+function savedCase(){try{const s=JSON.parse(localStorage.getItem(saveKey)||'null');return s&&typeof s.phase==='string'&&(caseTitles[s.phase]||['watch','ready','follow','danger','qte','result','evidence','deduce','arrival','ending'].includes(s.phase))&&Array.isArray(s.clues)?s:null;}catch(e){return null;}}
+function continueCase(){const s=savedCase();if(!s)return;Object.assign(state,s,{paused:false,event:0});const name=sceneFor(s.phase);setScene(name);Object.assign(camera,name==='street'?shotFor():sceneStart(name));enter(s.phase);}
+function caseEnter(phase){
+ const name=sceneFor(phase);
+ if(setScene(name)){Object.assign(camera,name==='street'?startShot:sceneStart(name));transitionFrom={...camera};}
+ state.phaseDistance=state.distance;
+ if(phase==='stationReady'){state.decoded=true;addClue('The maintenance tape says: close the INLET wheel before pulling someone off the flooded platform.');}
+ if(phase==='pumpTruth'){
+  addClue('Bell identifies Inspector Vale: Vale sold the emergency batteries, then locked Bell in the pump room to silence him.');
+  addClue(state.rescue==='valve'?'Recovered: Vale\'s signed battery-transfer ledger, dry and legible.':'The flooded ledger is unreadable. Bell can testify, but the written proof is lost.');
+ }
+ if(phase==='roofSignal'){state.radio=true;addClue('Radio traffic: Vale is heading for the lifting bridge. The lower service ramp reaches the canal first.');}
+ if(phase==='roofConfession'){state.twist=true;addClue('Nell admits forging the maintenance order to bring Bell here and expose Vale. Nell did not foresee the trap.');}
+ if(phase==='canalEnd')state.endingSeen=true;
+}
+function rescue(move){if(state.phase!=='pumpQte'||state.paused)return;state.rescue=move;enter('pumpResult');}
+function chaseChoice(move){
+ if(state.paused)return;
+ if(state.phase==='chaseQteA'){state.firstMove=move;state.gap=move==='dodge'?0:move==='brake'?1:2;enter('chaseBank');}
+ else if(state.phase==='chaseQteB'){state.pursuit=move;state.caught=move==='ramp'?state.gap<2:move==='jump'&&state.gap===0;enter('chaseFinish');}
+}
+function pursuit(){state.distance=20;state.gap=0;state.caught=false;state.pursuit='chasing';enter('chaseEntry');}
+function stayWithBell(){state.pursuit='stay';state.caught=false;enter('canalEntry');}
+function caseAdvance(dt){
+ const p=state.phase,e=state.event;
+ if(sceneName==='chase'&&!reduce&&!(isQte()&&state.untimed))state.distance+=dt*(isQte()?1.6:p==='chaseFinish'?13:21);
+ const done=(s)=>e>=(reduce&&s>2?1:s);
+ if(p==='stationEntry'&&done(7))enter('stationQuiet');
+ else if(p==='stationListen'&&e>=8)enter('stationReady');
+ else if(p==='pumpEntry'&&done(6))enter('pumpFind');
+ else if(p==='pumpDanger'&&e>=2)enter('pumpQte');
+ else if(p==='pumpQte'&&!state.untimed&&e>=caseDuration())rescue('late');
+ else if(p==='pumpResult'&&done(4))enter('pumpTruth');
+ else if(p==='roofEntry'&&done(8))enter('roofQuiet');
+ else if(p==='roofListen'&&e>=8)enter('roofSignal');
+ else if(p==='chaseEntry'&&done(6))enter('chaseQteA');
+ else if(p==='chaseQteA'&&!state.untimed&&e>=caseDuration())chaseChoice('late');
+ else if(p==='chaseBank'&&done(6))enter('chaseQteB');
+ else if(p==='chaseQteB'&&!state.untimed&&e>=caseDuration())chaseChoice('late');
+ else if(p==='chaseFinish'&&done(6))enter('canalEntry');
+ else if(p==='canalEntry'&&done(7))enter('canalEnd');
+}
+function roofActions(){
+ if(!state.radio)button('[LISTEN TO THE RADIO / 8s]',()=>enter('roofListen'));
+ button('[PURSUE VALE]',pursuit);button('[STAY WITH BELL]',stayWithBell);
+}
+function caseUI(){
+ el.phase.textContent=caseTitles[state.phase]||'THE LAST LIGHT';
+ switch(state.phase){
+ case 'stationEntry':el.caption.textContent=state.choice==='person'?'Nell opens the service door with three taps. Footsteps echo through the empty concourse.':'The service latch gives under Rook\'s shoulder. Inside, a maintenance desk glows in an otherwise empty station.';break;
+ case 'stationQuiet':
+  el.caption.textContent='A fresh order is stamped "INSPECTOR VALE / RESERVE BATTERIES." A maintenance tape is still turning. Below the floor, someone strikes a pipe.';
+  button('[READ THE TAPE / 8s]',()=>enter('stationListen'));button('[FOLLOW THE KNOCKING]',()=>enter('pumpEntry'));break;
+ case 'stationListen':el.caption.textContent='Rook feeds the tape through its reader. Rain ticks against the roof glass. The knocking below continues.';break;
+ case 'stationReady':
+  el.caption.textContent='The tape warns: "FLOOD RESCUE: CLOSE INLET FIRST." Rook knows which wheel to reach for. Extra reaction time earned.';
+  button('[FOLLOW THE KNOCKING]',()=>enter('pumpEntry'));break;
+ case 'pumpEntry':el.caption.textContent='Under the station, pumps tower above black water. A man on the far platform is tapping a wrench against a pipe.';break;
+ case 'pumpFind':
+  el.caption.textContent='Bell: "Vale took the reserve batteries. I found his ledger, so he locked me down here. That pipe will not hold much longer."';
+  button('[GET BELL OUT]',()=>enter('pumpDanger'));break;
+ case 'pumpDanger':el.caption.textContent='A joint splits. Water surges beneath the platform. The INLET wheel is beside Rook; Bell is reaching out. Get ready.';break;
+ case 'pumpQte':
+  el.caption.textContent=state.decoded?'The tape said to close the inlet first. Shut off the flood, or pull Bell out immediately.':'Water is climbing. Close the INLET wheel, or pull Bell away from the collapsing platform.';
+  button('[1] CLOSE THE INLET',()=>rescue('valve'));button('[2] PULL BELL OUT',()=>rescue('pull'));break;
+ case 'pumpResult':
+  el.caption.textContent=state.rescue==='valve'?'Rook shuts the inlet, then helps Bell across. His satchel stays above the water.':state.rescue==='pull'?'Rook pulls Bell onto the walkway. His satchel drops into the torrent.':state.choice==='person'?'Nell throws a line. Rook and Nell haul Bell clear, but the water takes his satchel.':'Bell leaps as the platform breaks. Rook catches his sleeve. His satchel vanishes into the flood.';break;
+ case 'pumpTruth':
+  el.caption.textContent=state.rescue==='valve'?'The dry ledger bears Vale\'s signature: the city\'s emergency batteries were sold. Bell caught the theft. The locked room was meant to silence him.':'Bell: "Vale sold the emergency batteries. When I confronted him, he locked me in. The proof was in that satchel. I will say it in court."';
+  button('[TAKE BELL TO THE ROOF]',()=>enter('roofEntry'));break;
+ case 'roofEntry':el.caption.textContent='Rook brings Bell up the service stair. The city opens beneath them. Flying traffic passes between the towers; a medic answers the roof radio.';break;
+ case 'roofQuiet':
+  el.caption.textContent='Bell is safe with the medic. Far below, Vale\'s red car turns onto the elevated road. A patrol car waits at the service lift. There is still time to pursue him.';
+  roofActions();break;
+ case 'roofListen':el.caption.textContent='Rook waits on the open channel. Traffic slides through the rain. A bridge operator comes through the static.';break;
+ case 'roofSignal':
+  el.caption.textContent=state.choice==='person'?'Radio: "Bridge lifting. Lower service ramp is clear." Beside the receiver, Nell goes quiet. "There is something about Bell\'s work order I should tell you."':'Radio: "Bridge lifting. Lower service ramp is clear." Rook now knows a way to intercept Vale and has extra time at both turns.';
+  if(state.choice==='person')button('[ASK NELL ABOUT THE ORDER]',()=>enter('roofConfession'));
+  roofActions();break;
+ case 'roofConfession':
+  el.caption.textContent='Nell: "I forged the maintenance call. Bell was the only person who could prove the batteries were missing. I wanted Vale exposed. I did not know he would trap him." Rook records the confession.';
+  roofActions();break;
+ case 'chaseEntry':el.caption.textContent='Rook takes the patrol car. Vale\'s red tail lights race ahead. The empty street gives way to dense elevated traffic.';break;
+ case 'chaseQteA':
+  el.caption.textContent='A freight carrier swings into Rook\'s lane. The right lane is clear. Brake and lose ground, or dive right to stay close.';
+  button('[1] BRAKE',()=>chaseChoice('brake'));button('[2] DIVE RIGHT',()=>chaseChoice('dodge'));break;
+ case 'chaseBank':el.caption.textContent=state.firstMove==='dodge'?'Rook swings right and surges past the carrier. Vale is still within reach.':state.firstMove==='brake'?'The patrol car falls back under braking. Rook needs an interception route.':'The patrol car clips the carrier and fishtails. Rook recovers, but Vale has opened a long gap.';break;
+ case 'chaseQteB':
+  el.caption.textContent=(state.radio?'The radio marked the lower ramp as clear. ':'The bridge ahead is lifting. ')+(state.gap===0?'Rook is close enough to follow Vale over the gap, or cut him off below.':'Vale is too far ahead for a safe jump. The lower service ramp is Rook\'s best chance.');
+  button('[1] TAKE THE LOWER RAMP',()=>chaseChoice('ramp'));button('[2] FOLLOW OVER THE GAP',()=>chaseChoice('jump'));break;
+ case 'chaseFinish':
+  el.caption.textContent=state.caught?(state.pursuit==='jump'?'The patrol car clears the gap. Rook forces Vale to stop at the canal exit.':'Rook drops down the service ramp and blocks Vale at the canal exit.'):(state.pursuit==='late'?'Rook brakes at the rising bridge. Vale disappears into the towers.':state.pursuit==='jump'?'The gap is already too wide. Rook aborts the jump and brakes hard. Vale gets away.':'Rook reaches the canal exit seconds too late. Vale has vanished into the city.');break;
+ case 'canalEntry':el.caption.textContent=state.pursuit==='stay'?'Rook stays with Bell and escorts him to the canal-side medics. Dawn catches the windows across the water.':state.caught?'Vale is in custody. Rook returns to Bell as the first light reaches the canal.':'Vale escaped tonight. Rook returns to Bell, who is waiting beside the canal with the medics.';break;
+ case 'canalEnd':
+  el.caption.textContent=state.caught?'Bell is alive. Vale is in custody. As the station lamps go dark, this time it is only because morning has arrived.':state.pursuit==='stay'?'Bell is alive, and his testimony is on record. The search for Vale continues. Rook has brought the missing man home.':'Bell is alive. Vale remains at large, but his secret is out. The missing-person case is closed; the warrant is just beginning.';
+  el.outcome.hidden=false;el.outcome.textContent=(state.rescue==='valve'?'Evidence: signed ledger recovered. ':'Evidence: Bell\'s testimony; ledger lost. ')+(state.caught?'Vale: arrested. ':state.pursuit==='stay'?'Vale: pursuit declined. ':'Vale: escaped. ')+(state.twist?'Nell\'s forged order is part of the case.':state.choice==='person'?'Nell remains a trusted witness.':'Rook worked without Nell.');
+  button('[PLAY THE CASE AGAIN]',reset);break;
+ }
+}
+function reel(name){
+ reset();
+ if(name==='street')return;
+ Object.assign(state,{choice:'person',decoded:true,watched:true,rescue:'valve',clues:['Scene preview: Bell\'s trail leads from the station to Pump Room 4.']});
+ if(name==='chase'){state.radio=true;pursuit();return;}
+ if(name==='canal'){state.caught=true;state.pursuit='ramp';}
+ enter(name+'Entry');
+}
+
+// Story and camera direction layered over the unchanged approved street renderer.
+const startShot={x:-.8,y:2.05,z:-5,yaw:.035,pitch:.085};
+const followShot={x:-2.8,y:2.05,z:12,yaw:.1,pitch:.085};
+const dangerShot={x:-2.8,y:2.9,z:14.4,yaw:.3,pitch:-.22};
+const endShot={x:-4.3,y:2.05,z:30,yaw:-.05,pitch:.05};
+const span=(seconds)=>smooth(clamp(state.event/seconds,0,1));
+function shotFor(){
+ if(extended())return caseShot();
+ if(['brief','watch','ready'].includes(state.phase))return startShot;
+ if(state.phase==='follow')return followShot;
+ if(['danger','qte','result'].includes(state.phase))return dangerShot;
+ if(['evidence','deduce'].includes(state.phase))return state.choice==='person'?{x:-2.8,y:2.4,z:15.6,yaw:.28,pitch:-.02}:state.choice==='book'?{x:-1.5,y:2.3,z:16.3,yaw:.5,pitch:-.18}:{x:-1.8,y:1.7,z:16.3,yaw:.45,pitch:-.2};
+ return endShot;
+}
+function pose(){
+ if(extended()){casePose();return;}
+ const target=shotFor(),duration=state.phase==='follow'?8:state.phase==='arrival'?7:state.phase==='danger'?2:.9;
+ const u=reduce?1:span(duration);
+ for(const k of Object.keys(camera))camera[k]=mix(transitionFrom[k],target[k],u);
+ state.travel=clamp((camera.z+5)/35,0,1);
+ state.moving=['follow','arrival'].includes(state.phase);
+}
+function blocking(){
+ if(extended())return caseBlocking();
+ let rook={x:-3.2,z:3,pose:'watch'},courier={x:.1,z:12,pose:'walk'},book={x:.65,y:1.05,z:11.9,flat:false};
+ if(['follow','danger','qte','result','evidence','deduce','arrival','ending'].includes(state.phase)){
+  const u=state.phase==='follow'&&!reduce?span(8):1;
+  rook={x:mix(-3.2,-2.2,u),z:mix(3,17.8,u),pose:state.phase==='follow'?'walk':'watch'};
+  courier={x:mix(.1,.6,u),z:mix(12,20,u),pose:state.phase==='follow'?'walk':'stand'};
+  book={x:courier.x+.62,y:1.18,z:courier.z-.16,flat:false};
+ }
+ if(['danger','qte','result','evidence','deduce'].includes(state.phase)){
+  const q=state.phase==='danger'?span(2)*.15:state.phase==='qte'?.15+.65*clamp(state.event/qteDuration(),0,1):.8;
+  courier.pose='stumble';courier.lean=q*.62;
+  book={x:1.2+q*.35,y:1.18-q*.7,z:19.65,flat:false};
+ }
+ if(['result','evidence','deduce','arrival','ending'].includes(state.phase)){
+  const u=state.phase==='result'&&!reduce?span(3.8):1;
+  if(state.choice==='person'){
+   rook={x:mix(-2.2,-.85,u),z:mix(17.8,19.5,u),pose:u<.8?'reach':'support'};
+   courier={x:.6,z:20,pose:'stand',lean:(1-u)*.5};
+   book={x:1.48,y:mix(.6,.07,u),z:19.65,flat:u>.65};
+  }else{
+   rook={x:mix(-2.2,state.choice==='book'?1.1:-.5,u),z:mix(17.8,19.3,u),pose:state.choice==='book'?(u<.75?'reach':'read'):'crouch'};
+   courier={x:mix(.6,-4,u),z:mix(20,29,u),pose:'walk'};
+   book=state.choice==='book'?{x:mix(1.4,1.55,u),y:mix(.6,1.3,u),z:mix(19.65,18.96,u),flat:false}:{x:1.48,y:.07,z:19.65,flat:true};
+  }
+ }
+ if(['arrival','ending'].includes(state.phase)){
+  const u=state.phase==='arrival'&&!reduce?span(7):1;
+  const path=(x,z,endX,endZ)=>u<.45?{x:mix(x,-3.2,u/.45),z:mix(z,25,u/.45)}:{x:mix(-3.2,endX,(u-.45)/.55),z:mix(25,endZ,(u-.45)/.55)};
+  rook={...path(rook.x,rook.z,-4.6,36.3),pose:u<1?'walk':'watch'};
+  if(state.choice==='person')courier={...path(.6,20,-5.2,37.2),pose:u<1?'walk':'stand'};
+  else courier=null;
+  book=null;
+ }
+ return{rook,courier,book};
+}
+function actor(a,isRook=false){
+ if(!a)return;
+ let rows=isRook?['    ____   ','  _/====\\_ ','   ( o_>   ','   /|~\\    ','  /##~#\\   ',' /|#####|\\ ','  |#####|  ','  /#####\\  ',' /___|___\\ ','    | |    ','   _| |_   ']:['   ___   ',' _/===\\_ ','  (o.o)  ','   /|\\   ','  /###\\  ',' /#####\\ ',' |#####| ','  /###\\  ','   | |   ','   | |   '];
+ if(a.pose==='walk'){
+  const odd=Math.floor(state.t*5)%2;
+  rows[rows.length-2]=isRook?(odd?'   /   |   ':'   |   \\   '):(odd?'  /   |  ':'  |   \\  ');
+  rows[rows.length-1]=isRook?(odd?' _/    |_  ':'  _|    \\_ '):(odd?'_/    |_ ':' _|    \\_');
+ }
+ if(isRook&&['reach','support','read'].includes(a.pose)){rows[4]='  /##~#|__ ';rows[5]=a.pose==='read'?'  |####|=[]':'  |#####| \\';}
+ if(!isRook&&a.pose==='stumble'){rows[3]='\\  /|\\  /';rows[4]=' \\/###\\/ ';rows[8]='  /   |  ';}
+ if(isRook&&a.pose==='crouch')rows=['    ____   ','  _/====\\_ ','   ( o_>   ','   /|~\\    ','  /####\\__ ',' /######|\\ ','/_/   \\___ '];
+ const height=a.pose==='crouch'?1.35:isRook?2.15:2.05,cols=isRook?11:9;
+ const bottom=cam([a.x,.16+(a.y||0),a.z]),top=cam([a.x+(a.lean||0),height+(a.y||0),a.z]);if(bottom.z<.4)return;
+ const ap=project(top),bp=project(bottom),h=bp.y-ap.y,w=h*(ch/cw)*.41;
+ if(h<1)return;
+ for(let y=Math.max(0,Math.floor(ap.y));y<=Math.min(H-1,Math.ceil(bp.y));y++){
+  const u=clamp((y-ap.y)/h,0,.999),row=rows[Math.floor(u*rows.length)],cx=mix(ap.x,bp.x,u),left=cx-w/2;
+  for(let x=Math.floor(left);x<left+w;x++){
+   const col=clamp(Math.floor((x-left)/w*cols),0,cols-1),g=row[col]||' ';if(g===' ')continue;
+   const hue=isRook?(g==='~'?2:g==='o'||g==='>'?6:1):(a.hue??6);
+   pixel(x,y,mix(top.z,bottom.z,u)-.06,g,hue*20+(isRook?14:11));
+  }
+ }
+}
+function geometry(){
+ if(extended())return caseGeometry();
+ surfaces.length=staticCount;
+ // The only new architecture is a small service hatch on the station facade.
+ box(-5.9,0,38.68,-3.9,2.6,38.8,{kind:'hatch',hue:0});
+ box(-6,2.6,38.6,-3.8,2.72,38.8,{kind:'metal',hue:2});
+ const a=blocking();
+ if(a.book){
+  const b=a.book;
+  if(b.flat)box(b.x-.42,.06,b.z-.33,b.x+.42,.11,b.z+.33,{kind:'dispatch',hue:6});
+  else box(b.x-.32,b.y-.35,b.z-.06,b.x+.32,b.y+.35,b.z+.06,{kind:'dispatch',hue:6});
+ }
+ if(a.courier){
+  const p=a.courier;
+  // A physical lantern is bright enough to lead the eye through the street.
+  const y=['danger','qte'].includes(state.phase)?1.02:.95;
+  box(p.x-.7,y-.22,p.z-.12,p.x-.43,y+.22,p.z+.12,{kind:'lamp',hue:2});
+ }
+ return a;
+}
+function render(){
+ if(!W||!H)return;frame++;zbuf.fill(Infinity);chars.fill(' ');ink.fill(0);
+ sy=Math.sin(camera.yaw);cy=Math.cos(camera.yaw);sp=Math.sin(camera.pitch);cp=Math.cos(camera.pitch);
+ const cast=geometry();
+ for(const s of surfaces){
+  const a=s.v[0],f=s.n[0]*(camera.x-a[0])+s.n[1]*(camera.y-a[1])+s.n[2]*(camera.z-a[2]);if(f<-.01&&s.mat.kind!=='cable')continue;
+  const poly=clip(s.v.map(cam));if(poly.length<3)continue;const proj=poly.map(project);for(let i=1;i<proj.length-1;i++)triangle(proj[0],proj[i],proj[i+1],s.mat,s.n);
+ }
+ // Rain is rendered before people, so it does not cover their faces.
+ if(['street','roof','chase','canal'].includes(sceneName))for(let i=0;i<125;i++){
+  const x=hash(i,3)*22-11,z=camera.z+hash(i,7)*37,y=fract(hash(i,11)-state.t*.25)*16,p=cam([x,y,z]);if(p.z<.4)continue;
+  const q=project(p);pixel(q.x,q.y,p.z,'/',7*20+7);
+ }
+ actor(cast.courier);actor(cast.rook,true);for(const a of cast.others||[])actor(a);
+ if(sceneName==='street'){
+ worldLabel([-7.95,3.05,5.5],'PRINT',1);worldLabel([0,6.5,38.75],'NORTH STATION',2);worldLabel([-4.9,2.95,38.6],'PUMP 4',2);
+ const hotel=cam([7.03,11.2,11.8]);if(hotel.z>2){const p=project(hotel);'HOTEL'.split('').forEach((g,i)=>pixel(p.x,p.y+i,hotel.z-.2,g,2*20+17));}
+ if(state.phase==='qte'){
+  worldLabel([cast.courier.x,2.75,cast.courier.z],'[1]',2);
+  worldLabel([cast.book.x,cast.book.y+.85,cast.book.z],'[2]',2);
+ }
+ if(['evidence','deduce'].includes(state.phase)&&state.choice==='book'&&cast.book)worldLabel([cast.book.x,cast.book.y+.12,cast.book.z-.1],'P4',6);
+ }else caseLabels();
+ const colors=state.mono?gray:palettes;
+ ctx.fillStyle='#03070b';ctx.fillRect(0,0,canvas.width/dpr,canvas.height/dpr);ctx.font=(cw/.6)+'px "Liberation Mono",Consolas,monospace';ctx.textBaseline='top';
+ let current=-1;for(let y=0;y<H;y++)for(let x=0;x<W;x++){const i=y*W+x,g=chars[i];if(g===' ')continue;if(ink[i]!==current){current=ink[i];ctx.fillStyle=colors[current];}ctx.fillText(g,x*cw,y*ch);}
+ timer();
+}
+function qteDuration(){return state.watched?9:7;}
+function addClue(text){if(!state.clues.includes(text))state.clues.push(text);}
+function button(text,fn){
+ const b=document.createElement('button');b.type='button';b.className='cursor-interaction';b.textContent=text;b.disabled=state.paused;
+ const action=()=>{if(!state.paused&&!b.disabled)fn();};b.addEventListener('click',action);el.actions.appendChild(b);keys.push(action);
+}
+function enter(phase){
+ transitionFrom={...camera};state.phase=phase;state.event=0;
+ caseEnter(phase);
+ if(phase==='ready'){state.watched=true;addClue('The courier favors an injured leg. You can anticipate the stumble.');}
+ if(phase==='evidence'){
+  if(state.choice==='person')addClue('Nell says Bell is alive below the station, in Pump Room 4. The service knock is three short taps.');
+  else if(state.choice==='book')addClue('An intact dispatch entry reads: 00:17 / I. BELL / PUMP ROOM 4 / JOB OPEN.');
+  else addClue('The dispatch pages are ruined. PUMP ROOM 4 is embossed into the cover.');
+ }
+ if(reduce)pose();
+ ui();render();checkpoint();
+}
+function choose(id){if(state.phase!=='qte'||state.paused)return;state.choice=id;enter('result');}
+function deduce(correct){
+ if(correct){enter('arrival');return;}state.wrong=true;ui();
+}
+function reset(){
+ Object.assign(state,{t:0,paused:false,mono:false,travel:0,moving:false,phase:'brief',event:0,watched:false,choice:'',untimed:reduce,clues:[],wrong:false,decoded:false,radio:false,twist:false,rescue:'',gap:0,pursuit:'',caught:false,distance:20,endingSeen:false,firstMove:'',phaseDistance:20});
+ setScene('street');try{localStorage.removeItem(saveKey);}catch(e){}
+ Object.assign(camera,startShot);transitionFrom={...startShot};el.journal.open=false;lastTime=0;ui();render();
+}
+function timer(){
+ if(state.paused){el.timer.textContent='PAUSED';return;}
+ if(['watch','stationListen','roofListen'].includes(state.phase))el.timer.textContent='OBSERVING / '+Math.max(0,Math.ceil(8-state.event))+'s';
+ else if(isQte()){
+  const left=Math.max(0,caseDuration()-state.event),n=Math.ceil(left/caseDuration()*10);
+  el.timer.textContent=state.untimed?'TAKE YOUR TIME':'['+'='.repeat(n)+'.'.repeat(10-n)+'] '+left.toFixed(1)+'s';
+ }else el.timer.textContent=['follow','danger','result','arrival',...liveCase].includes(state.phase)?'LIVE':'YOUR MOVE';
+}
+function ui(){
+ el.actions.replaceChildren();keys=[];el.outcome.hidden=state.phase!=='ending';
+ el.clues.replaceChildren();for(const clue of state.clues){const li=document.createElement('li');li.textContent=clue;el.clues.appendChild(li);}
+ el.journal.hidden=!state.clues.length;
+ const phases={brief:'THE LAST LIGHT',watch:'WATCH THE COURIER',ready:'A USEFUL DETAIL',follow:'FOLLOW THE LANTERN',danger:'THE COURIER STUMBLES',qte:'THE BOOK IS FALLING',result:state.choice==='person'?'COURIER CAUGHT':state.choice==='book'?'DISPATCH SAVED':'TOO LATE',evidence:state.choice==='person'?'A WITNESS':state.choice==='book'?'A WRITTEN LEAD':'A DAMAGED CLUE',deduce:'WHERE DID BELL GO?',arrival:'NORTH STATION / SERVICE DOOR',ending:'THE WAY BELOW'};
+ el.phase.textContent=phases[state.phase];
+ switch(state.phase){
+ case 'brief':
+  el.caption.textContent="Rook's case: find lamplighter Ivo Bell. He vanished at the closed station. Tonight, a stranger is carrying his lantern.";
+  if(savedCase())button('[CONTINUE SAVED CASE]',continueCase);
+  button('[FOLLOW THE LANTERN]',()=>enter('follow'));button('[WATCH FIRST / 8s]',()=>enter('watch'));break;
+ case 'watch':
+  el.caption.textContent='Rook watches from the curb. The stranger holds a dispatch book and keeps weight off one leg.';break;
+ case 'ready':
+  el.caption.textContent='The courier is limping. Rook will have two extra seconds to react if that leg gives way.';
+  button('[FOLLOW THE LANTERN]',()=>enter('follow'));break;
+ case 'follow':
+  el.caption.textContent='Rook keeps to the shadows. The stranger heads toward the station clock.';break;
+ case 'danger':
+  el.caption.textContent='A boot catches the wet tram rail. The courier pitches forward; the dispatch book slips free. Get ready.';break;
+ case 'qte':
+  el.caption.textContent='Catch the courier, or save the dispatch book before the rain destroys it.';
+  button('[1] CATCH THE COURIER',()=>choose('person'));button('[2] SAVE THE BOOK',()=>choose('book'));break;
+ case 'result':
+  el.caption.textContent=state.choice==='person'?'Rook catches the courier. The book hits the wet street; ink begins to run.':state.choice==='book'?'Rook saves the book. The courier catches their balance and limps away toward the station.':'Rook reaches too late. The book falls into the water, and the courier limps away.';break;
+ case 'evidence':
+  el.caption.textContent=state.choice==='person'?'Nell: "Bell is alive. Pump Room 4, below the station. Knock three times. I will take you."':state.choice==='book'?'The page is fresh: "00:17 / I. BELL / PUMP ROOM 4 / JOB OPEN." The station is still being used.':'The rain has erased the entries. The cover still reads "PUMP ROOM 4." It is a lead, without a name or time.';
+  button('[CONNECT THE CLUE]',()=>enter('deduce'));break;
+ case 'deduce':
+  el.caption.textContent=state.wrong?'The clue points to Pump Room 4 beneath the station. Rook needs the service entrance.':'Which lead should Rook pursue?';
+  button('[THE STATION SERVICE ENTRANCE]',()=>deduce(true));button('[THE HOTEL]',()=>deduce(false));button('[THE EMPTY TRAM]',()=>deduce(false));break;
+ case 'arrival':
+  el.caption.textContent=state.choice==='person'?'Nell leads Rook to the service hatch. Three short knocks.':'Rook follows the rails to the station and finds the pump-room service hatch.';break;
+ case 'ending':
+  el.caption.textContent='Bell is somewhere below. Rook has found the entrance; the search can continue.';
+  el.outcome.textContent=state.choice==='person'?'Your route: a cooperative witness and the correct knock. The written record was lost.':state.choice==='book'?'Your route: an intact dispatch record. You will enter alone, without the knock.':'Your route: a damaged clue. You will enter alone, with less certainty.';
+  button('[ENTER THE STATION]',()=>enter('stationEntry'));break;
+ default:caseUI();break;
+ }
+ el.pause.textContent=state.paused?'[RESUME]':'[PAUSE]';el.pause.setAttribute('aria-pressed',String(state.paused));
+ el.timing.textContent=state.untimed?'[UNTIMED]':'[TIMED]';el.timing.setAttribute('aria-pressed',String(state.untimed));
+ el.mono.textContent=state.mono?'[COLOR]':'[MONO]';el.mono.setAttribute('aria-pressed',String(state.mono));
+ const sceneDescriptions={street:'A dense 3D ASCII night street, warm lamps and wet tram tracks.',station:'A vaulted station hall, tiled floor, columns, warm pendant lamps and a maintenance desk.',pump:'A flooded machinery chamber. Bell is on a platform and Rook stands by the inlet wheel.',roof:'A high rooftop overlooking deep city streets and flying traffic.',chase:'Rook\'s cyan patrol car pursues Vale\'s red car along an elevated road.',canal:'A quiet canal at first light. Rook and Bell stand near a medical vehicle.'};
+ canvas.setAttribute('aria-label',sceneDescriptions[sceneName]+' '+el.caption.textContent);
+ const chapter=root.querySelector('.lc-chapter');if(chapter)chapter.textContent={street:'01 / STATION ROAD',station:'02 / CONCOURSE',pump:'03 / PUMP ROOM',roof:'04 / ROOFTOP',chase:'05 / PURSUIT',canal:'06 / FIRST LIGHT'}[sceneName];
+ timer();
+}
+function resize(){
+ const width=canvas.clientWidth;if(width<=0)return;
+ // Exact approved density, proportions, field of view, and font sizing.
+ W=clamp(Math.floor(width/4.2),72,180);H=Math.round(W*(width<480?.67:.39));cw=width/W;ch=cw*1.72;dpr=Math.min(window.devicePixelRatio||1,2);
+ canvas.width=Math.round(width*dpr);canvas.height=Math.round(H*ch*dpr);canvas.style.height=H*ch+'px';ctx.setTransform(dpr,0,0,dpr,0,0);
+ fx=W/(2*Math.tan((width<480?66:78)*Math.PI/360));fy=fx/1.72;
+ zbuf=new Float32Array(W*H);chars=new Array(W*H);ink=new Uint16Array(W*H);render();
+}
+el.pause.addEventListener('click',()=>{state.paused=!state.paused;lastTime=0;ui();render();});
+el.mono.addEventListener('click',()=>{state.mono=!state.mono;ui();render();});
+el.timing.addEventListener('click',()=>{state.untimed=!state.untimed;if(!state.untimed&&isQte())state.event=0;ui();render();});
+root.addEventListener('keydown',e=>{if(e.repeat||!isQte()||!['1','2'].includes(e.key))return;e.preventDefault();keys[Number(e.key)-1]?.();});
+document.addEventListener('visibilitychange',()=>{lastTime=0;});
+function tick(now){
+ if(!root.isConnected)return;const dt=lastTime?Math.min(.1,Math.max(0,(now-lastTime)/1000)):0;lastTime=now;
+ if(!state.paused&&visible&&!document.hidden){
+  if(!reduce)state.t+=dt;
+  if(!(isQte()&&state.untimed))state.event+=dt;
+  if(extended())caseAdvance(dt);
+  pose();
+  if(state.phase==='watch'&&state.event>=8)enter('ready');
+  else if(state.phase==='follow'&&state.event>=(reduce?1:8))enter('danger');
+  else if(state.phase==='danger'&&state.event>=2)enter('qte');
+  else if(state.phase==='qte'&&!state.untimed&&state.event>=qteDuration())choose('missed');
+  else if(state.phase==='result'&&state.event>=4)enter('evidence');
+  else if(state.phase==='arrival'&&state.event>=(reduce?1:7))enter('ending');
+  if(now-lastFrame>66){if(!reduce)render();else timer();lastFrame=now;}
+ }
+ requestAnimationFrame(tick);
+}
+ui();pose();resize();
+const reelBox=root.querySelector('.lc-reel-actions');if(reelBox){reelBox.replaceChildren();for(const [name,label] of [['street','STREET'],['station','STATION'],['pump','FLOOD'],['roof','ROOFTOP'],['chase','CHASE'],['canal','DAWN']]){const b=document.createElement('button');b.type='button';b.className='cursor-interaction';b.textContent='['+label+']';b.addEventListener('click',()=>{reel(name);const d=root.querySelector('.lc-reel');if(d)d.open=false;});reelBox.appendChild(b);}}
+new ResizeObserver(resize).observe(canvas);
+if(typeof IntersectionObserver!=='undefined')new IntersectionObserver(es=>{visible=es[0].isIntersecting&&es[0].intersectionRatio>.15;lastTime=0;},{threshold:.15}).observe(canvas);
+requestAnimationFrame(tick);
+root.cinemaAudit=()=>({state:JSON.parse(JSON.stringify(state)),scene:sceneName,camera:{...camera},columns:W,rows:H,frame,cast:blocking(),nonASCII:chars.filter(g=>g.charCodeAt(0)<32||g.charCodeAt(0)>126).length});
+})();
+
+</script>
+</div>
+
+</main></body></html>
