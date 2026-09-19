@@ -10,11 +10,19 @@ The scene builders create 3D surfaces and lights. The camera transforms and proj
 
 `case.js` owns the case phases and branch decisions. `runtime.js` retains the approved opening and calls the case code for later locations. A phase starts with `enter()`, updates the visible choices, and records a checkpoint. Timed movement and quick-time prompts advance through the animation loop. Quiet choices wait for the player.
 
+## Presentation
+
+`presentation.js` owns everything that makes a beat feel like a game without touching the scene: a five-row block font for chapter cards and stingers, the typed narration, the case file (route, persons of interest, evidence), the reflex tally and the case records. `enter()` reports each phase change and whether the scene changed; the presentation layer decides whether that is a chapter card, a landed or missed stinger, a warning, or nothing. Everything it draws is HTML placed below the canvas. `audio.js` synthesizes short cues from oscillators when the sound preference is on; it has no assets and is silent by default.
+
+Narration types in from a copy of the caption. The visible caption is hidden from assistive technology and a visually hidden live region receives the full sentence once, so screen readers hear whole sentences rather than fragments.
+
 ## Sessions and persistence
 
 `session.js` distinguishes the main menu, story play and scene previews. Previews can run every location but never write the story checkpoint. Opening the menu freezes the phase and its deadline. Starting over requires a confirmation when a checkpoint exists.
 
-`save-store.js` validates known phase names, field types, numeric bounds and clue strings before loading. Saves use a versioned envelope under `last-light/save/v1`. Existing prototype saves from `the-last-light-case-v2` migrate. Settings are stored independently under `last-light/settings/v1` and survive new cases. Storage failures leave a session-only checkpoint and do not prevent play.
+`save-store.js` validates known phase names, field types, numeric bounds and clue strings before loading. Saves use a versioned envelope under `last-light/save/v1`. Existing prototype saves from `the-last-light-case-v2` migrate. Settings are stored independently under `last-light/settings/v1` and survive new cases. Case records (endings reached, discoveries made, cases closed) live under `last-light/records/v1`; they are written only when a story session, never a preview, reaches the ending, and a new case does not clear them. Storage failures leave a session-only checkpoint and do not prevent play.
+
+Endings, discoveries, the route and the reflex score are all derived from existing checkpoint fields, so the checkpoint schema did not change.
 
 Checkpoints restart their current story beat. They do not promise frame-exact mid-animation restoration. Changes to save structure must include an explicit migration or graceful rejection.
 

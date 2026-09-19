@@ -135,6 +135,7 @@ function button(text,fn){
  const action=()=>{if(!state.paused&&!b.disabled)fn();};b.addEventListener('click',action);el.actions.appendChild(b);keys.push(action);
 }
 function enter(phase){
+ const scene=sceneName,wasEndingSeen=state.endingSeen;
  transitionFrom={...camera};state.phase=phase;state.event=0;
  caseEnter(phase);
  if(phase==='ready'){state.watched=true;addClue('The courier favors an injured leg. You can anticipate the stumble.');}
@@ -144,6 +145,7 @@ function enter(phase){
   else addClue('The dispatch pages are ruined. PUMP ROOM 4 is embossed into the cover.');
  }
  if(reduce)pose();
+ presentEnter(phase,sceneName!==scene,wasEndingSeen);
  ui();render();checkpoint();
 }
 function choose(id){if(state.phase!=='qte'||state.paused)return;state.choice=id;enter('result');}
@@ -156,18 +158,20 @@ function reset(){
  Object.assign(camera,startShot);transitionFrom={...startShot};el.journal.open=false;lastTime=0;ui();render();
 }
 function timer(){
+ el.timer.className='lc-timer';
  if(session.menu){el.timer.textContent='';return;}
  if(state.paused){el.timer.textContent='PAUSED';return;}
  if(['watch','stationListen','roofListen'].includes(state.phase))el.timer.textContent='OBSERVING / '+Math.max(0,Math.ceil(8-state.event))+'s';
  else if(isQte()){
   const left=Math.max(0,caseDuration()-state.event),n=Math.ceil(left/caseDuration()*10);
   el.timer.textContent=state.untimed?'TAKE YOUR TIME':'['+'='.repeat(n)+'.'.repeat(10-n)+'] '+left.toFixed(1)+'s';
+  if(!state.untimed&&left<=3){el.timer.className='lc-timer lc-urgent';tickCue(left);}
  }else el.timer.textContent=['follow','danger','result','arrival',...liveCase].includes(state.phase)?'LIVE':'YOUR MOVE';
 }
 function ui(){
  el.actions.replaceChildren();keys=[];el.outcome.hidden=state.phase!=='ending';
  el.clues.replaceChildren();for(const clue of state.clues){const li=document.createElement('li');li.textContent=clue;el.clues.appendChild(li);}
- el.journal.hidden=!state.clues.length;
+ el.journal.hidden=!state.clues.length&&state.phase==='brief';
  const phases={brief:'THE LAST LIGHT',watch:'WATCH THE COURIER',ready:'A USEFUL DETAIL',follow:'FOLLOW THE LANTERN',danger:'THE COURIER STUMBLES',qte:'THE BOOK IS FALLING',result:state.choice==='person'?'COURIER CAUGHT':state.choice==='book'?'DISPATCH SAVED':'TOO LATE',evidence:state.choice==='person'?'A WITNESS':state.choice==='book'?'A WRITTEN LEAD':'A DAMAGED CLUE',deduce:'WHERE DID BELL GO?',arrival:'NORTH STATION / SERVICE DOOR',ending:'THE WAY BELOW'};
  el.phase.textContent=phases[state.phase];
  if(session.menu)menuUI();else switch(state.phase){
@@ -212,6 +216,7 @@ function ui(){
  const sceneDescriptions={street:'A dense 3D ASCII night street, warm lamps and wet tram tracks.',station:'A vaulted station hall, tiled floor, columns, warm pendant lamps and a maintenance desk.',pump:'A flooded machinery chamber. Bell is on a platform and Rook stands by the inlet wheel.',roof:'A high rooftop overlooking deep city streets and flying traffic.',chase:'Rook\'s cyan patrol car pursues Vale\'s red car along an elevated road.',canal:'A quiet canal at first light. Rook and Bell stand near a medical vehicle.'};
  canvas.setAttribute('aria-label',sceneDescriptions[sceneName]+' '+el.caption.textContent);
  const chapter=root.querySelector('.lc-chapter');if(chapter)chapter.textContent=(session.mode==='preview'?'PREVIEW / ':'')+{street:'01 / STATION ROAD',station:'02 / CONCOURSE',pump:'03 / PUMP ROOM',roof:'04 / ROOFTOP',chase:'05 / PURSUIT',canal:'06 / FIRST LIGHT'}[sceneName];
+ presentUI();
  timer();
 }
 function resize(){
@@ -220,21 +225,31 @@ function resize(){
  W=clamp(Math.floor(width/4.2),72,180);H=Math.round(W*(width<480?.67:.39));cw=width/W;ch=cw*1.72;dpr=Math.min(window.devicePixelRatio||1,2);
  canvas.width=Math.round(width*dpr);canvas.height=Math.round(H*ch*dpr);canvas.style.height=H*ch+'px';ctx.setTransform(dpr,0,0,dpr,0,0);
  fx=W/(2*Math.tan((width<480?66:78)*Math.PI/360));fy=fx/1.72;
- zbuf=new Float32Array(W*H);chars=new Array(W*H);ink=new Uint16Array(W*H);render();
+ zbuf=new Float32Array(W*H);chars=new Array(W*H);ink=new Uint16Array(W*H);fitCard();render();
 }
 el.pause.addEventListener('click',()=>{state.paused=!state.paused;lastTime=0;ui();render();});
 el.mono.addEventListener('click',()=>{state.mono=!state.mono;savePreferences();ui();render();});
 el.timing.addEventListener('click',()=>{state.untimed=!state.untimed;if(!state.untimed&&isQte())state.event=0;savePreferences();ui();render();});
+root.querySelector('.lc-sound')?.addEventListener('click',()=>{state.sound=!state.sound;savePreferences();cue('clue');ui();});
 root.querySelector('.lc-menu')?.addEventListener('click',openMenu);
-root.addEventListener('keydown',e=>{if(session.menu||e.repeat||!isQte()||!['1','2'].includes(e.key))return;e.preventDefault();keys[Number(e.key)-1]?.();});
+// Quick-time input: 1 and 2, or the arrow keys in the joystick sense (left/up for the first move, right/down for the second).
+// Rebuilding the choices drops focus, so reflex keys are read at the document level while a prompt is live.
+const qteKeys={'1':0,'2':1,ArrowLeft:0,ArrowUp:0,ArrowRight:1,ArrowDown:1};
+document.addEventListener('keydown',e=>{
+ if(!root.isConnected||session.menu||e.repeat||!isQte()||!(e.key in qteKeys))return;
+ const target=e.target;if(target&&target!==document.body&&target!==root&&!(typeof root.contains==='function'&&root.contains(target)))return;
+ e.preventDefault();keys[qteKeys[e.key]]?.();
+});
 document.addEventListener('visibilitychange',()=>{lastTime=0;});
 function tick(now){
  if(!root.isConnected)return;const dt=lastTime?Math.min(.1,Math.max(0,(now-lastTime)/1000)):0;lastTime=now;
  if(session.menu&&visible&&!document.hidden){
   if(state.phase==='brief'&&!reduce)state.t+=dt;
+  presentTick(dt);
   if(now-lastFrame>66){render();lastFrame=now;}
  }else if(!state.paused&&visible&&!document.hidden){
   if(!reduce)state.t+=dt;
+  presentTick(dt);
   if(!(isQte()&&state.untimed))state.event+=dt;
   if(extended())caseAdvance(dt);
   pose();
@@ -253,5 +268,5 @@ const reelBox=root.querySelector('.lc-reel-actions');if(reelBox){reelBox.replace
 new ResizeObserver(resize).observe(canvas);
 if(typeof IntersectionObserver!=='undefined')new IntersectionObserver(es=>{visible=es[0].isIntersecting&&es[0].intersectionRatio>.15;lastTime=0;},{threshold:.15}).observe(canvas);
 requestAnimationFrame(tick);
-root.cinemaAudit=()=>({state:JSON.parse(JSON.stringify(state)),session:{...session},scene:sceneName,camera:{...camera},columns:W,rows:H,frame,cast:blocking(),nonASCII:chars.filter(g=>g.charCodeAt(0)<32||g.charCodeAt(0)>126).length});
+root.cinemaAudit=()=>({state:JSON.parse(JSON.stringify(state)),session:{...session},scene:sceneName,camera:{...camera},columns:W,rows:H,frame,cast:blocking(),nonASCII:chars.filter(g=>g.charCodeAt(0)<32||g.charCodeAt(0)>126).length,card:cardText,route:routeSteps(),board:boardEntries(),reflex:reflexes(),records:saveStore.readRecords()});
 })();

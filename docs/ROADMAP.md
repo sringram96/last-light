@@ -4,6 +4,8 @@
 
 Completed: repository structure, dependency-free build and local development server, main menu, resume, persistent settings, versioned saves, prototype-save migration, safe scene previews, focused tests and GitHub checks. The approved six-location case remains the playable baseline.
 
+Also completed: the game presentation layer. Block-letter chapter cards and action stingers, a warning card before each reaction, typed narration, arrow-key reflex input, a reflex tally and closing grade, the case file (route taken, persons of interest, evidence), persistent case records with five endings and nine discoveries, and optional synthesized sound.
+
 ## 0.3 — Detective interaction
 
 Make the player assemble an inference from observed evidence rather than choosing only a destination. Add a small clue model with observation, interpretation and witness attribution. Let one wrong inference open a believable detour. Keep the evidence interface folded away during cinematics.

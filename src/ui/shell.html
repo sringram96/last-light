@@ -1,38 +1,54 @@
-<div id="last-light-cinema" aria-label="The Last Light: a cinematic ASCII detective game">
+<div id="last-light-cinema" tabindex="-1" aria-label="The Last Light: a cinematic ASCII detective game">
 <style>
-#last-light-cinema{color-scheme:dark;background:#03070b;color:#dce1da;padding:14px;box-sizing:border-box;width:100%;font:12px/1.6 ui-monospace,Consolas,"Liberation Mono",monospace}
+#last-light-cinema{color-scheme:dark;background:#03070b;color:#dce1da;padding:14px;box-sizing:border-box;width:100%;font:12px/1.6 ui-monospace,Consolas,"Liberation Mono",monospace;outline:none}
 #last-light-cinema *{box-sizing:border-box}
 #last-light-cinema .lc-top,#last-light-cinema .lc-status,#last-light-cinema .lc-actions,#last-light-cinema .lc-options{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px 18px}
-#last-light-cinema .lc-top{padding:2px 2px 10px;color:#d8ba87;letter-spacing:2px}
+#last-light-cinema .lc-top{padding:2px 2px 10px;color:#d8ba87;letter-spacing:2px;border-bottom:1px solid #16232b;margin-bottom:10px}
+#last-light-cinema .lc-title::before{content:"";display:inline-block;width:7px;height:7px;margin-right:9px;background:#7ee0dc;box-shadow:0 0 8px #7ee0dc;vertical-align:1px}
 #last-light-cinema .lc-small{font-size:11px;color:#99abb5;letter-spacing:0}
+#last-light-cinema .lc-score{color:#7ee0dc}
 #last-light-cinema canvas{display:block;width:100%;background:#03070b;touch-action:pan-y}
-#last-light-cinema button{font:inherit;background:transparent;border:0;border-radius:0;color:#dbe0d6;min-height:44px;padding:8px 0;text-align:left}
-#last-light-cinema button:hover,#last-light-cinema button:focus-visible{color:#ffd391}
+#last-light-cinema .lc-card{margin:10px 0 0;font:inherit;line-height:1.05;white-space:pre;overflow:hidden;color:#efc789;text-shadow:0 0 7px rgba(255,190,94,.35)}
+#last-light-cinema .lc-card--title{color:#efc789}
+#last-light-cinema .lc-card--hit{color:#7ee0dc;text-shadow:0 0 7px rgba(83,186,184,.45)}
+#last-light-cinema .lc-card--miss,#last-light-cinema .lc-card--warn{color:#e07a72;text-shadow:0 0 7px rgba(195,109,103,.5)}
+#last-light-cinema button{font:inherit;background:transparent;border:0;border-left:2px solid transparent;border-radius:0;color:#dbe0d6;min-height:44px;padding:8px 0 8px 7px;text-align:left}
+#last-light-cinema button:hover,#last-light-cinema button:focus-visible{color:#ffd391;border-left-color:#7ee0dc;text-shadow:0 0 8px rgba(255,211,145,.4);outline:none}
 #last-light-cinema button[aria-pressed="true"]{color:#efc789}
-#last-light-cinema button:disabled{color:#829097}
-#last-light-cinema .lc-actions{justify-content:flex-start;gap:0 22px;min-height:44px}
-#last-light-cinema .lc-status{padding-top:10px;color:#efc789;font-size:11px}
-#last-light-cinema .lc-timer{font-variant-numeric:tabular-nums;white-space:nowrap}
+#last-light-cinema button:disabled{color:#829097;border-left-color:transparent;text-shadow:none}
+#last-light-cinema .lc-actions{justify-content:flex-start;gap:0 18px;min-height:44px}
+#last-light-cinema .lc-status{padding-top:10px;color:#efc789;font-size:11px;letter-spacing:1px}
+#last-light-cinema .lc-timer{font-variant-numeric:tabular-nums;white-space:nowrap;color:#7ee0dc}
+#last-light-cinema .lc-urgent{color:#e07a72}
 #last-light-cinema .lc-caption{min-height:40px;margin:6px 0;color:#d1dcde;max-width:65em}
-#last-light-cinema .lc-options{justify-content:flex-end;gap:0 18px;font-size:11px}
-#last-light-cinema .lc-options button{color:#99abb5}
-#last-light-cinema .lc-journal summary{min-height:44px;padding:10px 0;color:#d8ba87;font-size:11px}
-#last-light-cinema .lc-reel summary{min-height:44px;padding:10px 0;color:#99abb5;font-size:11px}
-#last-light-cinema .lc-reel-actions{display:flex;flex-wrap:wrap;gap:0 22px}
-#last-light-cinema .lc-clues{padding:0;list-style:none;margin:0 0 8px;color:#b4c6cc}
-#last-light-cinema .lc-clues li{padding:5px 0;max-width:65em}
-#last-light-cinema .lc-outcome{margin:8px 0;color:#d8ba87}
+#last-light-cinema .lc-veil{visibility:hidden}
+#last-light-cinema .lc-sr{position:absolute;width:1px;height:1px;margin:-1px;padding:0;border:0;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+#last-light-cinema .lc-options{justify-content:flex-end;gap:0 14px;font-size:11px}
+#last-light-cinema .lc-options button{color:#99abb5;padding-left:5px}
+#last-light-cinema details summary{min-height:44px;padding:10px 0;font-size:11px;letter-spacing:1px}
+#last-light-cinema .lc-journal summary{color:#d8ba87}
+#last-light-cinema .lc-records-box summary,#last-light-cinema .lc-reel summary{color:#99abb5}
+#last-light-cinema .lc-label{margin:8px 0 2px;color:#7ee0dc;font-size:10px;letter-spacing:2px}
+#last-light-cinema .lc-route{margin:0 0 6px;color:#efc789;max-width:65em}
+#last-light-cinema .lc-reel-actions{display:flex;flex-wrap:wrap;gap:0 18px}
+#last-light-cinema .lc-clues,#last-light-cinema .lc-board,#last-light-cinema .lc-records{padding:0;list-style:none;margin:0 0 8px;color:#b4c6cc}
+#last-light-cinema .lc-clues li,#last-light-cinema .lc-board li,#last-light-cinema .lc-records li{padding:4px 0;max-width:65em;white-space:pre-wrap}
+#last-light-cinema .lc-outcome{margin:8px 0;color:#d8ba87;max-width:65em}
 #last-light-cinema [hidden]{display:none!important}
-@media(max-width:440px){#last-light-cinema{padding:10px;font-size:11px}#last-light-cinema .lc-top{letter-spacing:1px}#last-light-cinema .lc-actions{gap:0 16px}}
+@media(prefers-reduced-motion:no-preference){#last-light-cinema .lc-urgent{animation:lc-pulse .5s steps(2,end) infinite}#last-light-cinema .lc-card--warn{animation:lc-pulse .6s steps(2,end) infinite}@keyframes lc-pulse{50%{opacity:.35}}}
+@media(max-width:440px){#last-light-cinema{padding:10px;font-size:11px}#last-light-cinema .lc-top{letter-spacing:1px}#last-light-cinema .lc-actions{gap:0 12px}}
 </style>
-<div class="lc-top"><span>THE LAST LIGHT</span><span class="lc-small lc-chapter">01 / STATION ROAD</span></div>
+<div class="lc-top"><span class="lc-title">THE LAST LIGHT</span><span class="lc-small"><span class="lc-score"></span><span class="lc-chapter">01 / STATION ROAD</span></span></div>
 <canvas role="img" aria-label="A dense three-dimensional night street rendered entirely in ASCII, with moving camera, warm lamps, wet tram tracks, trees, and the station clock tower."></canvas>
+<pre class="lc-card" aria-hidden="true" hidden></pre>
 <div class="lc-status"><span class="lc-phase"></span><span class="lc-timer" aria-hidden="true"></span></div>
-<p class="lc-caption" aria-live="polite"></p>
+<p class="lc-said lc-sr" aria-live="polite"></p>
+<p class="lc-caption" aria-hidden="true"></p>
 <p class="lc-outcome" hidden></p>
 <div class="lc-actions" role="group" aria-label="Story choices"></div>
-<div class="lc-options"><button type="button" class="lc-menu cursor-interaction">[MENU]</button><button type="button" class="lc-timing cursor-interaction" aria-pressed="false">[TIMED]</button><button type="button" class="lc-mono cursor-interaction" aria-pressed="false">[MONO]</button><button type="button" class="lc-pause cursor-interaction" aria-pressed="false">[PAUSE]</button></div>
-<details class="lc-journal" hidden><summary class="cursor-interaction">CASE NOTES</summary><ul class="lc-clues"></ul></details>
+<div class="lc-options"><button type="button" class="lc-menu cursor-interaction">[MENU]</button><button type="button" class="lc-timing cursor-interaction" aria-pressed="false">[TIMED]</button><button type="button" class="lc-mono cursor-interaction" aria-pressed="false">[MONO]</button><button type="button" class="lc-sound cursor-interaction" aria-pressed="false">[SOUND OFF]</button><button type="button" class="lc-pause cursor-interaction" aria-pressed="false">[PAUSE]</button></div>
+<details class="lc-journal" hidden><summary class="cursor-interaction">CASE FILE</summary><p class="lc-label">ROUTE TAKEN</p><p class="lc-route"></p><p class="lc-label">PERSONS OF INTEREST</p><ul class="lc-board"></ul><p class="lc-label">EVIDENCE</p><ul class="lc-clues"></ul></details>
+<details class="lc-records-box" hidden><summary class="cursor-interaction">CASE RECORDS / ENDINGS FOUND</summary><ul class="lc-records"></ul></details>
 <details class="lc-reel"><summary class="cursor-interaction">SCENE REEL / PREVIEW LOCATIONS</summary><p class="lc-small">Explore the locations. Your story checkpoint stays saved.</p><div class="lc-reel-actions" role="group" aria-label="Start a preview route at a location"></div></details>
 <!-- CINEMA_SCRIPT -->
 </div>
