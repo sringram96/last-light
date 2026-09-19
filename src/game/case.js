@@ -96,13 +96,13 @@ function caseUI(){
  case 'canalEntry':el.caption.textContent=state.pursuit==='stay'?'Rook stays with Bell and escorts him to the canal-side medics. Dawn catches the windows across the water.':state.caught?'Vale is in custody. Rook returns to Bell as the first light reaches the canal.':'Vale escaped tonight. Rook returns to Bell, who is waiting beside the canal with the medics.';break;
  case 'canalEnd':
   el.caption.textContent=state.caught?'Bell is alive. Vale is in custody. As the station lamps go dark, this time it is only because morning has arrived.':state.pursuit==='stay'?'Bell is alive, and his testimony is on record. The search for Vale continues. Rook has brought the missing man home.':'Bell is alive. Vale remains at large, but his secret is out. The missing-person case is closed; the warrant is just beginning.';
-  el.outcome.hidden=false;el.outcome.textContent=(state.rescue==='valve'?'Evidence: signed ledger recovered. ':'Evidence: Bell\'s testimony; ledger lost. ')+(state.caught?'Vale: arrested. ':state.pursuit==='stay'?'Vale: pursuit declined. ':'Vale: escaped. ')+(state.twist?'Nell\'s forged order is part of the case.':state.choice==='person'?'Nell remains a trusted witness.':'Rook worked without Nell.');
+  el.outcome.hidden=false;el.outcome.textContent=caseReport()+' '+(state.rescue==='valve'?'Evidence: signed ledger recovered. ':'Evidence: Bell\'s testimony; ledger lost. ')+(state.caught?'Vale: arrested. ':state.pursuit==='stay'?'Vale: pursuit declined. ':'Vale: escaped. ')+(state.twist?'Nell\'s forged order is part of the case.':state.choice==='person'?'Nell remains a trusted witness.':'Rook worked without Nell.');
   button('[RETURN TO MENU]',openMenu);break;
  }
 }
 function reel(name){
  session.mode='preview';session.menu=false;session.confirmNew=false;reset();
- if(name==='street')return;
+ if(name==='street'){chapterCard();return;}
  Object.assign(state,{choice:'person',decoded:true,watched:true,rescue:'valve',clues:['Scene preview: Bell\'s trail leads from the station to Pump Room 4.']});
  if(name==='chase'){state.radio=true;pursuit();return;}
  if(name==='canal'){state.caught=true;state.pursuit='ramp';}

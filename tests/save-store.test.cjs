@@ -21,6 +21,17 @@ test('malformed saves and future schemas never enter the runtime',()=>{
  }
  for(const value of ['broken','{"version":99,"state":{}}']){const storage=memoryStorage();storage.setItem('last-light/save/v1',value);assert.equal(createSaveStore(storage,phases).load(),null);}
 });
+test('case records accumulate endings and discoveries, survive new cases, and reject malformed data',()=>{
+ const storage=memoryStorage(),store=createSaveStore(storage,phases);
+ assert.deepEqual(store.readRecords(),{endings:[],discoveries:[],cases:0});
+ store.record({ending:'home',discoveries:['tape','tape']});store.record({ending:'home',discoveries:['ledger']});
+ assert.deepEqual(store.readRecords(),{endings:['home'],discoveries:['tape','ledger'],cases:2});
+ store.clear();assert.equal(createSaveStore(storage,phases).readRecords().cases,2);
+ for(const value of ['broken','{"version":2,"endings":["home"],"discoveries":[]}','{"version":1,"endings":[{}],"discoveries":[]}','{"version":1,"endings":["home"],"discoveries":"tape"}']){
+  const s=memoryStorage();s.setItem('last-light/records/v1',value);assert.deepEqual(createSaveStore(s,phases).readRecords(),{endings:[],discoveries:[],cases:0});
+ }
+ assert.deepEqual(createSaveStore(storage,phases).readSettings({mono:false,untimed:false,sound:false}),{mono:false,untimed:false,sound:false});
+});
 test('blocked browser storage keeps a session checkpoint and settings',()=>{
  const blocked={getItem(){throw Error('blocked')},setItem(){throw Error('blocked')},removeItem(){throw Error('blocked')}};
  const store=createSaveStore(blocked,phases);assert.equal(store.save(state),false);assert.equal(store.load().phase,'roofQuiet');assert.equal(store.isDurable(),false);

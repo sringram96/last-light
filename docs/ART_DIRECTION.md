@@ -11,6 +11,8 @@ The approved reference is a dense, textured 3D world rendered entirely through p
 - Continuous movement within a location, with deliberate camera changes between story beats.
 - Varied shots: street tracking, a concourse crane, low machinery views, rooftop sweeps and side-tracking pursuit.
 - A quiet interface below the art, with readable choices and minimal explanatory text.
+- Title cards, stingers and the case file are HTML placed under the canvas. They never overlay or draw into the scene, and the block-letter font uses only `#` and spaces.
+- The interface palette follows the scene: warm amber for titles and status, cyan for landed moves and the reflex tally, muted red for warnings and misses.
 
 ## Graphics rules
 

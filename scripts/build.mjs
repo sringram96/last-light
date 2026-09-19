@@ -9,7 +9,7 @@ export async function build() {
   let renderer = await read('src/engine/renderer.js');
   if (renderer.split('/* EXTRA_MATERIALS */').length !== 2) throw new Error('Expected one material extension point.');
   renderer = renderer.replace('/* EXTRA_MATERIALS */', await read('src/engine/materials.js'));
-  const files = ['src/game/save-store.js', 'src/game/scenes.js', 'src/game/case.js', 'src/game/session.js', 'src/game/runtime.js'];
+  const files = ['src/game/save-store.js', 'src/game/scenes.js', 'src/game/case.js', 'src/game/session.js', 'src/game/audio.js', 'src/game/presentation.js', 'src/game/runtime.js'];
   const script = [renderer, ...await Promise.all(files.map(read))].join('\n');
   const shell = await read('src/ui/shell.html');
   const fragment = shell.replace('<!-- CINEMA_SCRIPT -->', `<script>\n${script}\n</script>`);

@@ -4,6 +4,8 @@ A cinematic ASCII detective game. Watch Detective Rook move through a rain-soake
 
 All scenery, characters, rain, traffic and lighting are drawn with printable ASCII characters. The camera moves through a textured 3D world with perspective, depth and parallax.
 
+The game plays like a laserdisc arcade cabinet crossed with a branching mystery: watch the picture, react when it turns, and choose the route. Every chapter opens with a block-letter title card, every landed or missed move gets a stinger, the case file tracks your route and the persons of interest, and closed cases add endings and discoveries to a persistent record.
+
 ## Run
 
 Install Node.js 22 or newer, then:
@@ -24,13 +26,16 @@ npm test         # Save-system, story-route and renderer regression checks
 ## Play
 
 - Choose **New Case**, or **Continue Case** to load your saved checkpoint.
-- Watch the characters and camera; choose actions below the scene.
-- During quick-time events, click an action or press **1** or **2** while the game has focus.
-- **Untimed** removes reaction deadlines. **Mono** changes to monochrome. Both preferences persist.
+- Watch the characters and camera; choose actions below the scene. Narration types in; chapter cards and stingers appear under the picture.
+- **GET READY** warns that a reaction is coming. During quick-time events, click an action, press **1** or **2**, or use the arrow keys (left/up for the first move, right/down for the second).
+- The header keeps a **REFLEX** tally of prompts answered in time. The closing report names the ending, the reflex score and a grade.
+- **Case File** shows the route taken, the persons of interest and the evidence gathered.
+- **Case Records** on the menu lists endings found (of five) and discoveries (of nine). Records survive new cases.
+- **Untimed** removes reaction deadlines. **Mono** changes to monochrome. **Sound** enables short synthesized cues. All three preferences persist.
 - **Menu** pauses the story and provides resume and scene-preview controls.
-- **Scene Reel** previews locations without overwriting story progress.
+- **Scene Reel** previews locations without overwriting story progress or records.
 
-Reduced-motion settings use stable shots, shortened travel and untimed prompts by default. Background tabs and offscreen scenes pause. Observation jobs progress while the visible game is active; there is no offline idle economy yet.
+Reduced-motion settings use stable shots, shortened travel, untimed prompts and instant narration by default. Background tabs and offscreen scenes pause. Observation jobs progress while the visible game is active; there is no offline idle economy yet.
 
 ## Current playable case
 
@@ -51,7 +56,9 @@ Missed action prompts continue the story. The prototype has a complete short cas
 | `src/game/scenes.js` | Physical sets, characters, vehicles and camera direction |
 | `src/game/case.js` | Case dialogue, choices and branching events |
 | `src/game/session.js` | Start menu, resume, settings and preview isolation |
-| `src/game/save-store.js` | Validated, versioned checkpoints and legacy migration |
+| `src/game/save-store.js` | Validated, versioned checkpoints, settings, case records and legacy migration |
+| `src/game/presentation.js` | Title cards, stingers, typed narration, case file, reflex score and records |
+| `src/game/audio.js` | Optional synthesized sound cues |
 | `src/game/runtime.js` | Opening sequence, drawing, controls and animation loop |
 | `src/ui/` | Minimal interface around the scene |
 | `reference/` | Immutable approved visual references |

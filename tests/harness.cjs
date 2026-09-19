@@ -9,7 +9,7 @@ function game({width=320,reduced=false,storage=memoryStorage(),script}={}){
  const element=()=>({style:{},attrs:{},listeners:{},children:[],disabled:false,hidden:false,textContent:'',setAttribute(k,v){this.attrs[k]=v},addEventListener(k,f){this.listeners[k]=f},replaceChildren(){this.children=[]},appendChild(e){this.children.push(e)},click(){if(!this.disabled)this.listeners.click?.()}});
  const context={font:'',fillStyle:'',setTransform(){},fillRect(){draws=[]},fillText(g,x,y){draws.push([g,x,y,this.fillStyle,this.font])}};
  const canvas={...element(),clientWidth:width,getContext:()=>context};
- const names=['actions','caption','phase','timer','pause','timing','mono','journal','clues','outcome','chapter','reel-actions','reel','menu'];
+ const names=['actions','caption','phase','timer','pause','timing','mono','journal','clues','outcome','chapter','reel-actions','reel','menu','card','said','route','board','records','records-box','score','sound'];
  const elements=Object.fromEntries(names.map(k=>['.lc-'+k,element()]));
  const root={...element(),isConnected:true,querySelector:k=>k==='canvas'?canvas:elements[k]};
  const document={getElementById:()=>root,createElement:element,hidden:false,listeners:{},addEventListener(k,f){this.listeners[k]=f}};
