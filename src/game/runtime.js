@@ -71,13 +71,14 @@ function blocking(){
 }
 // The street miss picture's clock: the phase clock, or the still it holds under reduced motion (the car stopped beside the rail).
 function streetMissClock(){return reduce?3.9:state.event;}
-// The red car on the miss: back from the far corner along the rails over three seconds, a second beside the courier, then away past the camera with its lights off.
+// The red car on the miss: back from the far corner and down the right-hand rails over three seconds (clear of Rook, who
+// stands on the camera's line), a second beside the courier, then away out of the frame's right edge with its lights off.
 function streetMissCar(){
  const e=streetMissClock();
- if(e<1){const u=smooth(e);car(mix(-12,-3,u),mix(36,35,u),3,0,false,{dark:true});}
- else if(e<3){const u=smooth((e-1)/2);car(mix(-3,-1.7,u),mix(35,21.6,u),3,0,false,{dark:true});}
- else if(e<4)car(-1.7,21.6,3,0,false,{dark:true});
- else if(e<5.2){const u=(e-4)/1.2;car(mix(-1.7,-.4,u),mix(21.6,4,u*u),3,0,false,{dark:true});}
+ if(e<1){const u=smooth(e);car(mix(-12,-2,u),mix(36,35,u),3,0,false,{dark:true});}
+ else if(e<3){const u=smooth((e-1)/2);car(mix(-2,1.9,u),mix(35,22.6,u),3,0,false,{dark:true});}
+ else if(e<4)car(1.9,22.6,3,0,false,{dark:true});
+ else if(e<5.2){const u=(e-4)/1.2;car(mix(1.9,4.2,u),mix(22.6,4,u*u),3,0,false,{dark:true});}
 }
 // Walk cycles advance with distance travelled (one frame every SPRITE_STRIDE world units), so a standing character never flickers.
 const SPRITE_STRIDE=.3,walkMeters=new Map();

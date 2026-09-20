@@ -197,14 +197,18 @@ function car(x,z,hue=1,y=0,large=false,{dark=false,freight=false}={}){
  for(const dx of [-w,w])for(const dz of [-l*.67,l*.67])box(x+dx-.16,y+.13,z+dz-.4,x+dx+.16,y+.7,z+dz+.4,mat('rubber'));
  if(!dark)for(const dx of [-w*.7,w*.7]){box(x+dx-.22,y+.58,z-l-.06,x+dx+.22,y+.83,z-l,mat('tail',3));box(x+dx-.22,y+.65,z+l,x+dx+.22,y+.88,z+l+.06,mat('lamp',2));}
 }
-// A car pitched about its rear axle (nose down for a negative pitch): the same boxes as car(), every corner and normal turned.
-function tiltedCar(x,z,hue,pitch){
- const w=1.05,l=2.2,py=.35,pz=z-l*.67,c=Math.cos(pitch),s=Math.sin(pitch);
- const T=([qx,qy,qz])=>{const dy=qy-py,dz=qz-pz;return[qx,py+dy*c+dz*s,pz+dz*c-dy*s];},N=([nx,ny,nz])=>[nx,ny*c+nz*s,nz*c-ny*s];
+// A car turned about a pivot: the same boxes as car(), every corner and normal put through T and N. pitch turns it about
+// the x axis through its rear axle (nose down when negative); roll turns it about the z axis through the pivot [px,py]
+// (its right side dropping when negative). Used where a car stops nose-down at the deck's edge or goes over a barrier.
+function turnedCar(x,z,hue,{pitch=0,roll=0,pivot=[x,.35],y=0,dark=false,lamp=false}={}){
+ const w=1.05,l=2.2,py=.35,pz=z-l*.67,c=Math.cos(pitch),s=Math.sin(pitch),cr=Math.cos(roll),sr=Math.sin(roll),[rx,ry]=pivot;
+ const T=([qx,qy,qz])=>{let dy=qy-py,dz=qz-pz,yy=py+dy*c+dz*s,zz=pz+dz*c-dy*s;const dx=qx-rx;dy=yy-ry;return[rx+dx*cr-dy*sr,y+ry+dx*sr+dy*cr,zz];};
+ const N=([nx,ny,nz])=>{const y1=ny*c+nz*s,z1=nz*c-ny*s;return[nx*cr-y1*sr,nx*sr+y1*cr,z1];};
  const rb=(x0,y0,z0,x1,y1,z1,m)=>{const i=surfaces.length;box(x0,y0,z0,x1,y1,z1,m);for(let k=i;k<surfaces.length;k++){const q=surfaces[k];surfaces[k]={...q,v:q.v.map(T),n:N(q.n)};}};
  rb(x-w,.35,z-l,x+w,1.05,z+l,mat('car',hue));rb(x-w*.78,1.05,z-l*.52,x+w*.78,1.9,z+l*.55,mat('glass',hue));rb(x-w*.85,1.9,z-l*.55,x+w*.85,2.06,z+l*.58,mat('metal',hue));
  for(const dx of [-w,w])for(const dz of [-l*.67,l*.67])rb(x+dx-.16,.13,z+dz-.4,x+dx+.16,.7,z+dz+.4,mat('rubber'));
- for(const dx of [-w*.7,w*.7]){rb(x+dx-.22,.58,z-l-.06,x+dx+.22,.83,z-l,mat('tail',3));rb(x+dx-.22,.65,z+l,x+dx+.22,.88,z+l+.06,mat('lamp',2));}
+ if(!dark)for(const dx of [-w*.7,w*.7]){rb(x+dx-.22,.58,z-l-.06,x+dx+.22,.83,z-l,mat('tail',3));rb(x+dx-.22,.65,z+l,x+dx+.22,.88,z+l+.06,mat('lamp',2));}
+ if(lamp)rb(x-.45,2.07,z-.2,x+.45,2.15,z+.2,mat('lamp',2));
 }
 function extended(){return !['brief','watch','ready','follow','danger','qte','result','evidence','deduce','loftTurn','arrival'].includes(state.phase);}
 function sceneFor(p){const d=phaseDef(p);if(d){if(d.set!=='*')return d.set;const dp=deathPhases[state.dead];return dp?sceneFor(dp):sceneName;}for(const name of ['office','station','pump','roof','club','chase','tunnel','canal'])if(p.startsWith(name))return name;return 'street';}
@@ -321,8 +325,8 @@ function caseBlocking(){
   if(state.choice==='person')courier={x:1.5,z:14.5,pose:'watch',who:'nell'};
   if(p==='pumpDeath'){
    // Bell goes down with the platform and under; Rook lunges to the walkway's end reaching, then crouches; Nell's line goes out to the water.
-   const e=pictureClock(2.5),l=smooth(clamp(e/.6,0,1)),sink=mix(1.2,-1.2,smooth(clamp(e/.8,0,1)))-1.8*clamp((e-.8)/.8,0,1);
-   rook={x:mix(-.6,1.8,l),z:mix(11,15.7,l),pose:e<2?'reach':'crouch'};
+   const e=pictureClock(1.2),l=smooth(clamp(e/.8,0,1)),sink=mix(1.2,-1.2,smooth(clamp(e/.8,0,1)))-1.8*clamp((e-.8)/.8,0,1);
+   rook={x:mix(-.6,2.4,l),z:mix(11,18.6,l),pose:e<2?'reach':'crouch'};
    others.length=0;if(sink+1.95>-.7)others.push({x:4.8,y:sink,z:17.8,pose:'stumble',lean:.5,who:'bell'});
    if(courier)courier.pose='reach';
   }
@@ -390,9 +394,10 @@ function caseGeometry(){
   const drop=valve?v*.4:0,w0=sceneCache.pump.surfaces[0];
   surfaces[0]=drop>0?{...w0,v:w0.v.map(q=>[q[0],q[1]-drop,q[2]])}:w0;
   // The death: the platform drops below the water in the first 0.8 s; with Nell on the walkway her line runs from her hand to where Bell went under.
-  const cache=sceneCache.pump.surfaces,sink=p==='pumpDeath'?2*smooth(clamp(pictureClock(2.5)/.8,0,1)):0;
+  const cache=sceneCache.pump.surfaces,sink=p==='pumpDeath'?2*smooth(clamp(pictureClock(1.2)/.8,0,1)):0;
   for(let i=0;i<5;i++){const s=cache[pumpPlatformIdx+i];surfaces[pumpPlatformIdx+i]=sink>0?{...s,v:s.v.map(q=>[q[0],q[1]-sink,q[2]])}:s;}
-  if(p==='pumpDeath'&&state.choice==='person'&&pictureClock(2.5)>=.3)quad([1.95,1.45,14.5],[4.6,-.7,17.4],[4.6,-.66,17.44],[1.95,1.49,14.54],mat('cable'),[0,-1,0]);
+  // The line runs almost straight away from the camera, so it is a ribbon (0.12 wide, 0.14 tall) rather than a thread, or it would fall between the cells.
+  if(p==='pumpDeath'&&state.choice==='person'&&pictureClock(1.2)>=.3)quad([1.95,1.45,14.5],[4.9,-.7,17.6],[5.02,-.56,17.6],[2.07,1.59,14.5],mat('cable'),[0,0,-1]);
  }
  if(sceneName==='roof'){
   const d=reduce?4:state.t*3,p=picturePhase(),e=state.event;
@@ -415,10 +420,14 @@ function caseGeometry(){
   const caught=p==='chaseFinish'&&state.pursuit==='jump'&&state.caught;
   if((p==='chaseFinish'||p==='gapDeath')&&!caught&&state.pursuit!=='ramp')rookZ=Math.min(d,bridgeZ-5);
   if(caught){rookZ=Math.min(d,bridgeZ+36);y=(reduce?0:Math.sin(clamp((state.event-.5)/4.5,0,1)*Math.PI)*3.2)+deckY(rookZ);}
-  // Over the edge: the trailer puts the car across the road in 1.2 s, lifting it just over the barrier, and it falls the next 1.5 s.
-  if(p==='chaseDeath'){const t=pictureClock(1.4),s=smooth(clamp(t/1.2,0,1)),f=clamp((t-1.2)/1.5,0,1);x=mix(-2.2,6.4,s);y=.5*s-14.5*f*f;}
-  // Short of the far span: the run to the deck's edge, the arc peaking at 1.6, then the fall through the gap over two seconds.
-  if(p==='gapDeath'){const t=pictureClock(1.6),r=clamp((t-.7)/.5,0,1),f=clamp((t-1.2)/2,0,1);rookZ=Math.min(bridgeZ+14,bridgeZ-8+Math.min(t,.7)*10+Math.max(0,t-.7)*6);y=1.6*Math.sin(r*Math.PI/2)-15.6*f*f;}
+  // Over the edge: the trailer puts the car across the road to the barrier in 1.2 s; it rolls over the barrier's top
+  // through the next 0.8 s, then falls the last 1.5 s. The side camera sits above the deck, so once the car is below the
+  // deck's far edge the road hides it: the roll is the part of the death the frame can hold.
+  let over=null;
+  if(p==='chaseDeath'){const t=pictureClock(1.6),s=smooth(clamp(t/1.2,0,1)),r=smooth(clamp((t-1.2)/.8,0,1)),f=clamp((t-2)/1.5,0,1);x=mix(-2.2,6.4,s);y=.4*s-14.4*f*f;over={roll:-1.3*r,pivot:[7,.65]};}
+  // Short of the far span: the run to the deck's edge (lining up on the span's centre, which keeps the car in the near-deck
+  // frame at phone width), the arc peaking at 1.6, then the fall through the gap over two seconds with x held.
+  if(p==='gapDeath'){const t=pictureClock(1.6),r=clamp((t-.7)/.5,0,1),f=clamp((t-1.2)/2,0,1);x=mix(shift,1.6,smooth(clamp(t/.7,0,1)));rookZ=Math.min(bridgeZ+14,bridgeZ-8+Math.min(t,.7)*10+Math.max(0,t-.7)*6);y=1.6*Math.sin(r*Math.PI/2)-15.6*f*f;}
   if(p==='chaseFinish'&&state.pursuit==='ramp'){
    x=mix(shift,-10.2,span(4));y=-clamp((d-state.phaseDistance-29)/50,0,1)*7.5;
    const a=state.phaseDistance+16,b=a+64;
@@ -429,7 +438,8 @@ function caseGeometry(){
    box(-7.13,0,a+45,-6.87,.65,950,mat('barrier'));
   }else for(let i=1;i<=5;i++)surfaces[i]=sceneCache.chase.surfaces[i];
   // Timed out at the bridge: the car stops nose-down over the near deck's edge, and its roof lamp is out.
-  if(p==='chaseFinish'&&state.pursuit==='late'&&!caught)tiltedCar(x,bridgeZ-2.2,1,-.28);
+  if(p==='chaseFinish'&&state.pursuit==='late'&&!caught)turnedCar(x,bridgeZ-2.2,1,{pitch:-.28});
+  else if(over)turnedCar(x,rookZ,1,{...over,y,lamp:true});
   else{car(x,rookZ,1,y);box(x-.45,y+2.07,rookZ-.2,x+.45,y+2.15,rookZ+.2,mat('lamp',2));}
   // Vale: ahead by the gap; over the lifted span when the jump lands, stopped at the basin exit when caught; away at speed through a death.
   let valeZ=d+16+state.gap*7;if(caught)valeZ=Math.min(valeZ,bridgeZ+42);
