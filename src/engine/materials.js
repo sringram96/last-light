@@ -4,6 +4,7 @@ else if(kind==='hatch'){hue=0;lum=.18;g=fract(x*5)<.09?'|':'.';}
 else if(kind==='tiles'){
  const a=Math.floor(x*.8),b=Math.floor(z*.8);hue=(a+b)%2?0:2;lum=(a+b)%2?.36:.64;g=fract(x*.8)<.05||fract(z*.8)<.05?'+':grain>.65?':':'.';
  if(Math.abs(x)<2.5){hue=2;lum=.65;g=fract(z*2)<.12?'=':':';}
+ for(let i=0;i<lamps.length;i++){const l=lamps[i],d=(x-l[0])**2+(z-l[1])**2;if(d<22){const a2=(1-d/22);if(a2>.25){hue=2;lum=Math.max(lum,.3+a2*.55);if(grain>.6)g='=';}}}
 }
 else if(kind==='wall'||kind==='brick'){
  hue=kind==='wall'?2:(mat.hue||0);lum=.37+grain*.15;g=fract(y*2)<.10?'-':fract(x*.8+z*.8+Math.floor(y*2)*.5)<.055?'|':grain>.6?':':'.';
@@ -13,15 +14,16 @@ else if(kind==='wall'||kind==='brick'){
 else if(kind==='column'){hue=0;lum=.55+grain*.12;g=fract((x+z)*8)<.2?'|':':';}
 else if(kind==='ceiling'){hue=4;lum=.3;g=fract(x*.8)<.07?'|':fract(z*.5)<.1?'=':'.';}
 else if(kind==='water'){
- const r=Math.sin(x*2+z*.6+state.t*1.2)+Math.sin(z*3-x*.6-state.t*.8);hue=1;lum=.22+Math.max(0,r)*.23;g=r>1.1?'=':r>.2?'-':'.';
+ const r=Math.sin(x*2+z*.6+state.t*1.2)+Math.sin(z*3-x*.6-state.t*.8);hue=1;lum=.22+Math.max(0,r)*.23+(state.dawn||0)*.2;g=r>1.1?'=':r>.2?'-':'.';
  if(Math.abs(x)<2&&kind==='water'){hue=2;lum+=.15;}
+ for(let i=0;i<lamps.length;i++){const l=lamps[i],d=(x-l[0])**2+(z-l[1])**2;if(d<22){const a2=(1-d/22);if(a2>.25){hue=2;lum=Math.max(lum,.28+a2*.5);if(r>.2)g='=';}}}
 }
 else if(kind==='tank'){lum=.45+grain*.15;g=Math.abs(n[1])>.5?'=':fract(y*2)<.07?'=':fract((x+z)*2)<.05?'|':':';if(Math.abs(y-2.1)<.16){hue=2;lum=.9;g='=';}}
 else if(kind==='pipe'){hue=2;lum=.65;g=fract(z*.8)<.12?'#':'=';}
 else if(kind==='grate'){hue=0;lum=.6;g=fract(x*4)<.3||fract(z*4)<.25?'+':'.';}
 else if(kind==='console'){hue=1;lum=.5;g=':';if(!mat.roof&&y>1.35){hue=2;lum=1;g=fract(x*7)<.25?'|':'=';}}
 else if(kind==='poster'){hue=2;lum=.75;g=fract(y*4)<.32?'=':'.';}
-else if(kind==='roof'){hue=0;lum=.44;g=fract(x*.8)<.025||fract(z*.8)<.03?'=':grain>.65?':':'.';}
+else if(kind==='roof'){hue=0;lum=.44;g=fract(x*.8)<.025||fract(z*.8)<.03?'=':grain>.65?':':'.';for(let i=0;i<lamps.length;i++){const l=lamps[i],d=(x-l[0])**2+(z-l[1])**2;if(d<22){const a2=(1-d/22);if(a2>.25){hue=2;lum=Math.max(lum,.3+a2*.55);if(grain>.6)g='=';}}}}
 else if(kind==='vent'){hue=0;lum=.58;g=fract(y*7)<.48?'=':'.';if(mat.roof){g=fract(x*5)<.3?'|':'-';}}
 else if(kind==='express'){
  hue=7;lum=.34+grain*.12;g=grain>.6?':':'.';
@@ -49,4 +51,24 @@ else if(kind==='screen'){hue=1;lum=.5+.4*(fract(y*6-state.t*.4)<.5?1:0);g=fract(
 else if(kind==='neon'){const on=hash(Math.floor(state.t*6),mat.hue)>.08;hue=mat.hue;lum=on?1.45:.4;g=on?(mat.roof?'=':'#'):'-';}
 else if(kind==='velvet'){hue=3;lum=.28+(fract(x*.9+z*.9)<.5?.16:0)+grain*.06;g=fract((x+z)*.9)<.12?'|':grain>.6?':':'.';if(y<.4){hue=2;lum=.6;g='=';}}
 else if(kind==='sewer'){hue=5;lum=.36+grain*.14;g=fract(y*1.5)<.12?'-':fract(z*.6+Math.floor(y*1.5)*.5)<.06?'|':grain>.86?'~':grain>.5?':':'.';if(y>5.6){lum=.2;g=grain>.5?':':'.';}}
+// Substation Nine: battery racks. Shelves, dividers, and cell faces lit (charged) or dark (drained) by hash.
+else if(kind==='cell'){
+ const along=Math.abs(n[0])>.5?z:x,shelf=Math.floor(y/.9),bay=Math.floor(along/.6);
+ if(fract(y/.9)<.1){hue=0;lum=.7;g='=';}
+ else if(fract(along/.6)<.1){hue=0;lum=.5;g='|';}
+ else if(mat.roof){hue=0;lum=.45;g='=';}
+ else{const charged=hash(shelf,bay,mat.seed||9)>.35;hue=charged?2:4;lum=charged?1:.25;g=charged?(fract(y/.9)>.78?'-':'#'):':';if(charged&&fract(y/.9)>.78){hue=1;lum=.8;}}
+}
+// Dawn: a sky quad driven by state.dawn (0 night, 1 gold). Used only where the story says the sky brightens.
+else if(kind==='dawn'){const u=state.dawn||0;if(u<.3){hue=4;lum=.12+u;g='.';}else if(u<.6){hue=4;lum=.45;g=':';}else if(u<.85){hue=6;lum=.75;g='=';}else{hue=2;lum=1;g='#';}}
+// Bell's route map: streets as a grid, lamps as dots, and six lamps crossed out in red.
+else if(kind==='map'){
+ const along=Math.abs(n[0])>.5?z:x;hue=6;lum=.55;g='.';
+ if(fract(along*2)<.12){lum=.6;g='-';}if(fract(y*2.85)<.12){lum=.6;g='|';}
+ const cx=Math.floor(along*2),cy=Math.floor(y*2.85);
+ if(fract(along*2)<.25&&fract(y*2.85)<.3&&hash(cx,cy,mat.seed||3)>.75){hue=2;lum=1;g='@';}
+ if(mat.cross&&along>mat.cross[0]&&along<mat.cross[1]&&y>mat.cross[2]&&y<mat.cross[3]&&fract(along*2)<.3&&fract(y*2.85)<.35){hue=3;lum=1.1;g='x';}
+}
+// An electrical arc: bright, flickering, white to cyan.
+else if(kind==='arc'){const on=hash(Math.floor(state.t*14),Math.floor(x*3),Math.floor(y*3))>.35;hue=on?6:1;lum=on?1.5:.9;g=on?'#':'%';}
 else

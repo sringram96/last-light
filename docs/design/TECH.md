@@ -93,7 +93,7 @@ Sheets live in `docs/design/sprites.json` (the Character Director's file) and ar
 }
 ```
 
-- **Character key** is what blocking names in `who` (`rook`, `nell`, `bell`, `vale`, `krane`, `medic`, `performer`, `patron`, `coyle`, ...). An actor without `who` draws `generic`; `actor(a, true)` draws `rook`. An unknown `who` also draws `generic`.
+- **Character key** is what blocking names in `who` (`rook`, `nell`, `bell`, `vale`, `krane`, `medic`, `performer`, `patron`, `ashe`, ...). An actor without `who` draws `generic`; `actor(a, true)` draws `rook`. An unknown `who` also draws `generic`.
 - **Sizes** are `full`, `mid` (about 7x7) and `small` (about 5x5). Any row and column counts work; the engine reads them from the art. Every row of one size is padded to the widest row of that size, so keep all rows of a size the same length.
 - **Poses** are arrays of row strings. `walk` (or any pose with frames) is an array of frames, each an array of rows. Existing pose names: `stand`, `walk`, `watch`, `reach`, `support`, `read`, `crouch`, `stumble`; the design sheets add `wrench`, `sit`, `lantern`, `radio`, `throw`, `stage`, `handsUp`. Any name works; blocking picks it with `pose:`. `watch` borrows `stand` at sizes that do not draw it. A pose that no size draws falls back to `stand`.
 - **`stand` is required** for every size; a size without it is ignored with a warning.
@@ -114,7 +114,7 @@ Sheets live in `docs/design/sprites.json` (the Character Director's file) and ar
 ### Adding a character or a pose
 
 1. Add the character object to `docs/design/sprites.json` with `stand` at all three sizes and `walk` frames at least at `full`; give it `hue`, `level`, `height` and an `accent` or `null`.
-2. Name it in blocking: `{x, z, pose: 'stand', who: 'coyle'}` in `caseBlocking()` (`src/game/scenes.js`).
+2. Name it in blocking: `{x, z, pose: 'stand', who: 'ashe'}` in `caseBlocking()` (`src/game/scenes.js`).
 3. `npm run build` and `npm test`. The reel previews every set; the audit's `sprites` shows which sheet each figure used.
 4. A new pose is an array under the size that draws it. Give it `heights` if it is not standing height. Poses only at `full` are drawn from `full` at every distance, squeezed as Part 3 describes, so keep far-away poses at `mid` and `small` too.
 

@@ -1,4 +1,4 @@
-import { readFile, mkdir, writeFile } from 'node:fs/promises';
+import { readFile, readdir, mkdir, writeFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 
@@ -9,7 +9,9 @@ export async function build() {
   let renderer = await read('src/engine/renderer.js');
   if (renderer.split('/* EXTRA_MATERIALS */').length !== 2) throw new Error('Expected one material extension point.');
   renderer = renderer.replace('/* EXTRA_MATERIALS */', await read('src/engine/materials.js'));
-  const files = ['src/game/save-store.js', 'src/game/scenes.js', 'src/game/case.js', 'src/game/session.js', 'src/game/audio.js', 'src/game/presentation.js', 'src/game/sprites.js', 'src/game/runtime.js'];
+  // Every set module under src/game/sets/ registers itself; they load after the scene helpers and before the story driver.
+  const setFiles = (await readdir(path.join(root, 'src/game/sets'))).filter(name => name.endsWith('.js')).sort().map(name => 'src/game/sets/' + name);
+  const files = ['src/game/save-store.js', 'src/game/scenes.js', 'src/game/registry.js', ...setFiles, 'src/game/case.js', 'src/game/session.js', 'src/game/audio.js', 'src/game/presentation.js', 'src/game/sprites.js', 'src/game/runtime.js'];
   const sources = await Promise.all(files.map(read));
   // Character sheets from the design team drop in as docs/design/sprites.json and are loaded over the built-in defaults.
   const spritesIndex = files.indexOf('src/game/sprites.js');

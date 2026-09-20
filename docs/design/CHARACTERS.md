@@ -164,7 +164,7 @@ Palette hues, as the renderer numbers them: 0 slate-blue, 1 cyan, 2 amber, 3 red
 
 ### The file: `docs/design/sprites.json`
 
-One object per character, keyed `rook`, `nell`, `bell`, `vale`, `krane`, `medic`, `performer`, `coyle` and `generic` (the extras, under the name the loader falls back to). Each has `full`, `mid` and `small` (an object of poses; `walk` is an array of two frames, every other pose one array of rows), `accent` (`{glyph, hue}` or `null`), and the metadata the loader reads: `hue`, `level` (ink brightness, 14 for named characters, 11 for extras), `faceHue` (Rook only, 6), `height` and `heights`. Blocking selects a sheet with `who: 'nell'` and so on on the actor; an actor without `who` draws `generic` (Rook keeps `isRook`).
+One object per character, keyed `rook`, `nell`, `bell`, `vale`, `krane`, `medic`, `performer`, `ashe` and `generic` (the extras, under the name the loader falls back to). Each has `full`, `mid` and `small` (an object of poses; `walk` is an array of two frames, every other pose one array of rows), `accent` (`{glyph, hue}` or `null`), and the metadata the loader reads: `hue`, `level` (ink brightness, 14 for named characters, 11 for extras), `faceHue` (Rook only, 6), `height` and `heights`. Blocking selects a sheet with `who: 'nell'` and so on on the actor; an actor without `who` draws `generic` (Rook keeps `isRook`).
 
 ### Accent table
 
@@ -1781,7 +1781,7 @@ const performer = {
 };
 ```
 
-### Director Maren Coyle, Lumen Board (`coyle`)
+### Director Maren Coyle, Lumen Board (`ashe`)
 
 Sheet:
 
