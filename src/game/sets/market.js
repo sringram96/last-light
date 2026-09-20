@@ -35,12 +35,12 @@ registerSet('market',{
   quad([-9,9,-4],[9,9,-4],[9,9,42],[-9,9,42],mat('ceiling'),[0,-1,0]);
   for(let z=-4;z<=44;z+=12){for(const x of [-7.5,7.5])box(x-.5,0,z-.5,x+.5,9,z+.5,mat('column'));if(z<=32)box(-9,8.6,z-.15,9,9,z+.15,mat('metal'));}
   // Market Arch: two brick piers (the cart bursts on the left one), a stone lintel and the tram halt's rail above it.
-  for(const x of [-5.5,5.5])box(x-1.2,0,-7,x+1.2,9,-4,mat('brick',0));
+  for(const x of [-5.5,5.5])box(x-1.2,0,-7,x+1.2,9,-4,mat('stone'));
   box(-8,9,-7.2,8,9.7,-3.8,mat('stone'));box(-9,9.7,-7,9,10.2,-6.4,mat('barrier'));
   // Stalls: kiosk bodies on the slope, awnings alternating amber and rose, posters on every third, neon on two faces.
   // The first pair crowds the arch (pulled toward the aisle); the stall at z 6 sits back, so the gap behind it reads.
   for(const z of MARKET_STALLS)for(const side of [-1,1]){
-   const base=y(z+1.2),near=z===2,inner=side*(near?3.4:z===6&&side<0?4.8:4.1),outer=side*(near?5.8:6.5);
+   const base=y(z+1.2),near=z===2,inner=side*(near?3.4:z===6&&side<0?5:4.1),outer=side*(near?5.8:6.5);
    const x0=Math.min(inner,outer),x1=Math.max(inner,outer),hue=((z/4)|0)%2?2:3;
    box(x0,base,z,x1,base+2.2,z+2.4,((z/4)|0)%2?{kind:'kiosk',hue:1,baseY:base+.85}:mat('wood',2));
    const ax0=side<0?x0:inner-1.4,ax1=side<0?inner+1.4:x1,az1=side>0&&z>=10&&z<38?z+3.9:z+2.5;
@@ -55,7 +55,7 @@ registerSet('market',{
   for(let z=0;z<=40;z+=4){const c=y(z)+3.6;quad([-9,c,z],[9,c,z],[9,c+.03,z+.03],[-9,c+.03,z+.03],mat('cable'),[0,-1,0]);
    if(z%8===0)for(const x of [-2.9,2.9]){box(x-.17,c-.5,z-.17,x+.17,c,z+.17,mat('console',2));box(x-.15,c-.65,z-.15,x+.15,c-.5,z+.15,mat('lamp',2));lamps.push([x,z]);}}
   // The gap under [1]: the one gap on the left with a lamp over it, hung from a bar between the two stall roofs.
-  {const g=y(9.2);box(-5.4,g+3.65,8.3,-5.2,g+3.75,10.1,mat('metal'));box(-5.47,g+3.15,9.03,-5.13,g+3.65,9.37,mat('console',2));box(-5.45,g+3,9.05,-5.15,g+3.15,9.35,mat('lamp',2));lamps.push([-5.3,9.2]);}
+  {const g=y(9.2);box(-5.4,g+3.65,8.3,-5.2,g+3.75,10.1,mat('metal'));box(-5.5,g+3.2,9,-5.1,g+3.65,9.4,mat('console',2));box(-5.52,g+2.95,8.98,-5.08,g+3.2,9.42,mat('lamp',2));lamps.push([-5.3,9.2]);}
   // The awning rope under [2]: from a cleat at the aisle's edge up to the front edge of the right awnings' ledge.
   {const r=y(9.1)+.9;quad([3.85,r,9.1],[5.6,3.3,9.9],[5.82,3.3,9.98],[4.07,r,9.18],mat('metal'),[0,0,-1]);quad([4.07,r,9.18],[5.82,3.3,9.98],[5.6,3.3,9.9],[3.85,r,9.1],mat('metal'),[0,0,1]);box(3.72,r-.25,8.98,4.0,r+.02,9.26,mat('metal'));box(5.5,3.28,9.78,5.72,3.7,10.0,mat('metal'));}
   // Marta's cart: a wood bed on rubber wheels, eight cells in a rack, a paper plate (QUILL is the label above it).
@@ -83,7 +83,7 @@ registerSet('market',{
   const qte=look(-.2,y(-2)+2.4,-2,0,2.4,24);
   if(p==='marketEntry')return look(-.4,y(-1)+1.75,-1,0,6.2,44);
   if(p==='marketAisle')return look(-1.4,y(15.5)+1.9,15.5,-1,1.9,2);
-  if(p==='marketKeeper')return look(-1.2,y(10.2)+1.7,10.2,-3.6,y(13.4)+1.3,13.4);
+  if(p==='marketKeeper')return look(-.6,y(11)+1.9,11,-3.6,y(13.4)+1.4,13.4);
   if(p==='marketDanger')return look(1.6,y(21)+1.7,21,0,y(30)+1.3,30);
   if(p==='marketResult'&&m==='cut'){const v=reduce?1:span(4),cz=mix(4,30,v);return look(2.6,y(cz)+3.6,cz,5.6,y(cz+10)+2.8,cz+10);}
   if(p==='marketResult'&&m==='slip'){const s=reduce?1:smooth(clamp((t-.9)/2,0,1));return marketBlend(qte,look(0,y(-.5)+2,-.5,-5.2,1,-4.8),s);}
@@ -126,15 +126,16 @@ registerSet('market',{
   else if(res&&m!=='late'){const r=reduce?1:clamp(t,0,1);cz=mix(6.3,-3.2,r);cx=mix(0,-4.6,r);burst=r>=1;}
   if(res&&m==='late'){
    // Stopped across the aisle: four cells still on the bed, six spilled and arcing on the wet paving.
-   const b=y(6.3);box(-1.1,b+.4,5.5,1.1,b+.7,7.1,mat('wood',2));for(const dx of [-.9,.9])for(const dz of [-.6,.6])box(dx-.24,b,6.3+dz-.1,dx+.24,b+.45,6.3+dz+.1,mat('rubber'));
-   for(let i=0;i<4;i++){const o=hash(i,2)*.4;box(-.9+i*.5,b+.7,5.7+o,-.5+i*.5,b+1.2,6.5+o,mat('console',2));}
+   const b=y(6.3);box(-1.15,b,6.2,1.15,b+2.1,6.5,mat('wood',2));box(-1.2,b+2.1,6.15,1.2,b+2.2,6.55,mat('metal'));
+   for(const dx of [-.8,.8])box(dx-.25,b+1.5,5.85,dx+.25,b+2,6.2,mat('rubber'));for(const dx of [-.62,.62])box(dx-.16,b+.2,6.05,dx+.16,b+.47,6.2,mat('lamp',2));
+   for(let i=0;i<3;i++){const o=hash(i,2)*.3;box(-.9+i*.62,b+.5+o,6.5,-.35+i*.62,b+1.05+o,7.5,{kind:'console',hue:2,baseY:-1});}
    for(let i=0;i<6;i++){const sx=-1.9+hash(i,5)*3.6,sz=2.2+hash(i,6)*3.2,g=y(sz);box(sx,g,sz,sx+.5,g+.4,sz+.9,{kind:'console',hue:2,baseY:-1});if(i<4)box(sx+.1,g+.4,sz+.3,sx+.4,g+.8,sz+.6,mat('arc',6));}
   }else marketCart(cx,cz,y(cz),!burst);
   if(burst){
    // Cells burst white against the left pier and arc on the ground for a moment.
    for(let i=0;i<10;i++){const sx=-7+hash(i,1)*4,sz=-4.2+hash(i,2)*3.4;box(sx,-.02,sz,sx+.36,.28,sz+.36,mat('lamp',2));}
    lamps.push([-4.8,-2.6]);
-   if(reduce||t<3.4)for(let i=0;i<4;i++){const o=hash(i,4)*1.2;box(-6+i*.7,.2,-3.9+o,-5.7+i*.7,1+hash(i,3)*.8,-3.6+o,mat('arc',6));}
+   if(reduce||t<3.4)for(let i=0;i<5;i++){const sx=-6.6+hash(i,4)*3,sz=-4+hash(i,7)*2,sy=.1+hash(i,3)*.9;box(sx,sy,sz,sx+.28,sy+.4,sz+.28,mat('arc',6));}
   }
   if(state.tail)car(-8.3,-7.5,0,-.02,false,{dark:true});
  },

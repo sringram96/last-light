@@ -101,10 +101,11 @@ registerSet('room',{
  labels(p){
   const who=roomSitter();
   if(p==='roomEntry'){
-   worldLabel([-1.2,3.5,-.25],'INTERVIEW 2',1);worldLabel([-3.9,3.45,-2],'VALE',0);
+   worldLabel([-1.2,3.5,-.25],'INTERVIEW 2',1);worldLabel([-3.9,3.45,-1.5],'VALE',0);
    if(who)worldLabel([-.9,2.05,5.3],who==='vale'?'VALE':who==='krane'?'KRANE':'BELL',who==='vale'?3:who==='krane'?0:2);
   }
-  if(p==='roomDeduce'){if(ledgerHeld())worldLabel([-1.75,1.35,4],'LEDGER',6);if(manifestHeld())worldLabel([-1.2,1.6,4],'MANIFEST',6);if(chipHeld())worldLabel([-.7,1.35,3.9],'CHIP',6);worldLabel([-.2,1.6,4],'ORDER 7731',6);}
+  // The evidence labels wait for the camera to settle over the table, so they never cross the sitter's face on the way down.
+  if(p==='roomDeduce'&&(reduce||state.event>2.5)){if(ledgerHeld())worldLabel([-1.75,1.35,4],'LEDGER',6);if(manifestHeld())worldLabel([-1.2,1.6,4],'MANIFEST',6);if(chipHeld())worldLabel([-.7,1.35,3.9],'CHIP',6);worldLabel([-.2,1.6,4],'ORDER 7731',6);}
  },
  exit(){return [-1.2,1.3,-.2];},
  preview(){Object.assign(state,{pursuit:'ramp',tunnel:'right',caught:true,hall:'breaker',club:'vault'});return 'roomEntry';}

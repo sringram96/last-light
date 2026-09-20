@@ -180,6 +180,13 @@ function caseShot(){
  if(sceneName==='chase'){
   const d=state.distance;
   if(p==='chaseBank')return look(-13,3.5,d-10,0,1.3,d+6);
+  if(p==='chaseQteB')return look(-.6,3.3,d-11,0,2,d+29);
+  if(p==='chaseFinish'&&state.pursuit!=='ramp'){
+   // Caught: from the far span, three seconds on Vale's stopped car, then the pan across the water to the lit hall. Otherwise from the near deck toward it.
+   const bz=(state.phaseDistance||d)+26;
+   if(state.pursuit==='jump'&&state.caught){const a=look(-3,5,bz+18,1.6,1,bz+38);return state.event<3||reduce?a:blendShot(a,look(-3,5,bz+18,44,-8,bz+39),smooth(clamp((state.event-3)/3,0,1)));}
+   return look(-.6,3.3,bz-12,20,-4,bz+50);
+  }
   return look(-.6,p==='chaseEntry'?5:3.3,d-11,.3,1.2,d+13);
  }
  if(sceneName==='office'){
@@ -308,22 +315,24 @@ function caseGeometry(){
    for(let i=1;i<=5;i++)surfaces[i]={...sceneCache.chase.surfaces[i],v:sceneCache.chase.surfaces[i].v.map(v=>[v[0],v[1],v[2]>900?a:v[2]])};
    box(-7.13,0,a+45,-6.87,.65,950,mat('barrier'));
   }else for(let i=1;i<=5;i++)surfaces[i]=sceneCache.chase.surfaces[i];
-  car(x,d,1,y);box(x-.45,y+2.07,d-.2,x+.45,y+2.15,d+.2,mat('lamp',2));
-  const bridgeZ=(state.phaseDistance||d)+26;
-  const valeZ=d+16+state.gap*7,valeY=p==='chaseFinish'&&state.pursuit==='jump'&&state.caught?Math.sin(clamp((valeZ-bridgeZ+7)/32,0,1)*Math.PI)*2.7:0;
-  car(1.6,valeZ,3,valeY);
-  for(let i=0;i<3;i++){const z=d+28+i*24+Math.sin(state.t*.3+i)*5;car(i%2?2.3:-2.3,z,i%2?0:2,0,i===0);}
-  if(['chaseEntry','chaseQteA'].includes(p))car(-2.2,d+13,0,0,true);
-  if(['chaseQteB','chaseFinish'].includes(p)){
-   const z=p==='chaseFinish'?bridgeZ:d+29;for(const dx of [-7,7])box(dx-.3,0,z,dx+.3,6,z+.6,mat('metal'));
-   box(-7,5.5,z,7,5.85,z+.5,mat('barrier'));
-   if(p==='chaseFinish'&&state.pursuit==='jump'&&state.caught){
-    // Split the physical deck so the canal is visible through the gap.
-    surfaces[0]={...surfaces[0],v:[[-7,0,-55],[-7,0,bridgeZ],[7,0,bridgeZ],[7,0,-55]]};
-    floor(-7,bridgeZ+15,7,950,0,'express');
-    box(-7,-1,bridgeZ-1,7,0,bridgeZ,mat('brick'));box(-7,-1,bridgeZ+15,7,0,bridgeZ+16,mat('brick'));
-   }else surfaces[0]=sceneCache.chase.surfaces[0];
-  }
+  car(x,rookZ,1,y);box(x-.45,y+2.07,rookZ-.2,x+.45,y+2.15,rookZ+.2,mat('lamp',2));
+  // Vale: ahead by the gap; over the lifted span when the jump lands, stopped at the basin exit when caught.
+  let valeZ=d+16+state.gap*7;if(caught)valeZ=Math.min(valeZ,bridgeZ+42);
+  const valeY=(caught?Math.sin(clamp((valeZ-bridgeZ+7)/32,0,1)*Math.PI)*2.7:0)+deckY(valeZ);
+  car(1.6,valeZ,3,valeY);chasePos.vale={x:1.6,y:valeY,z:valeZ};
+  for(let i=0;i<5;i++){const z=d+28+i*24+Math.sin(state.t*.3+i)*5;car(i%2?2.3:-2.3,z,i%2?0:2,deckY(z),i===0);}
+  const freight=chaseFreight();chasePos.freight=freight;if(freight)car(freight.x,freight.z,0,0,true,{freight:true});
+  const cache=sceneCache.chase.surfaces;
+  if(lifted){
+   for(const dx of [-7,7])box(dx-.3,0,gz,dx+.3,6,gz+.6,mat('metal'));box(-7,5.5,gz,7,5.85,gz+.5,mat('barrier'));
+   // Split the physical deck so the basin is visible through the gap, with the far span raised.
+   surfaces[0]={...cache[0],v:[[-7,0,-55],[-7,0,gz],[7,0,gz],[7,0,-55]]};
+   floor(-7,gz+15,7,950,rise,'express');
+   box(-7,-1,gz-1,7,0,gz,mat('brick'));box(-7,-1,gz+15,7,rise+.01,gz+16,mat('brick'));
+   // Substation Nine across the basin, where the right-hand row opens.
+   substationBuilding(24,gz+32);
+   for(let i=chaseRowIdx[0];i<chaseRowIdx[1];i++){const s=cache[i],z=s.v[0][2];surfaces[i]=z>gz+16&&z<gz+84?HIDDEN:s;}
+  }else{surfaces[0]=cache[0];for(let i=chaseRowIdx[0];i<chaseRowIdx[1];i++)surfaces[i]=cache[i];}
  }
  if(sceneName==='tunnel'){
   const d=state.distance,p=state.phase,fork=forkZ(),u=p==='tunnelFinish'?span(4):0,vale=tunnelVale();
@@ -399,9 +408,11 @@ function caseLabels(){
  if(sceneName==='pump'){worldLabel([-2.1,1.6,12.2],'INLET',2);if(!['pumpResult','pumpTruth'].includes(state.phase))worldLabel([4.8,3.9,17.7],'BELL',2);if(state.phase==='pumpQte'){worldLabel([-1.25,2.15,11.8],'[1]',2);worldLabel([4.8,4.5,17.7],'[2]',2);}}
  if(sceneName==='roof')worldLabel([0,3.2,17],'NORTH / RADIO',2);
  if(sceneName==='chase'){
-  worldLabel([1.6,3.3,state.distance+16+state.gap*7],'VALE',3);
-  if(state.phase==='chaseQteA')worldLabel([-2.2,3.3,state.distance+13],'FREIGHT',2);
-  if(state.phase==='chaseQteB')worldLabel([0,5.1,state.distance+28],'BRIDGE LIFTING',2);
+  const p=state.phase,v=chasePos.vale,f=chasePos.freight;
+  if(v)worldLabel([v.x,v.y+3.3,v.z],'VALE',3);
+  if(f&&(p==='chaseQteA'||p==='chaseEntry'&&state.event>=4))worldLabel([f.x,3.0,f.z],'FREIGHT',2);
+  if(p==='chaseQteB')worldLabel([0,6.4,state.distance+29],'BRIDGE UP',2);
+  if(['chaseQteB','chaseFinish'].includes(p))worldLabel([44,-5.2,(p==='chaseFinish'?(state.phaseDistance||state.distance)+26:state.distance+29)+31.5],'SUBSTATION 9',1);
  }
  if(sceneName==='canal')worldLabel([9,3.5,24],'CITY MEDIC',2);
  if(sceneName==='office'){worldLabel([-7.4,4.5,7],'CASE BOARD',2);worldLabel([0,4.6,16.2],'NIGHT DIVISION',1);if(state.phase!=='officeEntry')worldLabel([-.4,1.55,8.3],'I. BELL',6);if(state.phase==='officeBoard'){worldLabel([-7.55,2.2,5],'I. BELL',6);worldLabel([-7.55,2.0,6.2],'A. VALE',3);worldLabel([-12.8,3.9,-10.6],'VALE',0);}}
