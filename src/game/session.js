@@ -10,10 +10,10 @@ function continueCase(){
  const s=savedCase();if(!s)return;
  session.mode='story';session.menu=false;session.confirmNew=false;
  const prefs={mono:state.mono,untimed:state.untimed};reset();Object.assign(state,s,prefs,{paused:false,event:0});
- const name=sceneFor(s.phase);setScene(name);Object.assign(camera,name==='street'?shotFor():sceneStart(name));enter(s.phase);chapterCard();
+ const name=sceneFor(s.phase);setScene(name);Object.assign(camera,name==='street'?shotFor():sceneStart(name));enter(s.phase,true);chapterCard();
 }
 function startNewCase(){
- saveStore.clear();session.mode='story';session.menu=false;session.confirmNew=false;reset();enter('officeEntry');
+ saveStore.clear();session.mode='story';session.menu=false;session.confirmNew=false;reset();enter('officeEntry',true);
 }
 function requestNewCase(){if(savedCase()){session.confirmNew=true;ui();}else startNewCase();}
 function openMenu(){session.menu=true;session.confirmNew=false;state.paused=false;lastTime=0;ui();render();}

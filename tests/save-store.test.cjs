@@ -16,7 +16,9 @@ test('legacy prototype checkpoints migrate; clearing also prevents legacy resurr
  store.clear();assert.equal(createSaveStore(storage,phases).load(),null);
 });
 test('malformed saves and future schemas never enter the runtime',()=>{
- for(const stateValue of [{...state,phase:'unknown'},{...state,distance:'far'},{...state,gap:1.5},{...state,twist:'yes'},{...state,clues:[{}]}]){
+ assert.equal(createSaveStore(memoryStorage(),phases).save(state)&&createSaveStore(memoryStorage(),phases).load(),null);
+ const s=memoryStorage();createSaveStore(s,phases).save(state);assert.equal(createSaveStore(s,phases).load().rewinds,3);
+ for(const stateValue of [{...state,phase:'unknown'},{...state,distance:'far'},{...state,gap:1.5},{...state,twist:'yes'},{...state,clues:[{}]},{...state,rewinds:5},{...state,rewinds:1.5}]){
   const storage=memoryStorage();storage.setItem('last-light/save/v1',JSON.stringify({version:1,state:stateValue}));assert.equal(createSaveStore(storage,phases).load(),null);
  }
  for(const value of ['broken','{"version":99,"state":{}}']){const storage=memoryStorage();storage.setItem('last-light/save/v1',value);assert.equal(createSaveStore(storage,phases).load(),null);}

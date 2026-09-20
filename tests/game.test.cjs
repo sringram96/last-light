@@ -25,7 +25,7 @@ test('close-up characters keep a single pair of eyes',()=>{
  }
 });
 test('menus pause action, preferences persist, and previews preserve the story checkpoint',()=>{
- const g=game();g.click('NEW CASE');g.phase('officeEntry');g.click('SKIP INTRO');g.click('WATCH FIRST');g.run(8.3);g.phase('ready');
+ const g=game();g.click('NEW CASE');g.phase('officeEntry');g.click('SKIP INTRO');g.run(1.6);g.phase('brief');g.click('WATCH FIRST');g.run(8.3);g.phase('ready');
  const saved=g.storage.getItem('last-light/save/v1');assert(saved);
  g.elements['.lc-mono'].click();g.elements['.lc-timing'].click();g.elements['.lc-menu'].click();
  const frozen=g.audit().state.event;g.run(3);assert.equal(g.audit().state.event,frozen);
@@ -49,8 +49,27 @@ test('the lower ramp leads into the undercity, where the fork decides the arrest
  assert(g.audit().route.includes('Took the ramp')&&g.audit().route.includes('Followed right'));assert.equal(g.audit().reflex.grade,'A');assert.equal(g.audit().nonASCII,0);
  g=game({reduced:true});g.click('UNDERCITY','reel-actions');g.run(1.3);g.click('CUT LEFT');assert(g.audit().state.caught);assert.equal(g.audit().card,'GOT HIM');
  g=game({reduced:true});g.click('CHASE','reel-actions');g.run(1.3);g.click('BRAKE');g.run(1.3);g.click('LOWER RAMP');g.phase('tunnelEntry');assert.equal(g.audit().scene,'tunnel');
- g.elements['.lc-timing'].click();g.run(1.3);g.phase('tunnelQte');g.run(9.4);g.phase('tunnelFinish');assert(!g.audit().state.caught);assert.equal(g.audit().card,'GONE');g.run(2.5);g.phase('canalEnd');
+ g.elements['.lc-timing'].click();g.run(1.3);g.phase('tunnelQte');g.run(9.4);g.phase('tunnelFinish');assert(!g.audit().state.caught);assert.equal(g.audit().card,'GONE');g.click('CARRY ON');g.run(2.5);g.phase('canalEnd');
  assert.equal(g.audit().reflex.faced-g.audit().reflex.hits,1);assert(g.audit().route.includes('Braked at the fork'));
+});
+test('scene changes play an exit beat and a dissolve before the next set fades up',()=>{
+ const g=game();g.click('NEW CASE');g.phase('officeEntry');const from={...g.audit().camera};
+ g.click('SKIP INTRO');assert.deepEqual(g.audit().transit,{phase:'brief',t:0});g.phase('officeEntry');assert.equal(g.elements['.lc-actions'].children.length,0);
+ g.run(.6);assert.equal(g.audit().fade,1);assert.notDeepEqual(g.audit().camera,from);
+ g.run(.6);assert(g.audit().fade<1&&g.audit().fade>0);assert.equal(g.audit().scene,'office');
+ g.run(.4);g.phase('brief');assert.equal(g.audit().scene,'street');assert.equal(g.audit().transit,null);assert(g.audit().fade<1);assert.equal(g.audit().card,'STATION ROAD');
+ g.run(1);assert.equal(g.audit().fade,1);assert.equal(g.audit().nonASCII,0);
+ // Menus freeze a dissolve mid-way and resume it.
+ g.click('FOLLOW');g.run(10.5);g.click('CATCH');g.run(4.3);g.click('CONNECT');g.click('STATION SERVICE');g.run(7.5);g.click('ENTER');g.run(.5);
+ g.elements['.lc-menu'].click();const t=g.audit().transit.t;g.run(2);assert.equal(g.audit().transit.t,t);g.click('RESUME');g.run(1.5);g.phase('stationEntry');
+});
+test('a missed move can be rewound three times, or carried',()=>{
+ const g=game({reduced:true});g.click('CHASE','reel-actions');g.elements['.lc-timing'].click();g.run(1.3);g.phase('chaseQteA');g.run(9.4);g.phase('chaseBank');
+ assert(g.elements['.lc-actions'].children.some(b=>b.textContent.includes('REWIND THE MOMENT / 3 LEFT')));g.run(7);g.phase('chaseBank');
+ g.click('REWIND');g.phase('chaseQteA');assert.equal(g.audit().state.rewinds,2);assert.equal(g.audit().state.firstMove,'');assert.equal(g.elements['.lc-score'].textContent,'REFLEX 3/3 // REWIND x2 // ');
+ g.click('DIVE RIGHT');g.phase('chaseBank');assert.equal(g.elements['.lc-actions'].children.length,0);g.run(1.3);g.phase('chaseQteB');
+ g.run(9.4);g.phase('chaseFinish');g.click('REWIND');g.phase('chaseQteB');g.run(9.4);g.click('REWIND');g.phase('chaseQteB');assert.equal(g.audit().state.rewinds,0);
+ g.run(9.4);g.phase('chaseFinish');assert(!g.elements['.lc-actions'].children.length);g.run(2.5);g.phase('canalEnd');assert(!g.audit().records.discoveries.includes('flawless'));
 });
 test('every location previews with printable ASCII only and visible characters where expected',()=>{
  for(const [name,sprites] of [['OFFICE',1],['STREET',2],['STATION',2],['FLOOD',3],['ROOFTOP',3],['CLUB',6],['CHASE',0],['UNDERCITY',0],['DAWN',4]]){
@@ -70,7 +89,7 @@ test('title cards, stingers, reflex keys and the case file follow the story',()=
  assert.match(g.audit().board[0],/missing/);g.run(4.3);g.phase('evidence');assert.match(g.audit().board[0],/last logged at Pump Room 4/);assert.match(g.audit().board[1],/limped away/);
  g.click('CONNECT');g.click('THE HOTEL');g.phase('deduce');assert(g.audit().route.includes('Chased a false lead'));
  g.click('STATION SERVICE');g.run(1.3);g.click('ENTER');assert.equal(g.audit().scene,'station');assert.equal(g.audit().card,'NORTH STATION');
- assert.equal(g.elements['.lc-journal'].hidden,false);assert.equal(g.elements['.lc-score'].textContent,'REFLEX 1/1 // ');
+ assert.equal(g.elements['.lc-journal'].hidden,false);assert.equal(g.elements['.lc-score'].textContent,'REFLEX 1/1 // REWIND x3 // ');assert.equal(g.audit().objective,'FIND BELL');
  g.elements['.lc-menu'].click();assert.equal(g.audit().card,'LAST LIGHT');assert.equal(g.elements['.lc-records-box'].hidden,false);
  g.click('RESUME');assert.equal(g.audit().card,'');assert.equal(g.elements['.lc-records-box'].hidden,true);
 });
@@ -81,8 +100,8 @@ test('closing a case records the ending and discoveries; previews and new cases 
  g.run(1.3);g.click('DIVE RIGHT');g.run(1.3);g.click('FOLLOW OVER');g.run(2.5);g.phase('canalEnd');
  assert.equal(g.audit().card,'CASE CLOSED');
  const records=g.audit().records;assert.deepEqual(records.endings,['arrest-ledger']);assert.equal(records.cases,1);
- assert.deepEqual(records.discoveries,['witness','tape','ledger','band','confession','jump','chip']);
- assert(g.elements['.lc-outcome'].textContent.startsWith('ENDING: THE CLEAN ARREST (1/5 found). Reflex 5/5, grade A.'));
+ assert.deepEqual(records.discoveries,['witness','tape','ledger','band','confession','jump','chip','flawless']);
+ assert(g.elements['.lc-outcome'].textContent.startsWith('ENDING: THE CLEAN ARREST (1/5 found). Reflex 5/5, grade A, rewinds used 0.'));
  assert.deepEqual(g.audit().route,['Followed at once','Caught the courier','Read the tape','Closed the inlet','Listened to the band',"Heard Nell's confession",'Pursued Vale','Went over the bar','Dove right','Jumped the gap']);
  g.click('RETURN TO MENU');const lines=g.elements['.lc-records'].children.map(li=>li.textContent);
  assert(lines[0].startsWith('ENDINGS 1/5'));assert(lines.some(l=>l.startsWith('THE CLEAN ARREST')));assert(lines.some(l=>l.startsWith('?????')));
@@ -96,6 +115,6 @@ test('timed misses, pausing and declining pursuit still reach coherent outcomes'
  const g=game({reduced:true});g.click('CHASE','reel-actions');g.elements['.lc-timing'].click();g.run(1.3);g.phase('chaseQteA');
  const event=g.audit().state.event;g.document.hidden=true;g.run(3);assert.equal(g.audit().state.event,event);g.document.hidden=false;
  g.elements['.lc-pause'].click();g.run(3);assert.equal(g.audit().state.event,event);g.elements['.lc-pause'].click();
- g.run(9.4);g.phase('chaseBank');assert.equal(g.audit().card,'CLIPPED');g.run(1.3);g.run(9.4);g.run(2.5);g.phase('canalEnd');assert(!g.audit().state.caught);
+ g.run(9.4);g.phase('chaseBank');assert.equal(g.audit().card,'CLIPPED');g.run(7);g.phase('chaseBank');g.click('CARRY ON');g.run(1.3);g.phase('chaseQteB');g.run(9.4);g.phase('chaseFinish');g.click('CARRY ON');g.run(2.5);g.phase('canalEnd');assert(!g.audit().state.caught);
  g.elements['.lc-menu'].click();g.click('ROOFTOP','reel-actions');g.run(1.3);g.click('STAY WITH');g.run(1.3);g.phase('canalEnd');assert.equal(g.audit().state.pursuit,'stay');
 });

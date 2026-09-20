@@ -29,6 +29,10 @@ The three files in `reference/` record the approved street study, opening and co
 
 Character sprites are text poses projected into the scene. Body glyphs fill their screen band when a character is close to the camera; facial details (eyes, mouth) are stamped once at the centre of their sprite cell, so a close-up never shows a second pair of eyes. Keep faces to the `o`, `.` and `>` glyphs so this rule keeps working.
 
+## Transitions
+
+A scene change is never a hard cut. The leaving set plays an exit beat of about a second and a half: the camera glides part of the way toward that set's exit point (a hatch, a ladder, a door, or straight down the road) while one line of narration explains the move. The picture then dissolves the way the art itself fades with distance: colours dim toward the background and heavy glyphs thin to `+`, then `.`, then nothing. The next set fades up from the same dissolve with its camera already moving toward the first shot. Reduced motion, resumes and previews cut directly.
+
 ## Sets
 
 Each set has its own camera language: the street tracks, the concourse cranes, the pump room stays low, the roof sweeps, the office pushes in slowly and then sits low over the desk, the club dollies past the bar and cranes over the booth, the elevated road and the undercity chase from behind, from the side and head-on. Interiors are lit by the same lamp pools as the street. Neon is the only surface allowed to flicker.

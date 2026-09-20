@@ -59,21 +59,21 @@ function caseAdvance(dt){
  else if(p==='pumpEntry'&&done(6))enter('pumpFind');
  else if(p==='pumpDanger'&&e>=2)enter('pumpQte');
  else if(p==='pumpQte'&&!state.untimed&&e>=caseDuration())rescue('late');
- else if(p==='pumpResult'&&done(4))enter('pumpTruth');
+ else if(p==='pumpResult'&&done(4)&&!canRewind())enter('pumpTruth');
  else if(p==='roofEntry'&&done(8))enter('roofQuiet');
  else if(p==='roofListen'&&e>=8)enter('roofSignal');
  else if(p==='clubEntry'&&done(8))enter('clubFace');
  else if(p==='clubFace'&&e>=2)enter('clubQte');
  else if(p==='clubQte'&&!state.untimed&&e>=caseDuration())clubChoice('late');
- else if(p==='clubResult'&&done(4))startChase();
+ else if(p==='clubResult'&&done(4)&&!canRewind())startChase();
  else if(p==='chaseEntry'&&done(6))enter('chaseQteA');
  else if(p==='chaseQteA'&&!state.untimed&&e>=caseDuration())chaseChoice('late');
- else if(p==='chaseBank'&&done(6))enter('chaseQteB');
+ else if(p==='chaseBank'&&done(6)&&!canRewind())enter('chaseQteB');
  else if(p==='chaseQteB'&&!state.untimed&&e>=caseDuration())chaseChoice('late');
- else if(p==='chaseFinish'&&done(6))enter('canalEntry');
+ else if(p==='chaseFinish'&&done(6)&&!canRewind())enter('canalEntry');
  else if(p==='tunnelEntry'&&done(6))enter('tunnelQte');
  else if(p==='tunnelQte'&&!state.untimed&&e>=caseDuration())tunnelChoice('late');
- else if(p==='tunnelFinish'&&done(6))enter('canalEntry');
+ else if(p==='tunnelFinish'&&done(6)&&!canRewind())enter('canalEntry');
  else if(p==='canalEntry'&&done(7))enter('canalEnd');
 }
 function roofActions(){
@@ -103,7 +103,7 @@ function caseUI(){
   el.caption.textContent=state.decoded?'The tape said to close the inlet first. Shut off the flood, or pull Bell out immediately.':'Water is climbing. Close the INLET wheel, or pull Bell away from the collapsing platform.';
   button('[1] CLOSE THE INLET',()=>rescue('valve'));button('[2] PULL BELL OUT',()=>rescue('pull'));break;
  case 'pumpResult':
-  el.caption.textContent=state.rescue==='valve'?'Rook shuts the inlet, then helps Bell across. His satchel stays above the water.':state.rescue==='pull'?'Rook pulls Bell onto the walkway. His satchel drops into the torrent.':state.choice==='person'?'Nell throws a line. Rook and Nell haul Bell clear, but the water takes his satchel.':'Bell leaps as the platform breaks. Rook catches his sleeve. His satchel vanishes into the flood.';break;
+  el.caption.textContent=state.rescue==='valve'?'Rook shuts the inlet, then helps Bell across. His satchel stays above the water.':state.rescue==='pull'?'Rook pulls Bell onto the walkway. His satchel drops into the torrent.':state.choice==='person'?'Nell throws a line. Rook and Nell haul Bell clear, but the water takes his satchel.':'Bell leaps as the platform breaks. Rook catches his sleeve. His satchel vanishes into the flood.';rewindActions();break;
  case 'pumpTruth':
   el.caption.textContent=state.rescue==='valve'?'The dry ledger bears Vale\'s signature: the city\'s emergency batteries were sold. Bell caught the theft. The locked room was meant to silence him.':'Bell: "Vale sold the emergency batteries. When I confronted him, he locked me in. The proof was in that satchel. I will say it in court."';
   button('[TAKE BELL TO THE ROOF]',()=>enter('roofEntry'));break;
@@ -125,23 +125,23 @@ function caseUI(){
   el.caption.textContent='Duck under the bottle, or go over the bar and cut the bodyguard off before Vale reaches the back door.';
   button('[1] DUCK',()=>clubChoice('duck'));button('[2] VAULT THE BAR',()=>clubChoice('vault'));break;
  case 'clubResult':
-  el.caption.textContent=state.club==='duck'?'The bottle bursts on the neon behind Rook. Vale is already through the back door and into his car.':state.club==='vault'?'Rook goes over the bar and lands between the bodyguard and the booth. Vale\'s chip case spills across the table. Rook pockets one chip and follows him out.':'The bottle catches Rook\'s shoulder. He is up in a second, but Vale has the back door and a head start.';break;
+  el.caption.textContent=state.club==='duck'?'The bottle bursts on the neon behind Rook. Vale is already through the back door and into his car.':state.club==='vault'?'Rook goes over the bar and lands between the bodyguard and the booth. Vale\'s chip case spills across the table. Rook pockets one chip and follows him out.':'The bottle catches Rook\'s shoulder. He is up in a second, but Vale has the back door and a head start.';rewindActions();break;
  case 'chaseEntry':el.caption.textContent='Rook takes the patrol car. Vale\'s red tail lights race ahead. The empty street gives way to dense elevated traffic.';break;
  case 'chaseQteA':
   el.caption.textContent='A freight carrier swings into Rook\'s lane. The right lane is clear. Brake and lose ground, or dive right to stay close.';
   button('[1] BRAKE',()=>chaseChoice('brake'));button('[2] DIVE RIGHT',()=>chaseChoice('dodge'));break;
- case 'chaseBank':el.caption.textContent=state.firstMove==='dodge'?'Rook swings right and surges past the carrier. Vale is still within reach.':state.firstMove==='brake'?'The patrol car falls back under braking. Rook needs an interception route.':'The patrol car clips the carrier and fishtails. Rook recovers, but Vale has opened a long gap.';break;
+ case 'chaseBank':el.caption.textContent=state.firstMove==='dodge'?'Rook swings right and surges past the carrier. Vale is still within reach.':state.firstMove==='brake'?'The patrol car falls back under braking. Rook needs an interception route.':'The patrol car clips the carrier and fishtails. Rook recovers, but Vale has opened a long gap.';rewindActions();break;
  case 'chaseQteB':
   el.caption.textContent=(state.radio?'The radio marked the lower ramp as clear. ':'The bridge ahead is lifting. ')+(state.gap===0?'Rook is close enough to follow Vale over the gap, or drop down the ramp into the storm drains.':'Vale is too far ahead for a safe jump. The lower service ramp into the storm drains is Rook\'s best chance.');
   button('[1] TAKE THE LOWER RAMP',()=>chaseChoice('ramp'));button('[2] FOLLOW OVER THE GAP',()=>chaseChoice('jump'));break;
  case 'chaseFinish':
-  el.caption.textContent=state.caught?'The patrol car clears the gap. Rook forces Vale to stop at the canal exit.':state.pursuit==='late'?'Rook brakes at the rising bridge. Vale disappears into the towers.':'The gap is already too wide. Rook aborts the jump and brakes hard. Vale gets away.';break;
+  el.caption.textContent=state.caught?'The patrol car clears the gap. Rook forces Vale to stop at the canal exit.':state.pursuit==='late'?'Rook brakes at the rising bridge. Vale disappears into the towers.':'The gap is already too wide. Rook aborts the jump and brakes hard. Vale gets away.';rewindActions();break;
  case 'tunnelEntry':el.caption.textContent='The service ramp drops below the road into the storm drains. Vale\'s tail lights bounce off wet brick, and the sound of two engines fills the tunnel.';break;
  case 'tunnelQte':
   el.caption.textContent=(state.radio?'The bridge operator said the maintenance channel reaches the canal first. ':'')+'The drain forks ahead. Vale takes the right branch under the canal gate.';
   button('[1] FOLLOW RIGHT',()=>tunnelChoice('right'));button('[2] CUT LEFT',()=>tunnelChoice('left'));break;
  case 'tunnelFinish':
-  el.caption.textContent=state.caught?(state.tunnel==='left'?'Rook takes the maintenance channel and bursts out of the canal outfall ahead of Vale. The red car stops with nowhere left to go.':'Rook stays on Vale\'s lights through the right branch and forces him against the canal gate.'):state.tunnel==='late'?'Rook brakes at the fork. Both branches are dark. Vale is gone.':state.tunnel==='left'?'The maintenance channel ends at a locked service gate. By the time Rook backs out, Vale is gone.':'Vale has too much road. His lights vanish under the canal gate.';break;
+  el.caption.textContent=state.caught?(state.tunnel==='left'?'Rook takes the maintenance channel and bursts out of the canal outfall ahead of Vale. The red car stops with nowhere left to go.':'Rook stays on Vale\'s lights through the right branch and forces him against the canal gate.'):state.tunnel==='late'?'Rook brakes at the fork. Both branches are dark. Vale is gone.':state.tunnel==='left'?'The maintenance channel ends at a locked service gate. By the time Rook backs out, Vale is gone.':'Vale has too much road. His lights vanish under the canal gate.';rewindActions();break;
  case 'canalEntry':el.caption.textContent=state.pursuit==='stay'?'Rook stays with Bell and escorts him to the canal-side medics. Dawn catches the windows across the water.':state.caught?'Vale is in custody. Rook returns to Bell as the first light reaches the canal.':'Vale escaped tonight. Rook returns to Bell, who is waiting beside the canal with the medics.';break;
  case 'canalEnd':
   el.caption.textContent=state.caught?'Bell is alive. Vale is in custody. As the station lamps go dark, this time it is only because morning has arrived.':state.pursuit==='stay'?'Bell is alive, and his testimony is on record. The search for Vale continues. Rook has brought the missing man home.':'Bell is alive. Vale remains at large, but his secret is out. The missing-person case is closed; the warrant is just beginning.';
@@ -149,14 +149,24 @@ function caseUI(){
   button('[RETURN TO MENU]',openMenu);break;
  }
 }
+// What Rook is doing right now, for the header.
+function objective(){
+ const s=sceneName;
+ if(s==='office')return 'A MISSING LAMPLIGHTER';
+ if(s==='street'||s==='station')return 'FIND BELL';
+ if(s==='pump')return reached('pumpResult')?'GET BELL TO SAFETY':'GET BELL OUT';
+ if(s==='roof')return 'VALE, OR BELL';
+ if(s==='club'||s==='chase'||s==='tunnel')return 'CATCH VALE';
+ return state.phase==='canalEnd'?'CASE CLOSED':'FIRST LIGHT';
+}
 function reel(name){
  session.mode='preview';session.menu=false;session.confirmNew=false;reset();
  if(name==='street'){chapterCard();return;}
- if(name==='office'){enter('officeEntry');return;}
+ if(name==='office'){enter('officeEntry',true);return;}
  Object.assign(state,{choice:'person',decoded:true,watched:true,rescue:'valve',clues:['Scene preview: Bell\'s trail leads from the station to Pump Room 4.']});
- if(name==='club'){state.pursuit='chasing';enter('clubEntry');return;}
- if(name==='chase'){state.radio=true;state.pursuit='chasing';startChase();return;}
- if(name==='tunnel'){state.radio=true;state.pursuit='ramp';state.gap=1;state.distance=20;state.phaseDistance=20;enter('tunnelEntry');return;}
+ if(name==='club'){state.pursuit='chasing';enter('clubEntry',true);return;}
+ if(name==='chase'){state.radio=true;state.pursuit='chasing';state.distance=20;state.phaseDistance=20;enter('chaseEntry',true);return;}
+ if(name==='tunnel'){state.radio=true;state.pursuit='ramp';state.gap=1;state.distance=20;state.phaseDistance=20;enter('tunnelEntry',true);return;}
  if(name==='canal'){state.caught=true;state.pursuit='ramp';}
- enter(name+'Entry');
+ enter(name+'Entry',true);
 }

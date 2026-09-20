@@ -4,7 +4,7 @@ function createSaveStore(storage, validPhases) {
  const phases=new Set(validPhases);
  const booleans=['watched','wrong','decoded','radio','twist','caught','endingSeen'];
  const enums={choice:['','person','book','missed'],rescue:['','valve','pull','late'],pursuit:['','chasing','stay','ramp','jump','late'],firstMove:['','dodge','brake','late'],club:['','duck','vault','late'],tunnel:['','right','left','late']};
- const numbers={t:[0,86400],distance:[0,950],phaseDistance:[0,950],gap:[0,2]};
+ const numbers={t:[0,86400],distance:[0,950],phaseDistance:[0,950],gap:[0,2],rewinds:[0,3]};
  let memory=null,settingsMemory=null,recordsMemory=null,durable=true;
  const copy=v=>v===null?null:JSON.parse(JSON.stringify(v));
  const get=key=>{try{return storage?.getItem(key)||null;}catch(e){durable=false;return null;}};
@@ -16,11 +16,11 @@ function createSaveStore(storage, validPhases) {
   for(const key of booleans){if(raw[key]!==undefined&&typeof raw[key]!=='boolean')return null;result[key]=raw[key]??false;}
   for(const [key,values] of Object.entries(enums)){if(raw[key]!==undefined&&!values.includes(raw[key]))return null;result[key]=raw[key]??'';}
   for(const [key,[min,max]] of Object.entries(numbers)){
-   const value=raw[key]??(key==='distance'||key==='phaseDistance'?20:0);
+   const value=raw[key]??(key==='distance'||key==='phaseDistance'?20:key==='rewinds'?3:0);
    if(typeof value!=='number'||!Number.isFinite(value)||value<min||value>max)return null;
    result[key]=value;
   }
-  if(!Number.isInteger(result.gap))return null;
+  if(!Number.isInteger(result.gap)||!Number.isInteger(result.rewinds))return null;
   return result;
  }
  function load(){

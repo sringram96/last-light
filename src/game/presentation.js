@@ -97,21 +97,21 @@ function reflexes(){
  return{faced,hits,grade:!faced?'-':hits===faced?'A':hits/faced>=.75?'B':hits/faced>=.5?'C':'D'};
 }
 const endings=[['arrest-ledger','THE CLEAN ARREST'],['arrest-word','WORD AGAINST WORD'],['home','THE LAMPLIGHTER HOME'],['paper','THE PAPER TRAIL'],['dark','A VOICE IN THE DARK']];
-const discoveries=[['observe',"Studied the courier's limp"],['witness','Made Nell a witness'],['record','Read the intact dispatch entry'],['tape','Decoded the maintenance tape'],['ledger',"Recovered Vale's signed ledger"],['band','Heard the bridge operator'],['confession',"Recorded Nell's confession"],['ramp','Cut Vale off on the service ramp'],['jump','Cleared the lifting bridge'],['chip','Pocketed a Filament chip'],['undercity','Ran Vale down in the storm drains']];
+const discoveries=[['observe',"Studied the courier's limp"],['witness','Made Nell a witness'],['record','Read the intact dispatch entry'],['tape','Decoded the maintenance tape'],['ledger',"Recovered Vale's signed ledger"],['band','Heard the bridge operator'],['confession',"Recorded Nell's confession"],['ramp','Cut Vale off on the service ramp'],['jump','Cleared the lifting bridge'],['chip','Pocketed a Filament chip'],['undercity','Ran Vale down in the storm drains'],['flawless','Closed the case without a rewind']];
 function endingId(){
  if(state.pursuit==='stay')return 'home';
  const ledger=state.rescue==='valve';
  return state.caught?(ledger?'arrest-ledger':'arrest-word'):(ledger?'paper':'dark');
 }
 function discovered(){
- const found={observe:state.watched,witness:state.choice==='person',record:state.choice==='book',tape:state.decoded,ledger:state.rescue==='valve',band:state.radio,confession:state.twist,ramp:state.pursuit==='ramp'&&state.caught&&state.tunnel==='left',jump:state.pursuit==='jump'&&state.caught,chip:state.club==='vault',undercity:state.pursuit==='ramp'&&state.caught};
+ const found={observe:state.watched,witness:state.choice==='person',record:state.choice==='book',tape:state.decoded,ledger:state.rescue==='valve',band:state.radio,confession:state.twist,ramp:state.pursuit==='ramp'&&state.caught&&state.tunnel==='left',jump:state.pursuit==='jump'&&state.caught,chip:state.club==='vault',undercity:state.pursuit==='ramp'&&state.caught,flawless:state.rewinds===3};
  return discoveries.filter(([id])=>found[id]).map(([id])=>id);
 }
 function recordCase(){saveStore.record({ending:endingId(),discoveries:discovered()});}
 function caseReport(){
  const r=reflexes(),name=endings.find(([id])=>id===endingId())[1];
  const found=session.mode==='preview'?'preview':saveStore.readRecords().endings.length+'/'+endings.length+' found';
- return 'ENDING: '+name+' ('+found+'). Reflex '+r.hits+'/'+r.faced+', grade '+r.grade+'.';
+ return 'ENDING: '+name+' ('+found+'). Reflex '+r.hits+'/'+r.faced+', grade '+r.grade+', rewinds used '+(3-state.rewinds)+'.';
 }
 function renderRecords(){
  if(!hud.records)return;
@@ -138,7 +138,7 @@ function presentUI(){
  el.caption.replaceChildren();el.caption.appendChild(typedText);el.caption.appendChild(veiledText);typeCaption();
  if(hud.route)hud.route.textContent=routeSteps().join('  >  ')||'The case begins.';
  if(hud.board){hud.board.replaceChildren();for(const text of boardEntries()){const li=document.createElement('li');li.textContent=text;hud.board.appendChild(li);}}
- const r=reflexes();if(hud.score)hud.score.textContent=r.faced?'REFLEX '+r.hits+'/'+r.faced+' // ':'';
+ const r=reflexes();if(hud.score)hud.score.textContent=(r.faced?'REFLEX '+r.hits+'/'+r.faced+' // ':'')+(session.menu||state.phase==='brief'&&session.mode!=='story'?'':'REWIND x'+state.rewinds+' // ');
  if(hud['records-box'])hud['records-box'].hidden=!session.menu;
  if(session.menu){renderRecords();if(cardTone!=='title')card('LAST LIGHT','title',Infinity);}
  else if(cardTone==='title')clearCard();

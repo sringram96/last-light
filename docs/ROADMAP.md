@@ -6,6 +6,8 @@ Completed: repository structure, dependency-free build and local development ser
 
 Also completed: the game presentation layer. Block-letter chapter cards and action stingers, a warning card before each reaction, typed narration, arrow-key reflex input, a reflex tally, reaction times and a closing grade, the case file (route taken, persons of interest, evidence), persistent case records with five endings and eleven discoveries, and optional synthesized sound.
 
+Also completed: fluid scene transitions (exit beat, connecting line, ASCII dissolve, fade-up), three rewinds per case in the Dragon's Lair sense, and an objective in the header.
+
 Also completed: three new sets with their own camera work. A Night Division office prologue cutscene, The Filament club with a bottle-throw prompt and a new evidence item, and the Undercity storm-drain chase reached from the lower ramp. Close-up character sprites no longer duplicate facial details.
 
 ## 0.3 — Detective interaction

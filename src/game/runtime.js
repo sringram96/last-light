@@ -132,6 +132,12 @@ function render(){
  }
  if(['evidence','deduce'].includes(state.phase)&&state.choice==='book'&&cast.book)worldLabel([cast.book.x,cast.book.y+.12,cast.book.z-.1],'P4',6);
  }else caseLabels();
+ // Dissolve: colours dim and heavy glyphs thin out, so a scene change sinks into the dark the way the art itself does with distance.
+ if(fade<1)for(let i=0;i<W*H;i++){
+  const g=chars[i];if(g===' ')continue;
+  const level=ink[i]%20;ink[i]=ink[i]-level+Math.round(level*fade);
+  if(fade<.15)chars[i]=' ';else if(fade<.35)chars[i]='.';else if(fade<.6&&(g==='#'||g==='@'||g==='%'||g==='&'||g==='H'))chars[i]='+';
+ }
  const colors=state.mono?gray:palettes;
  ctx.fillStyle='#03070b';ctx.fillRect(0,0,canvas.width/dpr,canvas.height/dpr);ctx.font=(cw/.6)+'px "Liberation Mono",Consolas,monospace';ctx.textBaseline='top';
  let current=-1;for(let y=0;y<H;y++)for(let x=0;x<W;x++){const i=y*W+x,g=chars[i];if(g===' ')continue;if(ink[i]!==current){current=ink[i];ctx.fillStyle=colors[current];}ctx.fillText(g,x*cw,y*ch);}
@@ -143,7 +149,18 @@ function button(text,fn){
  const b=document.createElement('button');b.type='button';b.className='cursor-interaction';b.textContent=text;b.disabled=state.paused;
  const action=()=>{if(!state.paused&&!b.disabled)fn();};b.addEventListener('click',action);el.actions.appendChild(b);keys.push(action);
 }
-function enter(phase){
+// A scene change plays an exit beat and a dissolve before the next set fades up; previews, resumes and reduced motion cut directly.
+let transit=null,fade=1,fadeIn=0;
+function enter(phase,direct=false){
+ if(transit&&!direct)return;
+ const target=sceneFor(phase);
+ if(!direct&&!reduce&&target!==sceneName&&state.phase!=='brief'){
+  transit={phase,t:0,shot:exitShot(sceneName),caption:transitionLine(sceneName,target)};
+  transitionFrom={...camera};ui();render();return;
+ }
+ transit=null;enterNow(phase);
+}
+function enterNow(phase){
  const scene=sceneName,wasEndingSeen=state.endingSeen;
  transitionFrom={...camera};state.phase=phase;state.event=0;
  caseEnter(phase);
@@ -154,15 +171,29 @@ function enter(phase){
   else addClue('The dispatch pages are ruined. PUMP ROOM 4 is embossed into the cover.');
  }
  if(reduce)pose();
+ if(sceneName!==scene&&!reduce&&fade<1){fadeIn=.8;}
  presentEnter(phase,sceneName!==scene,wasEndingSeen);
  ui();render();checkpoint();
+}
+// Dragon's Lair lives: a missed move can be rewound to its windup, three times per case.
+const missBeats={result:{miss:()=>state.choice==='missed',back:'danger',next:'evidence',reset:()=>{state.choice='';}},pumpResult:{miss:()=>state.rescue==='late',back:'pumpDanger',next:'pumpTruth',reset:()=>{state.rescue='';}},clubResult:{miss:()=>state.club==='late',back:'clubFace',next:'chase',reset:()=>{state.club='';}},chaseBank:{miss:()=>state.firstMove==='late',back:'chaseQteA',next:'chaseQteB',reset:()=>{state.firstMove='';state.gap=0;}},chaseFinish:{miss:()=>state.pursuit==='late',back:'chaseQteB',next:'canalEntry',reset:()=>{state.pursuit='chasing';state.caught=false;}},tunnelFinish:{miss:()=>state.tunnel==='late',back:'tunnelQte',next:'canalEntry',reset:()=>{state.tunnel='';state.caught=false;}}};
+function canRewind(){const b=missBeats[state.phase];return !!b&&b.miss()&&state.rewinds>0;}
+function rewind(){
+ const b=missBeats[state.phase];if(!canRewind())return;
+ state.rewinds--;b.reset();state.reaction=0;card('REWIND','hit',1.4);cue('clue');enter(b.back);
+}
+function rewindActions(){
+ if(!canRewind())return;
+ const b=missBeats[state.phase];
+ button('[REWIND THE MOMENT / '+state.rewinds+' LEFT]',rewind);button('[CARRY ON]',()=>b.next==='chase'?startChase():enter(b.next));
 }
 function choose(id){if(state.phase!=='qte'||state.paused)return;state.choice=id;enter('result');}
 function deduce(correct){
  if(correct){enter('arrival');return;}state.wrong=true;ui();
 }
 function reset(){
- Object.assign(state,{t:0,paused:false,mono:state.mono,travel:0,moving:false,phase:'brief',event:0,watched:false,choice:'',untimed:state.untimed,clues:[],wrong:false,decoded:false,radio:false,twist:false,rescue:'',gap:0,pursuit:'',caught:false,distance:20,endingSeen:false,firstMove:'',phaseDistance:20,club:'',tunnel:'',reaction:0});
+ Object.assign(state,{t:0,paused:false,mono:state.mono,travel:0,moving:false,phase:'brief',event:0,watched:false,choice:'',untimed:state.untimed,clues:[],wrong:false,decoded:false,radio:false,twist:false,rescue:'',gap:0,pursuit:'',caught:false,distance:20,endingSeen:false,firstMove:'',phaseDistance:20,club:'',tunnel:'',reaction:0,rewinds:3});
+ transit=null;fade=1;fadeIn=0;
  setScene('street');
  Object.assign(camera,startShot);transitionFrom={...startShot};el.journal.open=false;lastTime=0;ui();render();
 }
@@ -170,6 +201,7 @@ function timer(){
  el.timer.className='lc-timer';
  if(session.menu){el.timer.textContent='';return;}
  if(state.paused){el.timer.textContent='PAUSED';return;}
+ if(transit){el.timer.textContent='LIVE';return;}
  if(['watch','stationListen','roofListen'].includes(state.phase))el.timer.textContent='OBSERVING / '+Math.max(0,Math.ceil(8-state.event))+'s';
  else if(isQte()){
   const left=Math.max(0,caseDuration()-state.event),n=Math.ceil(left/caseDuration()*10);
@@ -201,7 +233,8 @@ function ui(){
   el.caption.textContent='Catch the courier, or save the dispatch book before the rain destroys it.';
   button('[1] CATCH THE COURIER',()=>choose('person'));button('[2] SAVE THE BOOK',()=>choose('book'));break;
  case 'result':
-  el.caption.textContent=state.choice==='person'?'Rook catches the courier. The book hits the wet street; ink begins to run.':state.choice==='book'?'Rook saves the book. The courier catches their balance and limps away toward the station.':'Rook reaches too late. The book falls into the water, and the courier limps away.';break;
+  el.caption.textContent=state.choice==='person'?'Rook catches the courier. The book hits the wet street; ink begins to run.':state.choice==='book'?'Rook saves the book. The courier catches their balance and limps away toward the station.':'Rook reaches too late. The book falls into the water, and the courier limps away.';
+  rewindActions();break;
  case 'evidence':
   el.caption.textContent=state.choice==='person'?'Nell: "Bell is alive. Pump Room 4, below the station. Knock three times. I will take you."':state.choice==='book'?'The page is fresh: "00:17 / I. BELL / PUMP ROOM 4 / JOB OPEN." The station is still being used.':'The rain has erased the entries. The cover still reads "PUMP ROOM 4." It is a lead, without a name or time.';
   button('[CONNECT THE CLUE]',()=>enter('deduce'));break;
@@ -216,6 +249,7 @@ function ui(){
   button('[ENTER THE STATION]',()=>enter('stationEntry'));break;
  default:caseUI();break;
  }
+ if(transit&&!session.menu){el.actions.replaceChildren();keys=[];if(transit.caption)el.caption.textContent=transit.caption;}
  el.pause.disabled=session.menu;
  const menuButton=root.querySelector('.lc-menu');if(menuButton)menuButton.hidden=session.menu;
  const reelDetails=root.querySelector('.lc-reel');if(reelDetails)reelDetails.hidden=!session.menu;
@@ -225,7 +259,7 @@ function ui(){
  el.mono.textContent=state.mono?'[COLOR]':'[MONO]';el.mono.setAttribute('aria-pressed',String(state.mono));
  const sceneDescriptions={office:'A small night-shift office: a desk lamp, a case board, filing cabinets and a rain-streaked window over the city.',street:'A dense 3D ASCII night street, warm lamps and wet tram tracks.',station:'A vaulted station hall, tiled floor, columns, warm pendant lamps and a maintenance desk.',pump:'A flooded machinery chamber. Bell is on a platform and Rook stands by the inlet wheel.',roof:'A high rooftop overlooking deep city streets and flying traffic.',club:'A neon-lit club with velvet curtains, a stage, a long bar, candlelit tables and a booth at the back.',chase:'Rook\'s cyan patrol car pursues Vale\'s red car along an elevated road.',tunnel:'A brick storm drain under the city, lit by emergency neon, with two cars racing through it.',canal:'A quiet canal at first light. Rook and Bell stand near a medical vehicle.'};
  canvas.setAttribute('aria-label',sceneDescriptions[sceneName]+' '+el.caption.textContent);
- const chapter=root.querySelector('.lc-chapter');if(chapter)chapter.textContent=(session.mode==='preview'?'PREVIEW / ':'')+{office:'00 / NIGHT DIVISION',street:'01 / STATION ROAD',station:'02 / CONCOURSE',pump:'03 / PUMP ROOM',roof:'04 / ROOFTOP',club:'05 / THE FILAMENT',chase:'06 / PURSUIT',tunnel:'07 / UNDERCITY',canal:'08 / FIRST LIGHT'}[sceneName];
+ const chapter=root.querySelector('.lc-chapter');if(chapter)chapter.textContent=(session.mode==='preview'?'PREVIEW / ':'')+{office:'00 / NIGHT DIVISION',street:'01 / STATION ROAD',station:'02 / CONCOURSE',pump:'03 / PUMP ROOM',roof:'04 / ROOFTOP',club:'05 / THE FILAMENT',chase:'06 / PURSUIT',tunnel:'07 / UNDERCITY',canal:'08 / FIRST LIGHT'}[sceneName]+(session.menu?'':' // '+objective());
  presentUI();
  timer();
 }
@@ -260,15 +294,24 @@ function tick(now){
  }else if(!state.paused&&visible&&!document.hidden){
   if(!reduce)state.t+=dt;
   presentTick(dt);
-  if(!(isQte()&&state.untimed))state.event+=dt;
-  if(extended())caseAdvance(dt);
-  pose();
-  if(state.phase==='watch'&&state.event>=8)enter('ready');
-  else if(state.phase==='follow'&&state.event>=(reduce?1:8))enter('danger');
-  else if(state.phase==='danger'&&state.event>=2)enter('qte');
-  else if(state.phase==='qte'&&!state.untimed&&state.event>=qteDuration())choose('missed');
-  else if(state.phase==='result'&&state.event>=4)enter('evidence');
-  else if(state.phase==='arrival'&&state.event>=(reduce?1:7))enter('ending');
+  if(transit){
+   // Exit beat: glide toward the way out, then dissolve. The next set fades up once the picture is dark.
+   transit.t+=dt;const u=smooth(clamp(transit.t/1.4,0,1));
+   for(const k of Object.keys(camera))camera[k]=mix(transitionFrom[k],transit.shot[k],u);
+   fade=clamp(1-(transit.t-.8)/.6,0,1);
+   if(transit.t>=1.4){const next=transit.phase;transit=null;fade=0;enterNow(next);}
+  }else{
+   if(fadeIn>0){fadeIn=Math.max(0,fadeIn-dt);fade=1-fadeIn/.8;}else fade=1;
+   if(!(isQte()&&state.untimed))state.event+=dt;
+   if(extended())caseAdvance(dt);
+   pose();
+   if(state.phase==='watch'&&state.event>=8)enter('ready');
+   else if(state.phase==='follow'&&state.event>=(reduce?1:8))enter('danger');
+   else if(state.phase==='danger'&&state.event>=2)enter('qte');
+   else if(state.phase==='qte'&&!state.untimed&&state.event>=qteDuration())choose('missed');
+   else if(state.phase==='result'&&state.event>=4&&!canRewind())enter('evidence');
+   else if(state.phase==='arrival'&&state.event>=(reduce?1:7))enter('ending');
+  }
   if(now-lastFrame>66){if(!reduce)render();else timer();lastFrame=now;}
  }
  requestAnimationFrame(tick);
@@ -278,5 +321,5 @@ const reelBox=root.querySelector('.lc-reel-actions');if(reelBox){reelBox.replace
 new ResizeObserver(resize).observe(canvas);
 if(typeof IntersectionObserver!=='undefined')new IntersectionObserver(es=>{visible=es[0].isIntersecting&&es[0].intersectionRatio>.15;lastTime=0;},{threshold:.15}).observe(canvas);
 requestAnimationFrame(tick);
-root.cinemaAudit=()=>({state:JSON.parse(JSON.stringify(state)),session:{...session},scene:sceneName,camera:{...camera},columns:W,rows:H,frame,cast:blocking(),nonASCII:chars.filter(g=>g.charCodeAt(0)<32||g.charCodeAt(0)>126).length,card:cardText,route:routeSteps(),board:boardEntries(),reflex:reflexes(),records:saveStore.readRecords(),sprites:spriteRects.map(r=>({...r}))});
+root.cinemaAudit=()=>({state:JSON.parse(JSON.stringify(state)),session:{...session},scene:sceneName,camera:{...camera},columns:W,rows:H,frame,cast:blocking(),nonASCII:chars.filter(g=>g.charCodeAt(0)<32||g.charCodeAt(0)>126).length,card:cardText,route:routeSteps(),board:boardEntries(),reflex:reflexes(),records:saveStore.readRecords(),sprites:spriteRects.map(r=>({...r})),transit:transit?{phase:transit.phase,t:transit.t}:null,fade,objective:objective()});
 })();

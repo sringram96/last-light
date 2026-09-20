@@ -279,6 +279,18 @@ function caseGeometry(){
  }
  return caseBlocking();
 }
+// Leaving a set: the camera glides toward its exit before the picture dissolves, and one line explains the move.
+function exitPoint(name){
+ return {office:[-6.5,1.5,-5.8],street:[-4.9,1.3,38.7],station:[0,2,43.8],pump:[6.15,5,31.1],roof:[-9.5,1.5,3.1],club:[11.85,1.8,18],chase:[0,1,camera.z+40],tunnel:[0,1,camera.z+40]}[name]||null;
+}
+function exitShot(name){
+ const e=exitPoint(name);if(!e)return{...camera};
+ const mv=/chase|tunnel/.test(name)?.6:.35;
+ return look(camera.x+(e[0]-camera.x)*mv,camera.y,camera.z+(e[2]-camera.z)*mv,e[0],e[1],e[2]);
+}
+function transitionLine(from,to){
+ return {'office>street':'Rook takes the stairs down to Station Road. The rain has not let up.','street>station':'Three knocks, or a shoulder. Either way, the hatch gives.','station>pump':'Down the service ladder, toward the knocking.','pump>roof':'Up the service stair, Bell\'s arm over Rook\'s shoulder.','roof>club':'Down the service lift. Across the street, The Filament\'s sign flickers.','roof>canal':'Rook stays. The medic\'s van takes them both to the canal-side post.','club>chase':'Out the back door and into the patrol car. Vale\'s tail lights are already moving.','chase>tunnel':'The service ramp drops away beneath the road.','chase>canal':'First light finds the canal.','tunnel>canal':'The outfall opens onto the canal. First light.'}[from+'>'+to]||'';
+}
 // The fork is fixed where the prompt began, so the pier does not move when the finish phase resets the phase distance.
 let tunnelFork=0;
 function forkZ(){return tunnelFork||(state.phaseDistance||state.distance)+30;}
