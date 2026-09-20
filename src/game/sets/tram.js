@@ -9,10 +9,10 @@ const TRAM_FAR=1200,TRAM_GROUND=-6,TRAM_BAY=24;
 const tramArch=()=>state.phaseDistance+43;
 // Buildings from cityRow/building stand on the district's ground, six units under the viaduct.
 function tramSunk(from){for(let i=from;i<surfaces.length;i++){const s=surfaces[i];if(s.mat.kind==='building'||s.mat.kind==='stone'){for(const v of s.v)v[1]+=TRAM_GROUND;s.mat={...s.mat,baseY:TRAM_GROUND};}}}
-// A lamp post on the viaduct: dark glass on its head until the market's district, then a lamp with a pool.
+// A lamp post on the viaduct: an unlit blue lantern on its head until the market's district, then a lamp with a pool.
 function tramPost(x,z,lit){
  box(x-.055,.5,z-.055,x+.055,4.6,z+.055,mat('metal'));
- box(x-.3,4.15,z-.3,x+.3,4.7,z+.3,lit?mat('lamp',2):mat('ceiling',4));box(x-.45,4.7,z-.45,x+.45,4.82,z+.45,mat('metal'));
+ box(x-.3,4.15,z-.3,x+.3,4.7,z+.3,lit?mat('lamp',2):mat('blind',4));box(x-.45,4.7,z-.45,x+.45,4.82,z+.45,mat('metal'));
  if(lit)lamps.push([x,z]);
 }
 // Market Arch: the elevated road crossing overhead on column piers, the lamplighter's lamps hung beneath it, the market
@@ -58,7 +58,7 @@ registerSet('tram',{
  // High and behind, dropping: the lift's descent continued.
  start(){const d=state.distance;return look(.6,6.8,d-14,1.35,3.6,d+20);},
  shot(p){
-  const d=state.distance,back=look(2.4,5.2,d+1,10,-.6,d-24);
+  const d=state.distance,back=look(2,5.4,d+1,10,-.6,d-24);
   if(p==='tramRide'||p==='tramWatch')return back;
   // Hold on the road for two seconds, then turn forward as the district comes up.
   if(p==='tramSpotted')return tramMix(back,look(.6,4.3,d-4,1.35,2,d+70),smooth(clamp((state.event-2)/4,0,1)));
