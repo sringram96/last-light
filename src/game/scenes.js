@@ -313,8 +313,9 @@ function caseBlocking(){
   if(p==='clubQte'||(p==='clubResult'&&state.club==='duck'))rook={x:.5,z:9,pose:'crouch'};
   if(p==='clubResult'&&state.club==='vault')rook={x:mix(.5,7.4,v),z:mix(9,12.4,v),pose:v<1?'walk':'reach'};
   if(p==='clubResult'&&state.club==='late')rook={x:.5,z:9,pose:'crouch',lean:.3*(1-v)};
-  const vale=p==='clubResult'?{x:mix(9,11,v),z:mix(14,18,v),pose:'walk',who:'vale'}:{x:9,z:14,pose:'stand',who:'vale'};
-  const guard=['clubFace','clubQte'].includes(p)?{x:6.5,z:11,pose:'throw',who:'krane'}:{x:6.5,z:11.5,pose:'stand',who:'krane'};
+  // In the result Vale goes out through the open back door to his car and Krane follows, clearing the doorway.
+  const vale=p==='clubResult'?{x:mix(9,12.6,v),z:mix(14,18.4,v),pose:'walk',who:'vale'}:{x:9,z:14,pose:'stand',who:'vale'};
+  const guard=['clubFace','clubQte'].includes(p)?{x:6.5,z:11,pose:'throw',who:'krane'}:p==='clubResult'?{x:mix(6.5,10.2,v),z:mix(11.5,17.2,v),pose:'walk',who:'krane'}:{x:6.5,z:11.5,pose:'stand',who:'krane'};
   others.push(vale,guard,{x:-5,z:5.5,pose:'stand',hue:4,who:'patron'},{x:-2.5,z:10.5,pose:'stand',hue:0,who:'patron'},{x:2.6,z:7.5,pose:'stand',hue:4,who:'patron'},{x:0,y:.8,z:18.5,pose:'stage',who:'performer'});
  }
  return{rook,courier,book:null,others};
@@ -494,7 +495,7 @@ function caseLabels(){
   const p=state.phase,v=chasePos.vale,f=chasePos.freight;
   if(v)worldLabel([v.x,v.y+3.3,v.z],'VALE',3);
   if(f&&(p==='chaseQteA'||p==='chaseEntry'&&state.event>=4))worldLabel([f.x,3.0,f.z],'FREIGHT',2);
-  if(p==='chaseQteB')worldLabel([0,6.4,state.distance+29],'BRIDGE UP',2);
+  if(p==='chaseQteB')worldLabel([0,6.9,state.distance+29],'BRIDGE UP',2);
   if(['chaseQteB','chaseFinish'].includes(p))worldLabel([44,-2.2,(p==='chaseFinish'?(state.phaseDistance||state.distance)+26:state.distance+29)+30.5],'SUBSTATION 9',1);
  }
  if(sceneName==='canal')worldLabel([7.4,3.3,20.2],'CITY MEDIC',2);
