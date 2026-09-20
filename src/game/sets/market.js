@@ -42,7 +42,7 @@ registerSet('market',{
   for(const z of MARKET_STALLS)for(const side of [-1,1]){
    const base=y(z+1.2),near=z===2,inner=side*(near?3.4:z===6&&side<0?5:4.1),outer=side*(near?5.8:6.5);
    const x0=Math.min(inner,outer),x1=Math.max(inner,outer),hue=((z/4)|0)%2?2:3;
-   box(x0,base,z,x1,base+2.2,z+2.4,((z/4)|0)%2?{kind:'kiosk',hue:1,baseY:base+.85}:mat('wood',2));
+   box(x0,base,z,x1,base+2.2,z+2.4,((z/4)|0)%2?mat('wood',2):{kind:'kiosk',hue:1,baseY:base+.85});
    const over=near?0:1.4,ax0=side<0?x0:inner-over,ax1=side<0?inner+over:x1,az1=side>0&&z>=10&&z<38?z+3.9:z+2.5;
    box(ax0,base+2.3,z-.1,ax1,base+2.55,az1,mat('awning',hue));
    if(((z/4)|0)%3===0)box(x0+.3,base+2.55,z+.6,x1-.3,base+3.1,z+1.8,mat('poster',2));

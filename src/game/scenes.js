@@ -26,7 +26,7 @@ function stationSet(){
  box(-2.3,0,18.7,2.3,1.15,20.4,mat('wood',2));box(-1.9,1.15,19,1.9,1.24,20.2,mat('dispatch',6));
  box(-.8,1.24,19.5,.8,1.7,20,mat('console',1));box(.15,1.24,19.12,.65,1.26,19.48,mat('paper',6));
  // The tape reader on the console: a steel unit whose two reels turn on its face (drawn per frame), the tape strung between them.
- box(-.75,1.7,19.55,.75,2.35,19.95,mat('metal'));box(-.22,2.0,19.53,.22,2.03,19.55,mat('paper',6));
+ box(-.8,1.7,19.55,.8,2.42,19.95,mat('metal'));box(-.22,2.04,19.53,.22,2.07,19.55,mat('paper',6));
  // The departures board over the desk.
  box(-2,4.2,20.9,2,5.2,21.1,mat('screen',1));for(const x of [-1.75,1.75])box(x-.05,5.2,20.95,x+.05,10,21.05,mat('metal'));
  for(const x of [-10,10])box(x-.9,3,15,x+.9,6,15.2,mat('poster',2));
@@ -487,7 +487,7 @@ function tunnelVale(){
 }
 function caseLabels(){
  const set=sets[sceneName];if(set){if(set.labels)set.labels(state.phase);return;}
- if(sceneName==='station'){worldLabel([0,6.3,43.2],'PUMP ROOM 4',2);worldLabel([0,2.2,19.1],'MAINTENANCE',2);if(state.phase==='stationQuiet')worldLabel([.4,1.7,19.3],'ORDER 7731',6);}
+ if(sceneName==='station'){worldLabel([0,6.3,43.2],'PUMP ROOM 4',2);worldLabel([0,2.9,19.1],'MAINTENANCE',2);if(state.phase==='stationQuiet')worldLabel([.4,1.7,19.3],'ORDER 7731',6);}
  if(sceneName==='pump'){worldLabel([-2.1,1.6,12.2],'INLET',2);if(!['pumpResult','pumpTruth'].includes(state.phase))worldLabel([4.8,3.9,17.7],'BELL',2);if(state.phase==='pumpQte'){worldLabel([-1.25,2.15,11.8],'[1]',2);worldLabel([4.8,4.5,17.7],'[2]',2);}}
  if(sceneName==='roof'){worldLabel([0,3.2,17],'RADIO',2);if(state.phase==='roofQuiet')worldLabel([-30,-6.9,58],'THE FILAMENT',3);}
  if(sceneName==='chase'){
