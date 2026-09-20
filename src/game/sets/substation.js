@@ -151,7 +151,7 @@ registerSet('substation',{
   const held=p==='subResult'&&state.hall==='breaker',burnt=p==='subResult'&&!held;
   if(!held&&!(burnt&&flat))tipBox(2.45,2.05,38.7,2.5,2.55,39.05,mat('paper',6),a);
   if(burnt&&flat){const s=1-clamp((state.event-.6)/3.5,0,1)*.85;box(-.45-.2*s,2,37.1-.2*s,-.45+.2*s,2+.4*s,37.1+.2*s,mat('tail',3));}
-  if(held&&Math.min(1,span(4)*3)>=1)box(.55,1.15,35.95,.58,1.6,36.3,mat('paper',6));
+  if(held&&(reduce||span(4)>=.6))box(.55,1.15,35.95,.58,1.6,36.3,mat('paper',6));
   // Arcs where the cells split: on the fallen rack and across the wet floor at its near end.
   if(burnt&&flat){box(-2.1,1.9,37.1,-1.5,2.25,37.9,mat('arc',6));box(-2.1,1.9,40.1,-1.5,2.25,40.9,mat('arc',6));box(1.1,1.9,36.35,1.9,2.25,36.75,mat('arc',6));box(-1.8,.02,35.5,-1.2,.25,35.85,mat('arc',6));}
   // The van on the dock, backed up to the door; it pulls away after the breaker or the miss and is gone by the dawn.
