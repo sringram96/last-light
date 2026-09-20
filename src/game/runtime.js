@@ -172,6 +172,8 @@ function geometry(){
 }
 let spriteRects=[];
 function render(){
+ // A scene change between grid densities (the menu and a story set) re-sizes first; resize() renders once it has the grid.
+ if((sets[sceneName]?.density||1)!==densityFor){resize();return;}
  if(!W||!H)return;frame++;zbuf.fill(Infinity);chars.fill(' ');ink.fill(0);spriteRects=[];labelRects=[];
  sy=Math.sin(camera.yaw);cy=Math.cos(camera.yaw);sp=Math.sin(camera.pitch);cp=Math.cos(camera.pitch);
  const cast=geometry();
@@ -181,7 +183,8 @@ function render(){
  }
  // Rain is rendered before people, so it does not cover their faces. Sets say where it falls (the office only beyond the window).
  const rainHere=sets[sceneName]?sets[sceneName].rain:['street','roof','chase','canal'].includes(sceneName)?true:sceneName==='office'?(x,z)=>z>16.6:false;
- if(rainHere)for(let i=0;i<125;i++){
+ const drops=sets[sceneName]?.rainDensity||125;
+ if(rainHere)for(let i=0;i<drops;i++){
   const x=hash(i,3)*22-11,z=camera.z+hash(i,7)*37,y=fract(hash(i,11)-state.t*.25)*16,p=cam([x,y,z]);if(p.z<.4||(typeof rainHere==='function'&&!rainHere(x,z)))continue;
   const q=project(p);pixel(q.x,q.y,p.z,'/',7*20+7);
  }
@@ -206,7 +209,13 @@ function render(){
  }
  const colors=state.mono?gray:palettes;
  ctx.fillStyle='#03070b';ctx.fillRect(0,0,canvas.width/dpr,canvas.height/dpr);ctx.font=(cw/.6)+'px "Liberation Mono",Consolas,monospace';ctx.textBaseline='top';
+ if(density>1){
+  // The dense grid draws each run of equal ink as one string (runs of up to 24 cells, so a font whose advance is not
+  // exactly 0.6 em drifts by less than a tenth of a cell). Story sets keep the cell-by-cell draw the reference test reads.
+  let current=-1;for(let y=0;y<H;y++)for(let x=0;x<W;){const i=y*W+x,g=chars[i];if(g===' '){x++;continue;}const k=ink[i];let run=g,n=1;while(n<24&&x+n<W&&ink[i+n]===k&&chars[i+n]!==' '){run+=chars[i+n];n++;}if(k!==current){current=k;ctx.fillStyle=colors[k];}ctx.fillText(run,x*cw,y*ch);x+=n;}
+ }else{
  let current=-1;for(let y=0;y<H;y++)for(let x=0;x<W;x++){const i=y*W+x,g=chars[i];if(g===' ')continue;if(ink[i]!==current){current=ink[i];ctx.fillStyle=colors[current];}ctx.fillText(g,x*cw,y*ch);}
+ }
  timer();
 }
 function qteDuration(){return caseDuration();}
@@ -345,6 +354,10 @@ function ui(){
 // picture keeps the fixed grid and the HUD moves beside it. Without a stage (the harness) resize() keeps the original rule
 // from canvas.clientWidth, so the reference test measures what it always did.
 const FILL_FX=180/(2*Math.tan(78*Math.PI/360)),FILL_FY=FILL_FX/1.72;
+// A set may ask for a denser grid (the menu tableau: `density: 2` is 140 rows on desktop, the cell halved, the field of view
+// unchanged). `density` is the factor in effect; `densityFor` the factor resize() last answered, so render() can re-size when
+// the scene changes. Only the fill rule reads it: without a stage (the harness) the original rule stands at density 1.
+let density=1,densityFor=1;
 function stageArea(){
  if(typeof window.innerHeight!=='number'||typeof window.innerWidth!=='number')return null;
  const picture=root.querySelector('.lc-picture');if(!picture)return null;
@@ -354,7 +367,7 @@ function stageArea(){
  return width>0&&height>0?{width,height}:null;
 }
 function resize(){
- const area=stageArea();
+ const area=stageArea(),wanted=sets[sceneName]?.density||1;densityFor=wanted;density=1;
  if(!area){
   const width=canvas.clientWidth;if(width<=0)return;
   // Exact approved density, proportions, field of view, and font sizing.
@@ -365,11 +378,16 @@ function resize(){
   if(area.width<480){
    W=clamp(Math.floor(area.width/4.2),72,180);cw=area.width/W;ch=cw*1.72;H=clamp(Math.floor(area.height/ch),24,70);
    fx=W/(2*Math.tan(66*Math.PI/360));fy=fx/1.72;
+   // The dense grid on a phone: the same rule with every count scaled, so the cell shrinks and the field of view holds.
+   if(wanted>1){W=clamp(Math.floor(area.width*wanted/4.2),Math.round(72*wanted),Math.round(180*wanted));cw=area.width/W;ch=cw*1.72;H=clamp(Math.floor(area.height/ch),Math.round(24*wanted),Math.round(70*wanted));fx=W/(2*Math.tan(66*Math.PI/360));fy=fx/1.72;density=wanted;}
   }else if(fit<3.6){
    const width=Math.min(area.width,area.height/(.39*1.72));
    W=clamp(Math.floor(width/4.2),72,180);H=Math.round(W*.39);cw=width/W;ch=cw*1.72;fx=W/(2*Math.tan(78*Math.PI/360));fy=fx/1.72;
   }else{
    H=70;cw=Math.max(3.6,Math.min(fit,area.width/180));ch=cw*1.72;W=Math.min(240,Math.floor(area.width/cw));fx=FILL_FX;fy=FILL_FY;
+   // The dense grid: `density` times the rows in the same height, the cell divided, columns up to 240 times it, and the
+   // focal lengths scaled with the grid so the picture's field of view is the approved one.
+   if(wanted>1){H=Math.round(70*wanted);cw/=wanted;ch=cw*1.72;W=Math.min(Math.round(240*wanted),Math.floor(area.width/cw));fx=FILL_FX*wanted;fy=FILL_FY*wanted;density=wanted;}
   }
   canvas.style.width=W*cw+'px';
  }
@@ -495,5 +513,5 @@ const stageObserver=new ResizeObserver(layout);stageObserver.observe(root);if(ch
 if(typeof IntersectionObserver!=='undefined')new IntersectionObserver(es=>{visible=es[0].isIntersecting&&es[0].intersectionRatio>.15;lastTime=0;},{threshold:.15}).observe(canvas);
 requestAnimationFrame(tick);
 root.cinemaSprites={load:data=>{const w=loadSprites(data);render();return w;},characters:()=>Object.keys(spriteSheets),warnings:()=>spriteWarnings.slice()};
-root.cinemaAudit=()=>({state:JSON.parse(JSON.stringify(state)),session:{...session},scene:sceneName,camera:{...camera},columns:W,rows:H,frame,cast:blocking(),nonASCII:chars.filter(g=>g.charCodeAt(0)<32||g.charCodeAt(0)>126).length,card:cardText,route:routeSteps(),board:boardEntries(),reflex:reflexes(),records:saveStore.readRecords(),sprites:spriteRects.map(r=>({...r})),labels:labelRects.map(r=>({...r})),window:isQte()?caseDuration():0,transit:transit?{phase:transit.phase,t:transit.t}:null,fade,objective:objective(),grid:{W,H,cw,ch,fx,fy},layout:root.classList?.contains('lc-side')?'side':'stacked',caption:captionAudit(),drawer:drawerOpen()});
+root.cinemaAudit=()=>({state:JSON.parse(JSON.stringify(state)),session:{...session},scene:sceneName,camera:{...camera},columns:W,rows:H,frame,cast:blocking(),nonASCII:chars.filter(g=>g.charCodeAt(0)<32||g.charCodeAt(0)>126).length,card:cardText,route:routeSteps(),board:boardEntries(),reflex:reflexes(),records:saveStore.readRecords(),sprites:spriteRects.map(r=>({...r})),labels:labelRects.map(r=>({...r})),window:isQte()?caseDuration():0,transit:transit?{phase:transit.phase,t:transit.t}:null,fade,objective:objective(),grid:{W,H,cw,ch,fx,fy,density},layout:root.classList?.contains('lc-side')?'side':'stacked',caption:captionAudit(),drawer:drawerOpen()});
 })();

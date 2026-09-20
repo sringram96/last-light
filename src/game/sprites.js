@@ -2,7 +2,7 @@
 // A character has up to four resolutions (hero, full, mid, small), each holding text poses. actor() in runtime.js
 // picks the sheet that fits the projected size and draws it in whole screen cells, so glyphs never tile or shimmer.
 // docs/design/sprites.json (same shape as the defaults below) is inlined by the build and loaded over the defaults.
-const SPRITE_SIZES=['hero','full','mid','small']; // hero: a close-up sheet for the menu tableau; most characters have none
+const SPRITE_SIZES=['portrait','hero','full','mid','small']; // portrait and hero: close-up sheets for the menu tableau (the dense grid and the 70-row one); most characters have none
 const SPRITE_MIN_SCALE=.7; // a sheet is never squeezed below this in either axis; a smaller sheet is stretched instead
 const SPRITE_ALIAS={watch:'stand',smoke:'stand'}; // poses that may borrow another pose at sizes where they are not drawn
 const spriteFace=g=>g==='o'||g==='.'||g==='>';
@@ -110,10 +110,11 @@ function spriteHoles(rows){
 function spriteHeight(sheet,pose){return sheet.heights[pose]??(pose==='crouch'?sheet.height*.63:sheet.height);}
 // The frames of a pose at one size, or null when that size does not draw it (an alias such as watch->stand may stand in).
 function spriteFrames(sheet,size,pose){const s=sheet.sizes[size];return s?s.poses[pose]||(SPRITE_ALIAS[pose]&&s.poses[SPRITE_ALIAS[pose]])||null:null;}
-// The hero tier is a close-up for poses drawn nowhere else (Rook's `smoke` in the menu tableau). It is never chosen for a
-// pose the full sheet draws itself, so a story shot that walks a character past the camera keeps the approved art.
-const heroDraws=(sheet,pose)=>!!(sheet.sizes.hero&&sheet.sizes.hero.poses[pose]&&!(sheet.sizes.full&&sheet.sizes.full.poses[pose]));
-const spriteDraws=(sheet,size,pose)=>spriteFrames(sheet,size,pose)&&(size!=='hero'||heroDraws(sheet,pose));
+// The hero and portrait tiers are close-ups for poses drawn nowhere else (Rook's `smoke` in the menu tableau; the portrait
+// is the same figure drawn for the menu's dense grid). Neither is ever chosen for a pose the full sheet draws itself, so a
+// story shot that walks a character past the camera keeps the approved art.
+const heroDraws=(sheet,size,pose)=>!!(sheet.sizes[size]&&sheet.sizes[size].poses[pose]&&!(sheet.sizes.full&&sheet.sizes.full.poses[pose]));
+const spriteDraws=(sheet,size,pose)=>spriteFrames(sheet,size,pose)&&((size!=='hero'&&size!=='portrait')||heroDraws(sheet,size,pose));
 // Chooses the sheet for a projected size of h rows by w columns: among the sizes that draw the pose, the largest one
 // that is not squeezed below SPRITE_MIN_SCALE in rows or columns, else the smallest of them. A pose no size draws
 // falls back to stand. Returns {size, frames}.
