@@ -1,76 +1,143 @@
 // 05a / THE NIGHT MARKET. Stalls under the elevated road, lit by reserve cells with Lumen Board serials, rising toward
 // The Filament's sign. Marta Quill's cart; Krane sends a loaded cell-cart down the sloped aisle at Rook.
+// The aisle runs along z from the arch (z -8) to the club's sign (z 46) and rises 3 degrees: everything standing on it
+// takes its base from marketY(z), and the camera heights below are eye heights above that slope.
 const marketY=z=>(z+8)*.05;
 function marketWindow(){return clamp(7+(state.tail?2:0)-(state.misread?2:0),5,9);}
+// Stall bases along the aisle. The left row keeps its gaps (the one under [1] is the only one with a lamp); the right
+// row's awnings run as one ledge from the rope to the club, the way Rook runs them on the cut route.
+const MARKET_STALLS=[2,6,10,14,18,22,26,30,34,38];
+// The crowd: [x, z, hue, x after the cart is launched, z after]. They mill at the stall fronts; when Krane pushes the
+// cart they press back to the stalls and off the band the gap and the rope occupy, so nothing stands between the camera
+// and the cart, the gap or the rope during the prompt. Hues 0, 4, 6 only; nobody on the centre line.
+const MARKET_CROWD=[[-3.0,3.2,4,-3.9,2.2],[3.1,5.0,0,3.9,3.0],[-3.1,6.4,6,-3.9,12.6],[3.0,7.6,0,3.9,12.0],[2.9,13.4,4,3.9,14.2],[-3.0,15.8,6,-3.9,15.8],[3.3,17.6,6,3.9,17.6],[-3.3,19.4,0,-3.9,19.4],[2.8,21.4,0,3.9,21.4],[-2.8,22.6,4,-3.9,22.6],[3.0,25.2,4,3.9,25.2],[-3.4,26,6,-3.9,26.6],[3.4,28.6,6,3.9,28.6],[-2.9,29.4,0,-3.9,29.8]];
+const marketBlend=(a,b,s)=>({x:mix(a.x,b.x,s),y:mix(a.y,b.y,s),z:mix(a.z,b.z,s),yaw:mix(a.yaw,b.yaw,s),pitch:mix(a.pitch,b.pitch,s)});
+// Krane's cart: rubber wheels, a wood bed, metal rails and twelve cells in two layers; unloaded once it has burst.
+function marketCart(x,z,y,loaded=true){
+ for(const dx of [-.7,.7])for(const dz of [-.8,.8])box(x+dx-.1,y,z+dz-.24,x+dx+.1,y+.45,z+dz+.24,mat('rubber'));
+ box(x-.8,y+.4,z-1.1,x+.8,y+.7,z+1.1,mat('wood',2));
+ for(const dx of [-.8,.8])box(x+dx-.05,y+.7,z-1.1,x+dx+.05,y+1.35,z+1.1,mat('metal'));
+ box(x-.85,y+1.25,z+1.05,x+.85,y+1.35,z+1.15,mat('metal'));
+ if(loaded)for(let i=0;i<3;i++)for(let j=0;j<2;j++)for(let k=0;k<2;k++)box(x-.72+i*.5,y+.7+k*.55,z-1+j*1.05,x-.3+i*.5,y+1.22+k*.55,z-.1+j*1.05,mat('console',2));
+}
 registerSet('market',{
  chapter:'05a / NIGHT MARKET',card:'THE NIGHT MARKET',objective:()=>'REACH THE FILAMENT',
  description:'A night market under the elevated road: two rows of stalls with awnings, cells hung as lamps, a crowd, a cart of batteries and the pink sign of The Filament at the far end of a sloping aisle.',
  rain:(x,z)=>Math.abs(x)>9||z>42,
  build(){
+  const y=marketY;
+  // The sloped aisle under the deck; the street it climbs from; the deck's underside, columns and beams.
   quad([-9,0,-8],[-9,2.7,46],[9,2.7,46],[9,0,-8],mat('paving',0),[0,1,-.05]);
-  quad([-9,9,-8],[9,9,-8],[9,9,46],[-9,9,46],mat('ceiling'),[0,-1,0]);
-  for(let z=-4;z<46;z+=12){for(const x of [-7.5,7.5])box(x-.5,0,z-.5,x+.5,9,z+.5,mat('column'));box(-9,8.6,z-.15,9,9,z+.15,mat('metal'));}
-  for(const x of [-5.5,5.5])box(x-1.5,0,-7,x+1.5,9,-4,mat('brick',0));box(-7,9,-7,7,9.6,-4,mat('stone'));
-  for(let z=2;z<40;z+=4)for(const side of [-1,1]){
-   const x0=side<0?-6.5:4.1,x1=side<0?-4.1:6.5,y=marketY(z);
-   box(x0,y,z,x1,y+2.2,z+2.4,mat('kiosk',1));box(side<0?x0:x0-1.4,y+2.3,z-.1,side<0?x1+1.4:x1,y+2.55,z+2.5,mat('awning',((z/4)|0)%2?2:3));
-   if(((z/4)|0)%3===0)box(x0+.3,y+2.55,z+.6,x1-.3,y+3.1,z+1.8,mat('sign'));
-   if(z===14&&side<0)box(x1-.02,y+.8,z+.2,x1+.02,y+1,z+2.2,mat('neon',1));if(z===18&&side>0)box(x0-.02,y+.8,z+.2,x0+.02,y+1,z+2.2,mat('neon',3));
+  floor(-40,-70,40,-8,-.02,'road',7);
+  quad([-9,9,-4],[9,9,-4],[9,9,42],[-9,9,42],mat('ceiling'),[0,-1,0]);
+  for(let z=-4;z<=44;z+=12){for(const x of [-7.5,7.5])box(x-.5,0,z-.5,x+.5,9,z+.5,mat('column'));if(z<=32)box(-9,8.6,z-.15,9,9,z+.15,mat('metal'));}
+  // Market Arch: two brick piers (the cart bursts on the left one), a stone lintel and the tram halt's rail above it.
+  for(const x of [-5.5,5.5])box(x-1.2,0,-7,x+1.2,9,-4,mat('brick',0));
+  box(-8,9,-7.2,8,9.7,-3.8,mat('stone'));box(-9,9.7,-7,9,10.2,-6.4,mat('barrier'));
+  // Stalls: kiosk bodies on the slope, awnings alternating amber and rose, posters on every third, neon on two faces.
+  // The first pair crowds the arch (pulled toward the aisle); the stall at z 6 sits back, so the gap behind it reads.
+  for(const z of MARKET_STALLS)for(const side of [-1,1]){
+   const base=y(z+1.2),near=z===2,inner=side*(near?3.4:z===6&&side<0?4.8:4.1),outer=side*(near?5.8:6.5);
+   const x0=Math.min(inner,outer),x1=Math.max(inner,outer),hue=((z/4)|0)%2?2:3;
+   box(x0,base,z,x1,base+2.2,z+2.4,{kind:'kiosk',hue:1,baseY:base});
+   const ax0=side<0?x0:inner-1.4,ax1=side<0?inner+1.4:x1,az1=side>0&&z>=10&&z<38?z+3.9:z+2.5;
+   box(ax0,base+2.3,z-.1,ax1,base+2.55,az1,mat('awning',hue));
+   if(((z/4)|0)%3===0)box(x0+.3,base+2.55,z+.6,x1-.3,base+3.1,z+1.8,mat('poster',2));
+   if(z===14&&side<0)box(inner-.02,base+.8,z+.2,inner+.02,base+1,z+2.2,mat('neon',1));
+   if(z===18&&side>0)box(inner-.02,base+.8,z+.2,inner+.02,base+1,z+2.2,mat('neon',3));
   }
-  for(let z=0;z<=40;z+=4){quad([-9,3.6,z],[9,3.6,z],[9,3.63,z+.03],[-9,3.63,z+.03],mat('cable'),[0,-1,0]);
-   if(z%8===0)for(const x of [-2.9,2.9]){box(x-.17,3.1,z-.17,x+.17,3.6,z+.17,mat('console',2));box(x-.15,2.95,z-.15,x+.15,3.1,z+.15,mat('lamp',2));lamps.push([x,z]);}}
-  box(-4.2,marketY(12),11.1,-3,marketY(12)+.9,12.9,mat('wood',2));for(const dz of [-.6,.6])box(-3.9,marketY(12)-.2,12+dz-.2,-3.3,marketY(12)+.3,12+dz+.2,mat('rubber'));
-  for(let i=0;i<4;i++)box(-4.1+i*.3,marketY(12)+.9,11.3,-3.9+i*.3,marketY(12)+1.4,12.7,mat('console',2));
-  quad([4.2,marketY(9)+1,9.2],[5.8,marketY(9)+3.3,9.6],[5.84,marketY(9)+3.3,9.66],[4.24,marketY(9)+1,9.26],mat('cable'),[0,0,-1]);box(4.1,marketY(9)+.8,9.1,4.35,marketY(9)+1.05,9.35,mat('metal'));
-  box(-3,marketY(46)+5,46,3,marketY(46)+6,46.4,mat('neon',3));for(const x of [-3.2,3.2])box(x-.15,0,45.8,x+.15,marketY(46)+6,46.2,mat('metal'));
-  box(6.8,marketY(44),43.8,7.6,marketY(44)+3,44.2,mat('door',2));box(6.7,marketY(44)+3.1,43.7,7.7,marketY(44)+3.5,44.3,mat('sign'));
-  cityRow(50,120,16,-30,20);cityRow(50,120,18,12,24);
-  quad([-12,marketY(46),46],[-6,marketY(46),46],[-6,8,70],[-12,8,70],mat('express'),[0,1,-.3]);
+  // Crates of cells for sale at the near stall fronts: the foreground of the prompt frame.
+  for(const [x,z] of [[-3.5,3.6],[3.6,5.2],[-3.6,15.2],[3.5,22.6]]){const b=y(z);box(x-.4,b,z-.3,x+.4,b+.5,z+.3,mat('wood',2));for(let i=0;i<2;i++)box(x-.35+i*.4,b+.5,z-.22,x-.05+i*.4,b+1,z+.22,mat('console',2));}
+  // Stall lamps are reserve cells on cables across the aisle: a glowing cell with a lamp cap, each one a pool.
+  for(let z=0;z<=40;z+=4){const c=y(z)+3.6;quad([-9,c,z],[9,c,z],[9,c+.03,z+.03],[-9,c+.03,z+.03],mat('cable'),[0,-1,0]);
+   if(z%8===0)for(const x of [-2.9,2.9]){box(x-.17,c-.5,z-.17,x+.17,c,z+.17,mat('console',2));box(x-.15,c-.65,z-.15,x+.15,c-.5,z+.15,mat('lamp',2));lamps.push([x,z]);}}
+  // The gap under [1]: the one gap on the left with a lamp over it, hung from a bar between the two stall roofs.
+  {const g=y(9.2);box(-5.4,g+3.65,8.3,-5.2,g+3.75,10.1,mat('metal'));box(-5.47,g+3.15,9.03,-5.13,g+3.65,9.37,mat('console',2));box(-5.45,g+3,9.05,-5.15,g+3.15,9.35,mat('lamp',2));lamps.push([-5.3,9.2]);}
+  // The awning rope under [2]: from a cleat at the aisle's edge up to the front edge of the right awnings' ledge.
+  {const r=y(9.1)+.9;quad([3.85,r,9.1],[5.6,3.3,9.9],[5.76,3.3,9.96],[4.01,r,9.16],mat('cable'),[0,0,-1]);box(3.72,r-.25,8.98,4.0,r+.02,9.26,mat('metal'));box(5.5,3.28,9.78,5.72,3.7,10.0,mat('metal'));}
+  // Marta's cart: a wood bed on rubber wheels, eight cells in a rack, a paper plate (QUILL is the label above it).
+  {const b=y(12);for(const dx of [-.45,.45])for(const dz of [-.65,.65])box(-3.6+dx-.1,b,12+dz-.2,-3.6+dx+.1,b+.4,12+dz+.2,mat('rubber'));
+   box(-4.2,b+.35,11.1,-3,b+.9,12.9,mat('wood',2));for(let i=0;i<4;i++)for(let j=0;j<2;j++)box(-4.1+i*.28,b+.9,11.3+j*.8,-3.88+i*.28,b+1.42,11.9+j*.8,mat('console',2));
+   box(-4.25,b+1.45,12.85,-2.95,b+1.9,12.95,mat('paper',6));}
+  // The far end: The Filament's sign on a gantry across the aisle, its facade behind, the back door on Vine Alley to
+  // the right with Vale's red car dark beside it, the deck's ramp climbing away on the left.
+  {const b=y(46);for(const x of [-3.4,3.4])box(x-.15,b,45.9,x+.15,b+5.6,46.1,mat('metal'));box(-3.6,b+5.4,45.85,3.6,b+5.6,46.15,mat('metal'));
+   box(-3,b+4.4,45.85,3,b+5.3,46.15,mat('neon',3));
+   box(-5,b,47.5,5,9.5,48.5,mat('brick',0));box(-1.2,b,47.4,1.2,b+3.2,47.55,{kind:'door',hue:2,baseY:b});box(-1.4,b+3.3,47.3,1.4,b+3.6,47.55,mat('lamp',2));lamps.push([0,47.4]);
+   const d=y(44);box(6.4,d-.1,44.3,9,9,47.5,mat('brick',0));box(6.8,d,44.1,7.6,d+3,44.35,{kind:'door',hue:2,baseY:d});box(6.7,d+3.1,44.1,7.7,d+3.5,44.35,mat('sign'));
+   quad([-12,b,46],[-6,b,46],[-6,8,70],[-12,8,70],mat('express'),[0,1,-.3]);for(const x of [-12,-6])quad([x-.1,b,46],[x+.1,b,46],[x+.1,8.6,70],[x-.1,8.6,70],mat('barrier'),[0,1,-.3]);}
+  car(7.8,y(41),3,y(41),false,{dark:true});
+  // The city beyond the club, and the dark district behind the arch for the shots that look back down the aisle.
+  cityRow(52,120,16,-30,20);cityRow(52,120,18,12,24);cityRow(-64,-12,16,-24,10);cityRow(-64,-12,16,10,12);
  },
- start(){return look(0,6.5,-12,0,2,14);},
+ // From the tram's rail above the arch: the fade-up looks down through the arch at the lit aisle.
+ start(){return look(0,7,-16,0,2,14);},
  shot(p){
-  if(p==='marketEntry')return look(-1.2,1.9,-2,0,3.2,44);
-  if(p==='marketAisle')return look(-2.6,1.7,15,-1,1.4,3);
-  if(p==='marketKeeper')return look(-3.2,1.5,9.6,-3.6,1.35,12.4);
-  if(p==='marketDanger')return look(1.6,1.7,21,0,1.8,30);
-  if(p==='marketResult'&&state.market==='cut')return look(2.4,4.2,6,5.2,3,26);
-  if(p==='marketResult'&&state.event>4)return look(-.4,2.2,3,0,4.5,46);
-  return look(-.4,2.2,3,0,1.6,22);
+  const y=marketY,t=state.event,m=state.market;
+  const qte=look(-.2,y(-2)+2.4,-2,0,2.4,24);
+  if(p==='marketEntry')return look(-.4,y(-1)+1.75,-1,0,6.2,44);
+  if(p==='marketAisle')return look(-1.4,y(15.5)+1.9,15.5,-1,1.9,2);
+  if(p==='marketKeeper')return look(-3.2,y(9.6)+1.5,9.6,-3.6,y(12.4)+1.35,12.4);
+  if(p==='marketDanger')return look(1.6,y(21)+1.7,21,0,y(30)+1.3,30);
+  if(p==='marketResult'&&m==='cut'){const v=reduce?1:span(4),cz=mix(4,30,v);return look(2.6,y(cz)+3.6,cz,5.6,y(cz+10)+2.8,cz+10);}
+  if(p==='marketResult'&&m==='slip'){const s=reduce?1:smooth(clamp((t-.9)/2,0,1));return marketBlend(qte,look(.6,y(0)+2.5,1.5,-5.2,1.2,-4.5),s);}
+  if(p==='marketResult'){const s=reduce?0:smooth(clamp((t-4)/2,0,1));return marketBlend(qte,look(-.4,y(3)+2.2,3,0,y(46)+4.5,46),s);}
+  return qte;
  },
- ease(p){return {marketEntry:8,marketAisle:3,marketKeeper:3,marketDanger:.5,marketResult:2}[p]||1.2;},
+ ease(p){return {marketEntry:8,marketAisle:3,marketKeeper:3,marketDanger:.5,marketQte:.8,marketResult:.6}[p]||1.2;},
  blocking(p){
-  const others=[],y=marketY;let rook;
-  const u=p==='marketEntry'&&!reduce?span(8):1,v=p==='marketResult'&&!reduce?span(4):1;
-  if(p==='marketEntry')rook={x:-1,y:y(mix(-6,8,u)),z:mix(-6,8,u),pose:u<1?'walk':'watch'};
+  const y=marketY,others=[],res=p==='marketResult',m=state.market,t=state.event;
+  const u=p==='marketEntry'?(reduce?1:span(8)):1,v=res?(reduce?1:span(4)):0,w=p==='marketDanger'?(reduce?1:span(2)):1;
+  let rook;
+  if(p==='marketEntry'){const z=mix(-6,8,u);rook={x:-1.6,y:y(z),z,pose:u<1?'walk':'watch'};}
+  else if(p==='marketAisle')rook={x:-1.6,y:y(8),z:8,pose:'watch'};
   else if(p==='marketKeeper')rook={x:-2.4,y:y(10.4),z:10.4,pose:'watch'};
-  else if(p==='marketResult'&&state.market==='slip')rook={x:mix(-.8,-5.3,Math.min(1,v*2)),y:y(9.2),z:9.2,pose:v<.5?'walk':'crouch'};
-  else if(p==='marketResult'&&state.market==='cut')rook={x:mix(4.4,5.3,v),y:y(10)+mix(0,2.55,v),z:mix(9.2,mix(10,38,v),v),pose:v<.2?'reach':'walk'};
-  else if(p==='marketResult')rook={x:0,y:y(8.5)-.3,z:8.5,pose:'stumble',lean:-.5};
-  else rook={x:-.8,y:y(9),z:9,pose:'watch',lean:p==='marketDanger'||p==='marketQte'?.1:0};
-  others.push({x:-3.6,y:y(13.4),z:13.4,pose:'stand',who:'nell',hue:6});
-  const krane=p==='marketAisle'||p==='marketKeeper'?{x:1.2,y:y(4)+.3,z:4,pose:'stand',who:'krane'}:p==='marketResult'&&state.market==='cut'?{x:mix(.4,7.2,v),y:y(mix(31.5,43.5,v))+.3,z:mix(31.5,43.5,v),pose:'walk',who:'krane'}:p==='marketResult'?null:{x:.4,y:y(31.5)+.3,z:31.5,pose:p==='marketEntry'?'walk':'reach',who:'krane'};
+  else if(res&&m==='slip'){const d=reduce?1:clamp(t/.9,0,1),z=mix(4.8,9.2,d);rook={x:mix(-1.5,-5.3,d),y:y(z),z,pose:d<1?'walk':'crouch'};}
+  else if(res&&m==='cut'){if(v<.2)rook={x:3.7,y:y(9.2),z:9.2,pose:'reach'};else{const s=(v-.2)/.8,z=mix(10,38,s);rook={x:mix(4.4,5.3,Math.min(1,s*3)),y:y(z)+2.55,z,pose:'walk'};}}
+  else if(res)rook={x:-.7,y:y(4.2)-.3,z:4.2,pose:'stumble',lean:-.5};
+  else rook={x:-1.5,y:y(4.8),z:4.8,pose:'watch',lean:.1};
+  others.push({x:-3.6,y:y(13.4),z:13.4,pose:p==='marketKeeper'?'read':'stand',who:'nell',hue:6});
+  let krane=null;
+  if(p==='marketAisle'||p==='marketKeeper'){const s=p==='marketAisle'&&!reduce?span(3):1,z=mix(-1,4,s);krane={x:1.2,y:y(z)+.3,z,pose:s<1?'walk':'stand',who:'krane'};}
+  else if(p==='marketDanger'||p==='marketQte')krane={x:.3,y:y(31.6)+.3,z:31.6,pose:'reach',who:'krane'};
+  else if(res&&m==='cut'){const z=mix(31.5,43.5,v);krane={x:mix(.4,7.2,v),y:y(z)+.3,z,pose:'walk',who:'krane'};}
+  else if(res&&v<.95){const z=mix(31.6,47,v);krane={x:mix(.3,1.2,v),y:y(z)+.3,z,pose:'walk',who:'krane'};}
   if(krane)others.push(krane);
-  for(let i=0;i<10;i++){const z=1+i*3,side=i%2?1:-1;others.push({x:side*3.4,y:y(z),z,pose:'stand',hue:[0,4,6][i%3],who:'patron'});}
+  const scattered=p==='marketDanger'||p==='marketQte'||res;
+  for(const [x0,z0,hue,x1,z1] of MARKET_CROWD){
+   const x=scattered?mix(x0,x1,w):x0,z=scattered?mix(z0,z1,w):z0;
+   others.push({x,y:y(z),z,pose:scattered&&w<1?'walk':'stand',hue,who:'patron'});
+  }
   return{rook,courier:null,others};
  },
  geometry(p){
-  const y=marketY;
-  if(['marketEntry','marketAisle','marketKeeper','marketDanger','marketQte'].includes(p)||(p==='marketResult'&&state.market==='late')){
-   const u=p==='marketQte'?clamp(state.event/marketWindow(),0,1):p==='marketResult'?1:0,z=p==='marketDanger'?30-span(2)*2:mix(30,7,u);
-   box(-.8,y(z),z-1.1,.8,y(z)+1.3,z+1.1,mat('wood',2));for(let i=0;i<3;i++)box(-.6+i*.45,y(z)+1.3,z-.9,-.25+i*.45,y(z)+1.9,z+.9,mat('console',2));
-   if(p==='marketResult')for(let i=0;i<5;i++)box(-1.5+i*.6,y(6)+.1,5.5+hash(i,4),-1.2+i*.6,y(6)+.35,5.8+hash(i,4),mat('arc',6));
+  const y=marketY,t=state.event,res=p==='marketResult',m=state.market;
+  // Krane's cart: parked on the centre line, tipped into motion in the windup, rolling down the aisle over the window.
+  let cz=30,cx=0,burst=false;
+  if(p==='marketDanger')cz=30-span(2)*2.5;
+  else if(p==='marketQte')cz=mix(27.5,6.3,clamp(t/marketWindow(),0,1));
+  else if(res&&m!=='late'){const r=reduce?1:clamp(t,0,1);cz=mix(6.3,-3.2,r);cx=mix(0,-4.6,r);burst=r>=1;}
+  if(res&&m==='late'){
+   // Stopped across the aisle: four cells still on the bed, six spilled and arcing on the wet paving.
+   const b=y(6.3);box(-1.1,b+.4,5.5,1.1,b+.7,7.1,mat('wood',2));for(const dx of [-.9,.9])for(const dz of [-.6,.6])box(dx-.24,b,6.3+dz-.1,dx+.24,b+.45,6.3+dz+.1,mat('rubber'));
+   for(let i=0;i<4;i++){const o=hash(i,2)*.4;box(-.9+i*.5,b+.7,5.7+o,-.5+i*.5,b+1.2,6.5+o,mat('console',2));}
+   for(let i=0;i<6;i++){const sx=-1.9+hash(i,5)*3.6,sz=2.2+hash(i,6)*3.2,g=y(sz);box(sx,g,sz,sx+.5,g+.4,sz+.9,mat('console',2));if(i<4)box(sx-.15,g+.4,sz+.3,sx+.65,g+.75,sz+.6,mat('arc',6));}
+  }else marketCart(cx,cz,y(cz),!burst);
+  if(burst){
+   // Cells burst white against the left pier and arc on the ground for a moment.
+   for(let i=0;i<8;i++){const sx=-6.4+hash(i,1)*3.2,sz=-4.2+hash(i,2)*3;box(sx,-.02,sz,sx+.32,.25,sz+.32,mat('lamp',2));}
+   if(reduce||t<2.6)for(let i=0;i<3;i++){const o=hash(i,4)*.8;box(-5.6+i*.8,.2,-3.9+o,-5.1+i*.8,.9+hash(i,3)*.6,-3.5+o,mat('arc',6));}
   }
-  if(p==='marketResult'&&state.market!=='late')for(let i=0;i<8;i++)box(-6+hash(i,1)*2,-.1,-6+hash(i,2)*2,-5.7+hash(i,1)*2,.2,-5.7+hash(i,2)*2,mat('lamp',2));
-  car(-7.2,42,3,y(42),false,{dark:true});if(state.tail)car(-7,-6,0,0,false,{dark:true});
+  if(state.tail)car(-8.3,-7.5,0,-.02,false,{dark:true});
  },
  labels(p){
   const y=marketY;
-  if(p==='marketEntry')worldLabel([0,9.8,-5],'MARKET',2);
-  if(p!=='marketEntry')worldLabel([-3.6,y(12)+2.3,12],'QUILL',6);
-  worldLabel([0,y(46)+6.6,46],'THE FILAMENT',3);
-  if(['marketDanger','marketQte'].includes(p))worldLabel([.4,y(31.5)+3.1,31.5],'KRANE',0);
-  if(p==='marketQte'){worldLabel([-5.3,y(9)+2.4,9.2],'[1]',2);worldLabel([5.4,y(9)+3.7,9.4],'[2]',2);}
-  if(p==='marketResult'&&state.market==='cut')worldLabel([7.2,y(44)+3.8,44],'VINE ALLEY',1);
+  if(p==='marketEntry')worldLabel([0,8.5,-4.2],'MARKET',2);
+  if(p==='marketAisle'||p==='marketKeeper')worldLabel([-3.6,y(12)+2.3,12],'QUILL',6);
+  worldLabel([0,y(46)+5.8,46],'THE FILAMENT',3);
+  if(p==='marketDanger')worldLabel([.3,y(31.6)+3.2,31.6],'KRANE',0);
+  if(p==='marketQte'){worldLabel([-4.6,y(9.2)+2.7,9.2],'[1]',2);worldLabel([4.9,y(9.5)+3.7,9.5],'[2]',2);}
+  if(p==='marketResult'&&state.market==='cut')worldLabel([7.2,y(44)+3.95,44.2],'VINE ALLEY',1);
  },
  exit(){return [0,marketY(46)+2.5,46];},
  preview(){Object.assign(state,{pursuit:'chasing',tail:true});return 'marketEntry';}

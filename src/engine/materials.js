@@ -45,7 +45,7 @@ else if(kind==='plank'||kind==='carpet'||kind==='drain'){
  for(let i=0;i<lamps.length;i++){const l=lamps[i],d=(x-l[0])**2+(z-l[1])**2;if(d<22){const a=(1-d/22);if(a>.25){hue=2;lum=Math.max(lum,.3+a*.55);if(grain>.6)g='=';}}}
 }
 else if(kind==='blind'){hue=4;lum=fract(y*4)<.45?.9:.25;g=fract(y*4)<.45?'=':'-';}
-else if(kind==='board'){hue=2;lum=.3;g='.';const c=hash(Math.floor(z*1.6),Math.floor(y*2.2));if(c>.55){hue=6;lum=.75;g=fract(y*2.2)<.3?'-':'=';}if(fract(z*1.6)<.06&&c>.55){hue=3;lum=.9;g='+';}}
+else if(kind==='board'){hue=2;lum=.4;g='.';const c=hash(Math.floor(z*1.6),Math.floor(y*2.2));if(c>.55){hue=6;lum=.75;g=fract(y*2.2)<.3?'-':'=';}if(fract(z*1.6)<.06&&c>.55){hue=3;lum=.9;g='+';}}
 else if(kind==='paper'){hue=6;lum=mat.roof?.95:.7;g=mat.roof?(fract(z*7)<.4?'-':' '):'=';if(g===' ')g='.';}
 else if(kind==='screen'){hue=1;lum=.5+.4*(fract(y*6-state.t*.4)<.5?1:0);g=fract(y*6-state.t*.4)<.5?'=':'-';if(mat.roof){lum=.4;g='=';}}
 else if(kind==='neon'){const on=hash(Math.floor(state.t*6),mat.hue)>.08;hue=mat.hue;lum=on?1.45:.4;g=on?(mat.roof?'=':'#'):'-';}

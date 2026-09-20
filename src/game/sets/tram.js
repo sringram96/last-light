@@ -1,50 +1,94 @@
 // 04b / THE LAST TRAM. A moving set: Rook rides the roof of the last tram across the dark district to Market Arch.
 // Lamps 14 to 19 stand dark on their posts; a black division car follows on the road below with its lights off.
-const TRAM_ARCH=420;
+// The viaduct, the road beside it, the tenements and the far rows are built long. The tram, the cars, the lamp posts
+// (dark until the market's district) and Market Arch itself are drawn each frame relative to the distance travelled,
+// so the arch is where the arrival beat needs it however long the player rode before choosing to ride on.
+const TRAM_FAR=1200,TRAM_GROUND=-6,TRAM_BAY=24;
+// Market Arch stands 32 units ahead of where tramArrive began; the lit lamp posts begin 20 units before it.
+const tramArch=()=>state.phaseDistance+32;
+// Buildings from cityRow/building stand on the district's ground, six units under the viaduct.
+function tramSunk(from){for(let i=from;i<surfaces.length;i++){const s=surfaces[i];if(s.mat.kind==='building'||s.mat.kind==='stone'){for(const v of s.v)v[1]+=TRAM_GROUND;s.mat={...s.mat,baseY:TRAM_GROUND};}}}
+// A lamp post on the viaduct: dark glass on its head until the market's district, then a lamp with a pool.
+function tramPost(x,z,lit){
+ box(x-.055,.5,z-.055,x+.055,4.6,z+.055,mat('metal'));
+ box(x-.34,4.15,z-.34,x+.34,4.7,z+.34,lit?mat('lamp',2):mat('glass',4));box(x-.45,4.7,z-.45,x+.45,4.82,z+.45,mat('metal'));
+ if(lit)lamps.push([x,z]);
+}
+// Market Arch: the elevated road crossing overhead on column piers, the lamplighter's lamps hung beneath it, the market
+// beginning on the ground to the left of the viaduct, and the lit towers of uptown behind.
+function tramMarket(A){
+ const g=TRAM_GROUND;
+ box(-40,9,A-4,40,10.2,A+16,mat('express'));quad([-40,8.97,A-4],[40,8.97,A-4],[40,8.97,A+16],[-40,8.97,A+16],mat('ceiling'),[0,-1,0]);
+ for(const z of [A-3,A+11])for(const x of [-11,-5,5,18])box(x-.7,g,z,x+.7,9,z+2.4,mat('column'));
+ for(const x of [-14,-10,-6,-2,2,6,10,14]){box(x-.3,8.35,A-1.2,x+.3,8.8,A-.6,mat('lamp',2));lamps.push([x,A-.9]);}
+ floor(-10.3,A-4,-4.2,A+18,g+.02,'paving',0);
+ for(let i=0;i<5;i++){const z=A-1+i*3.4,x0=-10+(i%2)*.8;box(x0,g,z,x0+2.4,g+2.2,z+2.4,{...mat('kiosk',1),baseY:g});box(x0-.2,g+2.3,z-.1,x0+3.4,g+2.55,z+2.5,mat('awning',i%2?2:3));}
+ quad([-6.83,g+3.4,A-2],[-6.77,g+3.4,A-2],[-6.77,g+3.43,A+16],[-6.83,g+3.43,A+16],mat('cable'),[0,-1,0]);
+ for(let z=A;z<A+16;z+=4){box(-7,g+2.9,z-.2,-6.6,g+3.4,z+.2,mat('lamp',2));lamps.push([-6.8,z]);}
+ box(-11,g+5,A+44,-5,g+6,A+44.4,mat('neon',3));
+ const from=surfaces.length;for(let i=0;i<6;i++){const z=A+16+i*20;building(-30,z,7,15,32+hash(i,1)*16,i%2?4:1,i*11+5);building(33,z+8,6,15,34+hash(i,2)*14,i%2?1:4,i*13+9);}tramSunk(from);
+}
+const tramMix=(a,b,u)=>({x:mix(a.x,b.x,u),y:mix(a.y,b.y,u),z:mix(a.z,b.z,u),yaw:mix(a.yaw,b.yaw,u),pitch:mix(a.pitch,b.pitch,u)});
 registerSet('tram',{
  chapter:'04b / THE LAST TRAM',card:'THE LAST TRAM',objective:()=>'CROSS THE DARK',
  description:'The roof of a tram crossing the dark district on its own reserve: unlit lamp posts, black tenements with one lit window in ten, and the elevated road ahead.',
- moving:true,rain:true,speed:p=>p==='tramArrive'?4:21,
+ moving:true,rain:true,
+ // The tram runs at the chase's pace and brakes for the arch over the first second of the arrival beat.
+ speed:p=>p==='tramArrive'?mix(21,4,clamp(state.event,0,1)):21,
  build(){
-  floor(-4,-50,4,950,0,'road',7);for(const x of [-4,4])box(x-.13,0,-50,x+.13,.5,950,mat('barrier'));
-  for(let z=-40;z<950;z+=24){for(const x of [-3.8,3.8])box(x-.07,0,z-.07,x+.07,6.4,z+.07,mat('metal'));quad([-3.8,6.4,z],[3.8,6.4,z],[3.8,6.43,z+.03],[-3.8,6.43,z+.03],mat('metal'),[0,-1,0]);}
-  quad([1.3,6,-50],[1.4,6,-50],[1.4,6.03,950],[1.3,6.03,950],mat('cable'),[0,-1,0]);
-  // Lamp posts along the viaduct: dark until the market's district, lit beyond it.
-  for(let z=-28;z<950;z+=24){for(const x of [-3.6,3.6]){box(x-.055,.5,z-.055,x+.055,4.6,z+.055,mat('metal'));if(z<TRAM_ARCH-120)box(x-.3,4.2,z-.3,x+.3,4.6,z+.3,mat('metal'));else{box(x-.34,4.15,z-.34,x+.34,4.7,z+.34,mat('lamp',2));lamps.push([x,z]);}}}
-  // The road beside the rails, and the dark district: windowless tenements with one lit window in ten.
-  floor(6,-50,16,950,-1.5,'express');for(const x of [6,16])box(x-.13,-1.5,-50,x+.13,-.85,950,mat('barrier'));
-  for(let z=-40,i=0;z<TRAM_ARCH-20;z+=20,i++){for(const x of [-22,24]){const h=10+hash(i,x)*6;box(x,-6,z,x+8,h-6,z+12,mat('brick',0));if(hash(i,x,5)>.9)box(x+3,h-9,z+5,x+4,h-8,z+5.1,mat('lamp',2));}}
-  cityRow(-40,TRAM_ARCH,20,-44,10);cityRow(-40,TRAM_ARCH,20,40,12);
-  cityRow(TRAM_ARCH-40,950,20,-44,32);cityRow(TRAM_ARCH-40,950,20,40,34);
-  // Market Arch: the elevated road crossing overhead, lamps beneath it, the market beginning beyond, the club's sign.
-  box(-40,9,TRAM_ARCH-4,40,10,TRAM_ARCH+6,mat('express'));for(const x of [-12,12])box(x-.6,-6,TRAM_ARCH-2,x+.6,9,TRAM_ARCH+4,mat('column'));
-  for(let x=-14;x<=14;x+=4){box(x-.3,8.4,TRAM_ARCH,x+.3,8.8,TRAM_ARCH+.6,mat('lamp',2));lamps.push([x,TRAM_ARCH]);}
-  for(const [x,z] of [[-6,TRAM_ARCH+10],[6,TRAM_ARCH+14],[-6,TRAM_ARCH+20],[6,TRAM_ARCH+26]]){box(x-1.2,0,z,x+1.2,2.2,z+2.4,mat('kiosk',1));box(x-1.6,2.2,z-.2,x+1.6,2.45,z+2.6,mat('awning',z%2?2:3));}
-  box(-3,5,TRAM_ARCH+40,3,6,TRAM_ARCH+40.4,mat('neon',3));
-  for(let i=surfaces.length-1;i>=0;i--){const s=surfaces[i];if(s.mat.kind==='building'||s.mat.kind==='stone'){for(const v of s.v)v[1]-=6;s.mat={...s.mat,baseY:-6};}}
+  const z0=-50,z1=TRAM_FAR,g=TRAM_GROUND;
+  // The district's ground, the viaduct on its brick wall with barrier edges, and the road deck beside it on columns.
+  floor(-60,z0,60,z1,g,'road',7);
+  floor(-4,z0,4,z1,0,'road',7);for(const x of [-4,4]){box(x-.2,g,z0,x+.2,0,z1,mat('brick',0));box(x-.13,0,z0,x+.13,.5,z1,mat('barrier'));}
+  floor(6,z0,16,z1,-1.5,'road',7);for(const x of [6,16])box(x-.13,-1.5,z0,x+.13,-.85,z1,mat('barrier'));
+  for(let z=z0+10;z<z1;z+=TRAM_BAY)for(const x of [6.6,15.4])box(x-.3,g,z-.3,x+.3,-1.5,z+.3,mat('column'));
+  // Catenary: masts on the left every 24 with cantilever beams, the wire along x 1.35 at y 6 hung from droppers.
+  for(let z=-40;z<z1;z+=TRAM_BAY){box(-3.87,0,z-.07,-3.73,7.2,z+.07,mat('metal'));box(-3.8,7.05,z-.08,2,7.2,z+.08,mat('metal'));box(1.31,6,z-.04,1.39,7.05,z+.04,mat('metal'));}
+  quad([1.3,6,z0],[1.4,6,z0],[1.4,6.03,z1],[1.3,6.03,z1],mat('cable'),[0,-1,0]);
+  // The service lift Rook dropped from, beside the track where the tram starts: a cage on its shaft rails.
+  box(2.9,5.4,18.2,5.3,5.6,21.2,mat('grate'));box(2.9,8.4,18.2,5.3,8.6,21.2,mat('metal'));
+  for(const x of [2.95,5.25])for(const z of [18.25,21.15])box(x-.05,5.4,z-.05,x+.05,8.4,z+.05,mat('metal'));
+  for(const z of [18.1,21.3])box(5.45,5.4,z-.06,5.57,30,z+.06,mat('metal'));
+  // The dark district: windowless tenements with one lit window in ten, and the far rows fogged behind them.
+  for(let z=-40,i=0;z<z1;z+=20,i++)for(const x of [-22,24]){const h=10+hash(i,x)*6;box(x,g,z,x+8,g+h,z+12,mat('brick',0));if(hash(i,x,5)>.9){const f=x<0?x+8:x;box(f-.06,g+h-4,z+5,f+.06,g+h-3,z+5.9,mat('lamp',2));}}
+  const far=surfaces.length;cityRow(-40,z1,20,-44,10);cityRow(-40,z1,20,40,12);tramSunk(far);
  },
- start(){const d=state.distance;return look(1.35,7.5,d-14,1.35,3.6,d+20);},
+ // High and behind, dropping: the lift's descent continued.
+ start(){const d=state.distance;return look(.6,6.8,d-14,1.35,3.6,d+20);},
  shot(p){
-  const d=state.distance;
-  if(p==='tramRide'||p==='tramWatch')return look(3.4,4.9,d+1,10,-.6,d-24);
-  if(p==='tramSpotted')return state.event<2?look(3.4,4.9,d+1,10,-.6,d-24):look(1.35,4.3,d-4,1.35,2,d+70);
-  if(p==='tramArrive')return look(1.35,4,d-2,0,-1.5,d+26);
-  return look(1.35,4.3,d-4,1.35,3.6,d+40);
+  const d=state.distance,back=look(2.4,5.2,d+1,10,-.6,d-24);
+  if(p==='tramRide'||p==='tramWatch')return back;
+  // Hold on the road for two seconds, then turn forward as the district comes up.
+  if(p==='tramSpotted')return tramMix(back,look(.6,4.3,d-4,1.35,2,d+70),smooth(clamp((state.event-2)/4,0,1)));
+  if(p==='tramArrive')return look(.6,4,d-4,0,-1,d+28);
+  return look(.6,4.3,d-4,1.35,3.6,d+40);
  },
- ease(p){return {tramEntry:5,tramRide:5,tramSpotted:4,tramArrive:5}[p]||1.1;},
+ ease(p){return {tramEntry:5,tramRide:5,tramSpotted:.01,tramArrive:5}[p]||1.1;},
  blocking(p){
   const d=state.distance;
-  return{rook:{x:1.35,y:3.55,z:d-1,pose:p==='tramSpotted'?'watch':p==='tramArrive'?'reach':'crouch'},courier:null,others:[]};
+  if(p==='tramArrive'){const u=span(1.5);return{rook:{x:mix(1.5,2.2,u),y:3.55,z:d+mix(.4,1.25,u),pose:'reach'},courier:null,others:[]};}
+  return{rook:{x:1.5,y:3.55,z:d+.4,pose:p==='tramSpotted'?'watch':'crouch'},courier:null,others:[]};
  },
  geometry(p){
-  const d=state.distance;
-  box(.1,.45,d-6,2.65,3.3,d+2,mat('tram',1));box(0,3.3,d-6.1,2.75,3.55,d+2.1,mat('metal'));for(const x of [.05,2.65])box(x-.05,3.55,d-6,x+.05,4.05,d+2,mat('metal'));
-  box(1.2,3.55,d-3.2,1.5,5.9,d-2.8,mat('metal'));for(const z of [d-5,d+1])for(const x of [.7,2.05])box(x-.3,.2,z-.4,x+.3,.7,z+.4,mat('rubber'));
-  car(11,d-14,0,-1.5,false,{dark:true});car(12,d+38,2,-1.5);car(9,d+62,0,-1.5);
+  const d=state.distance,lit=p==='tramArrive'?tramArch()-20:Infinity;
+  lamps.length=0;
+  // Lamp posts every 24, half a bay from the masts: dark glass until the market's district.
+  for(let z=Math.floor((d-60)/TRAM_BAY)*TRAM_BAY+20;z<d+110;z+=TRAM_BAY)for(const x of [-3.6,3.6])tramPost(x,z,z>=lit);
+  // The tram under the camera: body, ribbed roof, edge rails on posts, the front rail, the pantograph at the rear, bogies.
+  box(.1,.45,d-6,2.65,3.3,d+2,mat('tram',1));box(0,3.3,d-6.1,2.75,3.55,d+2.1,mat('vent'));
+  for(const x of [.12,2.63]){box(x-.04,3.95,d-6,x+.04,4.03,d+2,mat('metal'));for(let i=0;i<4;i++){const z=d-5.8+i*1.95;box(x-.06,3.55,z-.06,x+.06,3.98,z+.06,mat('metal'));}}
+  box(.08,3.95,d+1.96,2.67,4.03,d+2.04,mat('metal'));box(1.3,3.55,d+1.94,1.4,3.98,d+2.06,mat('metal'));
+  box(1.2,3.55,d-5.2,1.5,5.9,d-4.8,mat('metal'));box(.6,5.85,d-5.4,2.1,5.97,d-4.6,mat('metal'));
+  for(const z of [d-4.6,d+.6])for(const x of [.7,2.05])box(x-.3,.2,z-.45,x+.3,.7,z+.45,mat('rubber'));
+  // The road below: the black division car holds its distance and its headlights go dark early in the ride; ordinary
+  // cars far ahead and behind keep their lamps.
+  car(11,d-14,0,-1.5,false,{dark:!(p==='tramEntry'||(p==='tramRide'&&state.event<3.5))});
+  car(12,d+38,4,-1.5);car(9,d+62,0,-1.5);car(14.2,d-36,0,-1.5);
+  if(p==='tramArrive')tramMarket(tramArch());
  },
  labels(p){
-  if(p==='tramSpotted'&&state.tail)worldLabel([11,1.6,state.distance-14],'PLATE 41',0);
-  if(p==='tramArrive')worldLabel([0,8.5,TRAM_ARCH-4],'MARKET ARCH',2);
+  if(p==='tramSpotted'&&state.tail)worldLabel([11,1.15,state.distance-14],'PLATE 41',0);
+  if(p==='tramArrive')worldLabel([0,8.5,tramArch()-4.3],'MARKET ARCH',2);
  },
  exit(){return [1.35,3.6,camera.z+12];},
  preview(){Object.assign(state,{pursuit:'chasing',distance:20,phaseDistance:20});return 'tramEntry';}

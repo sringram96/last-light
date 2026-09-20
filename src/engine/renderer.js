@@ -123,4 +123,4 @@ function triangle(a,b,c,mat,n){
  }
 }
 function pixel(x,y,z,g,k){x=Math.round(x);y=Math.round(y);if(x<0||x>=W||y<0||y>=H)return;const i=y*W+x;if(z<zbuf[i]){zbuf[i]=z;chars[i]=g;ink[i]=k;}}
-function worldLabel(p,text,hue=2){const v=cam(p);if(v.z<1)return;const s=project(v),start=Math.round(s.x-text.length/2);for(let i=0;i<text.length;i++)if(text[i]!==' ')pixel(start+i,s.y,v.z-.3,text[i],hue*20+16);}
+function worldLabel(p,text,hue=2){const v=cam(p);if(v.z<1)return;const s=project(v),start=Math.round(s.x-text.length/2);for(let i=0;i<text.length;i++)if(text[i]!==' ')pixel(start+i,s.y,v.z-.6,text[i],hue*20+16);}

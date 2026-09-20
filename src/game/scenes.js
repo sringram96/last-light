@@ -82,7 +82,18 @@ function officeSet(){
  box(6.7,0,7,8,4.4,13,mat('metal'));for(let y=.5;y<4;y+=1.1)box(6.6,y,7.1,7.1,y+.8,12.9,mat('paper',6));
  box(-7.9,0,11.5,-5.9,2.8,15.5,mat('metal'));box(-7.8,2.8,11.6,-6,3.2,15.4,mat('paper',6));
  box(-6.5,0,-2,-6.3,2.6,-1.8,mat('metal'));box(-6.9,2.2,-2.4,-5.9,2.6,-1.4,mat('wood',2));
- box(-8,0,-5.9,-5,4,-5.7,mat('door',2));pendant(-3,-3,3.8);pendant(5.5,13.5,3.8);
+ pendant(-3,-3,3.8);pendant(5.5,13.5,3.8);
+ // Bell's lantern on the desk corner, and the two photographs pinned to the board: Bell's, and Vale's commendation with its ribbon.
+ box(-2.2,1.14,7.2,-1.8,1.8,7.6,mat('glass',1));box(-2.25,1.8,7.15,-1.75,1.88,7.65,mat('metal'));box(-2.06,1.88,7.36,-1.94,1.98,7.44,mat('metal'));
+ box(-7.7,2.55,4.75,-7.62,3.15,5.25,mat('dispatch',6));box(-7.7,2.55,5.95,-7.62,3.15,6.45,mat('dispatch',6));box(-7.7,2.36,6.05,-7.62,2.52,6.35,mat('sign'));
+ // The front wall and the office door, hinged open against the corridor wall. Beyond it the corridor: three dark desks,
+ // Vale's dark door opposite with its name plate and no light under it, and the stairwell door under the only lit box.
+ box(-5,0,-6.1,8,5,-5.9,mat('brick',2));box(-5,0,-6.35,-2,4,-6.15,mat('door',2));
+ floor(-22,-11,8,-6,0,'plank',2);wall(8,-11,-22,-11,4,'brick',0);wall(-22,-6,-22,-11,4,'brick',0);wall(-8,-6,-22,-6,4,'brick',0);
+ quad([-22,4,-11],[8,4,-11],[8,4,-6],[-22,4,-6],mat('ceiling'),[0,-1,0]);
+ for(const x of [-20,-16,-12]){box(x-1.3,.95,-9.9,x+1.3,1.05,-8.3,mat('wood',2));for(const [dx,dz] of [[-1.15,-9.75],[1.15,-9.75],[-1.15,-8.45],[1.15,-8.45]])box(x+dx-.05,0,dz-.05,x+dx+.05,.95,dz+.05,mat('metal'));}
+ box(-14,0,-10.95,-11.6,3.2,-10.9,mat('hatch'));box(-13.4,3.25,-10.95,-12.2,3.5,-10.9,mat('sign'));
+ box(-21.98,0,-9.5,-21.9,3.2,-7.5,mat('door',2));box(-21.9,3.45,-8.95,-21.6,3.85,-8.05,mat('lamp',2));lamps.push([-21.75,-8.5]);
  const cityStart=surfaces.length;cityRow(24,110,16,-14,14);cityRow(30,120,18,4,18);cityRow(40,130,20,22,24);cityRow(34,125,19,-30,20);
  for(let i=cityStart;i<surfaces.length;i++){for(const v of surfaces[i].v)v[1]-=6;surfaces[i].mat={...surfaces[i].mat,baseY:-6};}
 }
@@ -132,6 +143,8 @@ function extended(){return !['brief','watch','ready','follow','danger','qte','re
 function sceneFor(p){const d=phaseDef(p);if(d)return d.set;for(const name of ['office','station','pump','roof','club','chase','tunnel','canal'])if(p.startsWith(name))return name;return 'street';}
 const moving=()=>sceneName==='chase'||sceneName==='tunnel'||!!sets[sceneName]?.moving;
 const look=(x,y,z,tx,ty,tz)=>({x,y,z,yaw:Math.atan2(tx-x,tz-z),pitch:Math.atan2(ty-y,Math.hypot(tx-x,tz-z))});
+// A shot part-way between two others: the second half of a beat that pans or tilts after its first move has settled.
+function blendShot(a,b,t){const o={};for(const k of Object.keys(a))o[k]=mix(a[k],b[k],t);return o;}
 function caseShot(){
  const p=state.phase,set=sets[sceneName];
  if(set&&set.shot)return set.shot(p);
@@ -151,7 +164,8 @@ function caseShot(){
   // A slow push-in from the door, a low shot across the desk, then the window and the city.
   if(p==='officeEntry')return look(-1.6,1.7,4.4,-1.8,1.3,9.2);
   if(p==='officeFile')return look(2.3,1.45,6.4,-1.6,1.2,8.8);
-  if(p==='officeBoard')return look(-2.4,1.8,3.6,-7.9,2.7,5.8);
+  // The board beat: three seconds on the two photographs, then a glance out through the open door across the corridor to Vale's dark door.
+  if(p==='officeBoard'){const a=look(-2.4,1.8,3.6,-7.9,2.7,5.8);return state.event<3||reduce?a:blendShot(a,look(-6.6,1.6,-6.6,-14,1.5,-10.5),smooth(clamp((state.event-3)/2,0,1)));}
   return look(-2.2,2.2,6,0,2.4,16);
  }
  if(sceneName==='club'){
@@ -294,7 +308,9 @@ function caseGeometry(){
 function exitPoint(name){
  if(sets[name]&&sets[name].exit)return sets[name].exit();
  if(name==='street'&&state.phase==='loftTurn')return [-7.4,4.2,10.2];
- return {office:[-6.5,1.5,-5.8],street:[-4.9,1.3,38.7],station:[0,2,43.8],pump:[6.15,5,31.1],roof:[-9.5,1.5,3.1],club:[11.85,1.8,18],chase:[0,1,camera.z+40],tunnel:[0,1,camera.z+40]}[name]||null;
+ // The office leaves by the stairwell door at the end of the corridor; from inside the room the glide goes through the office door first.
+ if(name==='office'&&camera.z>-6)return [-6.6,1.6,-6.4];
+ return {office:[-21.5,1.5,-8.5],street:[-4.9,1.3,38.7],station:[0,2,43.8],pump:[6.15,5,31.1],roof:[-9.5,1.5,3.1],club:[11.85,1.8,18],chase:[0,1,camera.z+40],tunnel:[0,1,camera.z+40]}[name]||null;
 }
 function exitShot(name){
  const e=exitPoint(name);if(!e)return{...camera};
@@ -340,7 +356,7 @@ function caseLabels(){
   if(state.phase==='chaseQteB')worldLabel([0,5.1,state.distance+28],'BRIDGE LIFTING',2);
  }
  if(sceneName==='canal')worldLabel([9,3.5,24],'CITY MEDIC',2);
- if(sceneName==='office'){worldLabel([-7.7,4.5,6.2],'CASE BOARD',2);worldLabel([0,4.6,16.2],'NIGHT DIVISION',1);if(state.phase!=='officeEntry')worldLabel([-.4,1.55,8.3],'I. BELL',6);if(state.phase==='officeBoard'){worldLabel([-7.9,2.3,5],'I. BELL',6);worldLabel([-7.9,2.3,6.4],'A. VALE',3);}}
+ if(sceneName==='office'){worldLabel([-7.4,4.5,7],'CASE BOARD',2);worldLabel([0,4.6,16.2],'NIGHT DIVISION',1);if(state.phase!=='officeEntry')worldLabel([-.4,1.55,8.3],'I. BELL',6);if(state.phase==='officeBoard'){worldLabel([-7.6,2.3,5],'I. BELL',6);worldLabel([-7.6,2.2,6.2],'A. VALE',3);worldLabel([-12.8,3.9,-10.6],'VALE',0);}}
  if(sceneName==='club'){
   worldLabel([0,5.5,16],'THE FILAMENT',3);worldLabel([11.6,4.7,16.5],'NO EXIT',3);
   if(state.phase!=='clubEntry')worldLabel([9,3.4,14],'VALE',3);
