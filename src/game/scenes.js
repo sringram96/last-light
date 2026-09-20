@@ -190,7 +190,7 @@ function caseShot(){
 function sceneStart(name){
  const d=state.distance;
  if(sets[name]&&sets[name].start)return sets[name].start();
- return {office:look(-3.2,2.1,1.5,-1.8,1.2,9),station:look(5,10,-4,0,0,24),pump:look(-4.5,1.8,-7,2,1.5,18),roof:look(-12,6,-5,1.3,1.5,15),club:look(-9,2.2,-3,2,1.5,12),chase:look(-7,9,d-15,0,1,d+16),tunnel:look(-5,3,d-12,0,1,d+18)}[name]||look(8,2.3,7,3,1,15);
+ return {office:look(-3.2,2.1,1.5,-1.8,1.2,9),station:look(5,10,-4,0,0,24),pump:look(-4.5,1.8,-7,2,1.5,18),roof:look(-12,6,-5,1.3,1.5,15),club:state.market==='cut'?look(11,2,20.5,2,1.4,8):look(-9,2.2,-3,2,1.5,12),chase:look(-7,9,d-15,0,1,d+16),tunnel:look(-5,3,d-12,0,1,d+18)}[name]||look(8,2.3,7,3,1,15);
 }
 function casePose(){
  const set=sets[sceneName];
@@ -235,7 +235,8 @@ function caseBlocking(){
  }
  if(sceneName==='club'){
   const u=p==='clubEntry'&&!reduce?span(8):1,v=p==='clubResult'&&!reduce?span(4):p==='clubResult'?1:0;
-  rook={x:mix(-1,.5,u),z:mix(-2,9,u),pose:u<1?'walk':'watch'};
+  // On the cut route Rook comes in by the back door and walks past the booth to the same mark.
+  rook=state.market==='cut'?{x:mix(10.5,.5,u),z:mix(17.5,9,u),pose:u<1?'walk':'watch'}:{x:mix(-1,.5,u),z:mix(-2,9,u),pose:u<1?'walk':'watch'};
   if(p==='clubQte'||(p==='clubResult'&&state.club==='duck'))rook={x:.5,z:9,pose:'crouch'};
   if(p==='clubResult'&&state.club==='vault')rook={x:mix(.5,7.4,v),z:mix(9,12.4,v),pose:v<1?'walk':'reach'};
   if(p==='clubResult'&&state.club==='late')rook={x:.5,z:9,pose:'crouch',lean:.3*(1-v)};
@@ -383,8 +384,8 @@ function caseLabels(){
  if(sceneName==='canal')worldLabel([9,3.5,24],'CITY MEDIC',2);
  if(sceneName==='office'){worldLabel([-7.4,4.5,7],'CASE BOARD',2);worldLabel([0,4.6,16.2],'NIGHT DIVISION',1);if(state.phase!=='officeEntry')worldLabel([-.4,1.55,8.3],'I. BELL',6);if(state.phase==='officeBoard'){worldLabel([-7.55,2.2,5],'I. BELL',6);worldLabel([-7.55,2.0,6.2],'A. VALE',3);worldLabel([-12.8,3.9,-10.6],'VALE',0);}}
  if(sceneName==='club'){
-  worldLabel([0,5.5,16],'THE FILAMENT',3);worldLabel([11.6,4.7,16.5],'NO EXIT',3);
-  if(state.phase!=='clubEntry')worldLabel([9,3.4,14],'VALE',3);
+  worldLabel([0,5.5,16],'THE FILAMENT',3);worldLabel([11.6,5.3,16.5],'NO EXIT',3);
+  if(!['clubEntry','clubQte'].includes(state.phase)){worldLabel([9,3.4,14],'VALE',3);worldLabel([6.5,3.25,11.5],'KRANE',0);}
   if(state.phase==='clubQte'){worldLabel([.5,1.85,9],'[1]',2);worldLabel([8.3,2,10.5],'[2]',2);}
  }
  if(sceneName==='tunnel'){
