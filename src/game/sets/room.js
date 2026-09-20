@@ -21,7 +21,12 @@ registerSet('room',{
   // Front wall with the door gap x -2..-.4, a metal frame, and the door hinged open flat against the corridor face.
   box(-3.5,0,-.15,-2,3.6,.15,mat('brick',0));box(-.4,0,-.15,3.5,3.6,.15,mat('brick',0));box(-2,3.2,-.15,-.4,3.6,.15,mat('brick',0));
   for(const x of [-2.08,-.4])box(x,0,-.2,x+.08,3.28,.2,mat('metal'));box(-2.08,3.2,-.2,-.32,3.28,.2,mat('metal'));
-  box(-3.62,0,-.3,-2.06,3.15,-.18,mat('door',2));
+  // The door stands open into the corridor on its left hinge, sixty degrees off the wall: both faces are quads.
+  {const hx=-2.04,hz=-.22,ex=hx-1.6*Math.cos(Math.PI/3),ez=hz-1.6*Math.sin(Math.PI/3),nx=Math.sin(Math.PI/3),nz=-Math.cos(Math.PI/3);
+   quad([hx,0,hz],[ex,0,ez],[ex,3.15,ez],[hx,3.15,hz],mat('door',2),[nx,0,nz]);quad([ex,0,ez],[hx,0,hz],[hx,3.15,hz],[ex,3.15,ez],mat('door',2),[-nx,0,-nz]);
+   box(ex-.04,0,ez-.04,ex+.04,3.15,ez+.04,mat('metal'));}
+  // Beside the door on the corridor side: a low steel cabinet with the night's files on it, and a crate.
+  box(.3,0,-.75,1.7,1.05,-.25,mat('metal'));box(.45,1.05,-.7,1.3,1.13,-.3,mat('paper',6));box(1.9,0,-.9,2.6,.55,-.3,mat('wood',2));
   // Corridor: floor, walls, ceiling beams every two units, a conduit pair overhead and a skirting run on each wall.
   floor(-4,-13,4,0,0,'drain',7);wall(-4,0,-4,-13,3.6,'brick',0);wall(4,-13,4,0,3.6,'brick',0);
   for(let z=-12;z<0;z+=2)box(-4,3.35,z-.12,4,3.6,z+.12,mat('metal'));
@@ -40,8 +45,8 @@ registerSet('room',{
   box(-1.2,.15,-12.9,1.2,.85,-12.7,mat('grate'));
   // Beyond the window: the roofline of the block across the yard, then the sky. The sky quad's normal points up so it
   // takes the lamp-less top light and reads gold when state.dawn reaches 1.
-  box(-1.4,-3,-14.4,-.1,1.25,-13.7,mat('brick',4));box(-1.5,1.25,-14.5,0,1.4,-13.6,mat('stone',0));box(.3,-3,-14.4,1.6,1.15,-13.7,mat('brick',4));box(.2,1.15,-14.5,1.7,1.3,-13.6,mat('stone',0));
-  box(-.95,1.4,-14.2,-.75,2.05,-13.95,mat('metal'));box(.75,1.3,-14.25,1.25,1.75,-13.85,mat('metal'));
+  box(-1.4,-3,-14.4,-.1,1.08,-13.7,mat('brick',4));box(-1.5,1.08,-14.5,0,1.2,-13.6,mat('stone',0));box(.3,-3,-14.4,1.6,1.02,-13.7,mat('brick',4));box(.2,1.02,-14.5,1.7,1.12,-13.6,mat('stone',0));
+  box(-.95,1.2,-14.2,-.75,2,-13.95,mat('metal'));box(.75,1.12,-14.25,1.25,1.7,-13.85,mat('metal'));
   quad([-9,-4,-14.7],[9,-4,-14.7],[9,9,-14.7],[-9,9,-14.7],mat('dawn',4),[0,1,0]);
   // The table on four legs, two chairs, Rook's coat over the back of his, his file at the near edge.
   box(-2.1,.9,3.4,.3,.98,4.6,mat('metal'));for(const [x,z] of [[-2,3.5],[.2,3.5],[-2,4.5],[.2,4.5]])box(x-.05,0,z-.05,x+.05,.9,z+.05,mat('metal'));
@@ -57,8 +62,8 @@ registerSet('room',{
   box(3.3,.15,5.4,3.5,.9,7.4,mat('grate'));
   box(2.2,0,7,3.4,2.1,7.95,mat('metal'));for(let y=.25;y<2;y+=.6)box(2.3,y,6.96,3.3,y+.42,7.02,mat('paper',6));
   box(-3.5,3.3,7.2,3.5,3.6,7.5,mat('metal'));
-  // The one lamp: a low shade over the table centre; the only pool in the set.
-  pendant(-.9,4,3.3);
+  // The one lamp: a small low shade over the table centre on its flex; the only pool in the set.
+  box(-.94,3.3,3.96,-.86,3.6,4.04,mat('metal'));box(-1.25,3.05,3.7,-.55,3.3,4.3,mat('lamp',2));lamps.push([-.9,4]);
  },
  start(){return look(-1.2,1.7,-6.5,-1,1.2,5);},
  shot(p){

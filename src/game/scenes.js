@@ -28,7 +28,9 @@ function pumpSet(){
  floor(-15,-12,15,36,-.7,'water',1);wall(-15,36,-15,-12,11,'brick');wall(15,-12,15,36,11,'brick');wall(15,36,-15,36,11,'brick');
  box(-2.6,-.3,-12,2.6,0,20,mat('grate'));box(-2.6,-.3,16,10,0,25,mat('grate'));
  for(const x of [-2.5,2.5])for(let z=-8;z<16;z+=4){box(x-.035,0,z-.035,x+.035,.8,z+.035,mat('metal'));box(x-.03,.8,z,x+.03,.84,z+4,mat('metal'));}
- for(const x of [-8,8])for(const z of [7,24]){ellipsoid(x,3,z,2.2,3.5,2.2,mat('tank',1));box(x-.8,5,z-.8,x+.8,7.5,z+.8,mat('metal'));box(x-.27,7.2,-10,x+.27,7.65,33,mat('pipe',2));}
+ for(const x of [-8,8])for(const z of [7,20]){ellipsoid(x,3,z,2.2,3.5,2.2,mat('tank',1));box(x-.8,5,z-.8,x+.8,7.5,z+.8,mat('metal'));box(x-.27,7.2,-10,x+.27,7.65,33,mat('pipe',2));}
+ // The feeder pipe over Bell's platform; its joint is drawn per frame so it can split and drop in the windup.
+ box(3.5,7.2,16.8,7.8,7.65,17.2,mat('pipe',2));
  for(const z of [-4,12,29]){box(-15,9,z-.18,15,9.4,z+.18,mat('metal'));pendant(0,z,6.5);}
  box(-1.7,.3,12,-.9,2.3,12.6,mat('console',2));
  box(3.8,0,17,6.5,1.2,18.5,mat('metal'));box(-2,0,33.6,2,4,34,mat('hatch'));
@@ -99,8 +101,11 @@ function officeSet(){
 }
 function clubSet(){
  // The Filament: neon and velvet, a stage, a long bar and Vale's booth at the back.
- floor(-12,-4,12,22,0,'carpet',3);wall(-12,22,-12,-4,6,'velvet',3);wall(12,-4,12,22,6,'brick');wall(12,22,-12,22,6,'velvet',3);
+ floor(-12,-4,12,22,0,'carpet',3);wall(-12,22,-12,-4,6,'velvet',3);clubWallIdx=surfaces.length;wall(12,-4,12,22,6,'brick');wall(12,22,-12,22,6,'velvet',3);
  quad([-12,6,-4],[12,6,-4],[12,6,22],[-12,6,22],mat('ceiling'),[0,-1,0]);
+ // A cable across the room over the tables, and a neon spot over the stage; the back door is drawn per frame so it can open.
+ quad([-12,4.5,8],[12,4.5,8],[12,4.535,8.035],[-12,4.535,8.035],mat('cable'),[0,-1,0]);
+ box(-.35,4.85,18.15,.35,5.15,18.85,mat('neon',3));box(-.04,5.15,18.46,.04,6,18.54,mat('metal'));
  box(8,0,4,11.5,1.1,12,mat('wood',2));box(7.9,1.1,3.9,11.6,1.2,12.1,mat('metal'));box(11.5,0,3.5,11.9,3.6,12.5,mat('metal'));
  box(11.45,1.25,3.6,11.55,1.3,12.4,mat('neon',1));box(11.45,2.5,3.6,11.55,2.55,12.4,mat('neon',3));
  for(let z=4.3;z<12;z+=.8)box(11.3,1.3,z-.12,11.5,2.1,z+.12,mat('glass',1));
@@ -111,9 +116,9 @@ function clubSet(){
  for(const z of [13.5,16.5])box(11.6,1.5,z,11.8,3.2,z+2.5,mat('screen',1));
  box(6.5,0,14.6,11.5,1.4,15.4,mat('velvet',3));box(7,0,12.6,10.5,.95,14,mat('wood',2));box(7.1,.95,12.7,10.4,1,13.9,mat('metal'));
  for(const x of [-8,8])for(const z of [1,9])pillar(x,z,6);
- box(11.7,0,17,12,3.6,19,mat('door',2));
- for(const z of [2,9,15])pendant(0,z,4.2);
+ for(const z of [2,9,15])pendant(0,z,4.2);pendant(-5,6.5,4.2);pendant(-5,12.5,4.2);
 }
+let clubWallIdx=0;
 function tunnelSet(){
  // The Undercity: a storm drain running under the elevated road, lit by emergency neon.
  floor(-6,-60,6,1000,0,'drain');floor(-7.5,-60,-6,1000,-.35,'water',1);floor(6,-60,7.5,1000,-.35,'water',1);
@@ -248,6 +253,19 @@ function caseGeometry(){
   const x=-1.25,z=11.88,y=1.35;
   for(let i=0;i<12;i++){const a=i*Math.PI/6+spin,b=(i+1)*Math.PI/6+spin;quad([x+Math.cos(a)*.6,y+Math.sin(a)*.6,z],[x+Math.cos(b)*.6,y+Math.sin(b)*.6,z],[x+Math.cos(b)*.43,y+Math.sin(b)*.43,z],[x+Math.cos(a)*.43,y+Math.sin(a)*.43,z],mat('lamp',2),[0,0,-1]);}
   box(-1.3,1.29,11.85,-1.2,1.41,12,mat('metal'));
+  const p=state.phase,valve=state.rescue==='valve',v=p==='pumpResult'&&!reduce?span(4):p==='pumpTruth'?1:0;
+  // The joint splits in the windup: the pipe section drops 0.6 and water pours from it until the inlet is closed.
+  const jd=p==='pumpDanger'?span(2)*.6:['pumpQte','pumpResult','pumpTruth'].includes(p)?.6:0;
+  box(2.5,6.8-jd,16.5,3.5,7.6-jd,17.5,mat('pipe',2));
+  if(jd>0){box(2.5,6.5-jd,16.5,3.5,6.8-jd,17.5,mat('water',1));if(!(valve&&(p==='pumpTruth'||v>.5)))box(2.85,-.7,16.85,3.15,6.5-jd,17.15,mat('water',1));}
+  // Bell's satchel at his hip, carried across on the valve route and dropped into the torrent on the others.
+  const bx=mix(4.8,3.25,v),by=1.2*(1-v),bz=mix(17.8,16.2,v),lost=['pumpResult','pumpTruth'].includes(p)&&!valve;
+  if(!lost)box(bx+.25,by+.75,bz-.08,bx+.6,by+1.2,bz+.07,mat('wood',2));
+  else if(p==='pumpResult'){const fy=mix(1.95,-1.2,clamp(state.event/1.5,0,1));if(fy>-1)box(4.95,fy,17.7,5.3,fy+.45,17.85,mat('wood',2));}
+  // The ledger open on the walkway between them once the story reaches it dry, and the water dropping as the inlet closes.
+  if(p==='pumpTruth'&&valve)box(1.1,0,15.6,1.7,.12,16,mat('dispatch',6));
+  const drop=valve?v*.4:0,w0=sceneCache.pump.surfaces[0];
+  surfaces[0]=drop>0?{...w0,v:w0.v.map(q=>[q[0],q[1]-drop,q[2]])}:w0;
  }
  if(sceneName==='roof'){
   const d=reduce?4:state.t*3;
@@ -299,8 +317,15 @@ function caseGeometry(){
  if(sceneName==='club'){
   // The bottle crosses the room during the prompt and bursts on the neon if it is not answered.
   const p=state.phase;
-  if(p==='clubQte'){const u=clamp(state.event/caseDuration(),0,1),x=mix(6,.8,u),y=1.4+Math.sin(u*Math.PI)*1.6,z=mix(11,9.4,u);box(x-.12,y-.2,z-.12,x+.12,y+.2,z+.12,mat('glass',1));}
+  if(p==='clubQte'){const u=clamp(state.event/caseDuration(),0,1),x=mix(6,.8,u),y=1.4+Math.sin(u*Math.PI)*2.3,z=mix(11,9.4,u);box(x-.12,y-.2,z-.12,x+.12,y+.2,z+.12,mat('glass',1));}
   if(p==='clubResult'&&state.club==='vault')for(let i=0;i<4;i++)box(7.4+i*.5,1,12.9+hash(i,2)*.6,7.7+i*.5,1.08,13.2+hash(i,2)*.6,mat('lamp',2));
+  // The back door: closed until the result, when it stands open on Vine Alley and Vale's red car beyond it.
+  const w=sceneCache.club.surfaces[clubWallIdx];
+  if(p==='clubResult'){
+   surfaces[clubWallIdx]={...w,v:[[12,0,-4],[12,0,17],[12,6,17],[12,6,-4]]};quad([12,0,19],[12,0,22],[12,6,22],[12,6,19],mat('brick'),[-1,0,0]);quad([12,3.6,17],[12,3.6,19],[12,6,19],[12,6,17],mat('brick'),[-1,0,0]);
+   box(12.05,0,18.9,14.3,3.6,19.2,mat('door',2));quad([12,0,13],[16.5,0,13],[16.5,0,23],[12,0,23],mat('road',7),[0,1,0]);
+   quad([16.5,0,23],[16.5,0,12],[16.5,6,12],[16.5,6,23],mat('gap',4),[-1,0,0]);car(14.3,18.6,3,0);
+  }else{surfaces[clubWallIdx]=w;box(11.7,0,17,12,3.6,19,mat('door',2));}
  }
  return caseBlocking();
 }
@@ -348,7 +373,7 @@ function tunnelVale(){
 function caseLabels(){
  const set=sets[sceneName];if(set){if(set.labels)set.labels(state.phase);return;}
  if(sceneName==='station'){worldLabel([0,5.25,43.2],'PUMP ROOM 4',2);worldLabel([0,2.2,19.1],'MAINTENANCE',2);if(state.phase==='stationQuiet')worldLabel([.4,1.7,19.3],'ORDER 7731',6);}
- if(sceneName==='pump'){worldLabel([-1.25,2.65,11.8],'INLET',2);if(!['pumpResult','pumpTruth'].includes(state.phase))worldLabel([4.8,3.9,17.7],'BELL',2);if(state.phase==='pumpQte'){worldLabel([-1.25,3.3,11.8],'[1]',2);worldLabel([4.8,4.5,17.7],'[2]',2);}}
+ if(sceneName==='pump'){worldLabel([-2.1,1.6,12.2],'INLET',2);if(!['pumpResult','pumpTruth'].includes(state.phase))worldLabel([4.8,3.9,17.7],'BELL',2);if(state.phase==='pumpQte'){worldLabel([-1.25,2.15,11.8],'[1]',2);worldLabel([4.8,4.5,17.7],'[2]',2);}}
  if(sceneName==='roof')worldLabel([0,3.2,17],'NORTH / RADIO',2);
  if(sceneName==='chase'){
   worldLabel([1.6,3.3,state.distance+16+state.gap*7],'VALE',3);

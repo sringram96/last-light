@@ -7,7 +7,7 @@ else if(kind==='tiles'){
  for(let i=0;i<lamps.length;i++){const l=lamps[i],d=(x-l[0])**2+(z-l[1])**2;if(d<22){const a2=(1-d/22);if(a2>.25){hue=2;lum=Math.max(lum,.3+a2*.55);if(grain>.6)g='=';}}}
 }
 else if(kind==='wall'||kind==='brick'){
- hue=kind==='wall'?2:(mat.hue||0);lum=.37+grain*.15;g=fract(y*2)<.10?'-':fract(x*.8+z*.8+Math.floor(y*2)*.5)<.055?'|':grain>.6?':':'.';
+ hue=kind==='wall'?2:(mat.hue||0);lum=(kind==='brick'&&!mat.hue?.43:.37)+grain*.15;g=fract(y*2)<.10?'-':fract(x*.8+z*.8+Math.floor(y*2)*.5)<.055?'|':grain>.6?':':'.';
  if(kind==='wall'&&y>3&&y<9){const u=fract((Math.abs(n[0])>.5?z:x)/6);if(u>.2&&u<.8){hue=4;lum=.48;g=u<.23||u>.77?'|':fract(y*2)<.06?'=':'+';}}
  if(kind==='wall'&&(y<.25||Math.abs(y-2.7)<.1||Math.abs(y-10.2)<.13)){hue=2;lum=.9;g='=';}
 }
