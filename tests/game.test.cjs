@@ -95,6 +95,12 @@ test('the loft branch: the note, the photographs and a rewind lost to a wrong re
  const n=game({reduced:true});n.click('NEW CASE');n.click('SKIP INTRO');n.click('FOLLOW');n.run(3.5);n.click('CATCH');n.run(4.3);n.click('CONNECT');
  assert(!n.elements['.lc-actions'].children.some(b=>b.textContent.includes('LOFT')));
 });
+test('a checkpoint saved inside a registered set reloads at that beat',()=>{
+ const g=game({reduced:true});g.click('NEW CASE');g.click('SKIP INTRO');g.click('FOLLOW');g.run(3.5);g.click('SAVE THE BOOK');g.run(4.3);g.click('CONNECT');
+ g.click("BELL'S LOFT");g.phase('loftTurn');g.run(1.3);g.phase('loftEntry');g.run(1.3);g.phase('loftTable');g.click('READ THE NOTE');g.phase('loftNote');
+ const saved=JSON.parse(g.storage.getItem('last-light/save/v1'));assert.equal(saved.state?saved.state.phase:saved.phase,'loftNote');
+ const reloaded=game({reduced:true,storage:g.storage});reloaded.click('CONTINUE CASE');reloaded.phase('loftNote');assert.equal(reloaded.audit().scene,'loft');assert(reloaded.audit().state.note);
+});
 test('the lower ramp leads into the undercity, where the fork decides the arrest',()=>{
  // Following right catches Vale while the gap is small; cutting left needs the bridge operator's tip.
  let g=game({reduced:true});g.click('UNDERCITY','reel-actions');g.run(1.3);g.phase('tunnelQte');g.click('FOLLOW RIGHT');g.phase('tunnelFinish');assert(g.audit().state.caught);g.run(1.3);

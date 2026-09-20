@@ -1,7 +1,8 @@
 // Menus and scene previews do not become story checkpoints.
 const session={menu:true,mode:'story',confirmNew:false};
 let browserStorage=null;try{browserStorage=localStorage;}catch(e){}
-const saveStore=createSaveStore(browserStorage,[...Object.keys(caseTitles),'brief','watch','ready','follow','danger','qte','result','evidence','deduce','arrival','ending']);
+// Every phase a checkpoint can name: the street's, the hand-written case's and every registered set's.
+const saveStore=createSaveStore(browserStorage,[...Object.keys(caseTitles),...Object.keys(phaseDefs),'brief','watch','ready','follow','danger','qte','result','evidence','deduce','loftTurn','arrival','ending']);
 Object.assign(state,saveStore.readSettings({mono:false,untimed:reduce,sound:false}));
 function savePreferences(){saveStore.saveSettings({mono:state.mono,untimed:state.untimed,sound:state.sound});}
 function checkpoint(){if(session.mode==='story'&&!session.menu)saveStore.save(state);}
