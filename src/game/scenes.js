@@ -85,7 +85,7 @@ function officeSet(){
  pendant(-3,-3,3.8);pendant(5.5,13.5,3.8);
  // Bell's lantern on the desk corner, and the two photographs pinned to the board: Bell's, and Vale's commendation with its ribbon.
  box(-2.2,1.14,7.2,-1.8,1.8,7.6,mat('glass',1));box(-2.25,1.8,7.15,-1.75,1.88,7.65,mat('metal'));box(-2.06,1.88,7.36,-1.94,1.98,7.44,mat('metal'));
- box(-7.7,2.55,4.75,-7.62,3.15,5.25,mat('poster',2));box(-7.7,2.55,5.95,-7.62,3.15,6.45,mat('poster',2));box(-7.7,2.36,6.05,-7.62,2.52,6.35,mat('sign'));
+ box(-7.7,2.5,4.7,-7.62,3.15,5.3,mat('metal'));box(-7.7,2.5,5.9,-7.62,3.15,6.5,mat('metal'));box(-7.7,2.3,6.0,-7.62,2.46,6.4,mat('sign'));
  // The front wall and the office door, hinged open against the corridor wall. Beyond it the corridor: three dark desks,
  // Vale's dark door opposite with its name plate and no light under it, and the stairwell door under the only lit box.
  box(-5,0,-6.1,8,5,-5.9,mat('brick',2));box(-5,0,-6.35,-2,4,-6.15,mat('door',2));
@@ -356,7 +356,7 @@ function caseLabels(){
   if(state.phase==='chaseQteB')worldLabel([0,5.1,state.distance+28],'BRIDGE LIFTING',2);
  }
  if(sceneName==='canal')worldLabel([9,3.5,24],'CITY MEDIC',2);
- if(sceneName==='office'){worldLabel([-7.4,4.5,7],'CASE BOARD',2);worldLabel([0,4.6,16.2],'NIGHT DIVISION',1);if(state.phase!=='officeEntry')worldLabel([-.4,1.55,8.3],'I. BELL',6);if(state.phase==='officeBoard'){worldLabel([-7.6,2.3,5],'I. BELL',6);worldLabel([-7.6,2.2,6.2],'A. VALE',3);worldLabel([-12.8,3.9,-10.6],'VALE',0);}}
+ if(sceneName==='office'){worldLabel([-7.4,4.5,7],'CASE BOARD',2);worldLabel([0,4.6,16.2],'NIGHT DIVISION',1);if(state.phase!=='officeEntry')worldLabel([-.4,1.55,8.3],'I. BELL',6);if(state.phase==='officeBoard'){worldLabel([-7.55,2.2,5],'I. BELL',6);worldLabel([-7.55,2.0,6.2],'A. VALE',3);worldLabel([-12.8,3.9,-10.6],'VALE',0);}}
  if(sceneName==='club'){
   worldLabel([0,5.5,16],'THE FILAMENT',3);worldLabel([11.6,4.7,16.5],'NO EXIT',3);
   if(state.phase!=='clubEntry')worldLabel([9,3.4,14],'VALE',3);
