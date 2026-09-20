@@ -5,7 +5,7 @@
 // so the arch is where the arrival beat needs it however long the player rode before choosing to ride on.
 const TRAM_FAR=1200,TRAM_GROUND=-6,TRAM_BAY=24;
 // Market Arch's piers stand 39 units ahead of where tramArrive began (within the fog's 52 when they appear); the tram
-// brakes over the first second and stops with its front rail a few units short of them. The lit posts begin 20 before.
+// brakes over the first second and stops with its front rail a few units short of them. The lit posts begin 26 before.
 const tramArch=()=>state.phaseDistance+43;
 // Buildings from cityRow/building stand on the district's ground, six units under the viaduct.
 function tramSunk(from){for(let i=from;i<surfaces.length;i++){const s=surfaces[i];if(s.mat.kind==='building'||s.mat.kind==='stone'){for(const v of s.v)v[1]+=TRAM_GROUND;s.mat={...s.mat,baseY:TRAM_GROUND};}}}
@@ -72,10 +72,12 @@ registerSet('tram',{
   return{rook:{x:1.5,y:3.55,z:d+.7,pose:p==='tramSpotted'?'watch':'crouch'},courier:null,others:[]};
  },
  geometry(p){
-  const d=state.distance,lit=p==='tramArrive'?tramArch()-20:Infinity;
+  const d=state.distance,arch=p==='tramArrive'?tramArch():Infinity;
   lamps.length=0;
-  // Lamp posts every 24, half a bay from the masts: dark glass until the market's district.
-  for(let z=Math.floor((d-60)/TRAM_BAY)*TRAM_BAY+20;z<d+110;z+=TRAM_BAY)for(const x of [-3.6,3.6])tramPost(x,z,z>=lit);
+  // Lamp posts every 24, half a bay from the masts, unlit on the world's grid up to the market's district. From 26 units
+  // before the arch the lit posts run on the arch's own grid, so the tram always stops between two of them.
+  for(let z=Math.floor((d-60)/TRAM_BAY)*TRAM_BAY+20;z<Math.min(d+110,arch-38);z+=TRAM_BAY)for(const x of [-3.6,3.6])tramPost(x,z,false);
+  if(arch<Infinity)for(let z=arch-26;z<d+110;z+=TRAM_BAY)for(const x of [-3.6,3.6])tramPost(x,z,true);
   // The tram under the camera: body, ribbed roof, edge rails on posts, the front rail, the pantograph at the rear, bogies.
   box(.1,.45,d-6,2.65,3.3,d+2,mat('tram',1));box(0,3.3,d-6.1,2.75,3.55,d+2.1,mat('vent'));
   for(const x of [.12,2.63]){box(x-.04,3.95,d-6,x+.04,4.03,d+2,mat('metal'));for(let i=0;i<4;i++){const z=d-5.8+i*1.95;box(x-.06,3.55,z-.06,x+.06,3.98,z+.06,mat('metal'));}}
