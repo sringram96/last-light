@@ -277,7 +277,7 @@ function timer(){
  // A live beat has no countdown, pulse or ticks: the cue's flash rate is the only clock.
  else if(isQte())el.timer.textContent=state.untimed?'TAKE YOUR TIME':'LIVE';
  else if(isResult()&&state.reaction>0)el.timer.textContent='REACTION '+state.reaction.toFixed(2)+'s';
- else el.timer.textContent=isLive()?'LIVE':'YOUR MOVE';
+ else el.timer.textContent=phaseDef()?.kind==='death'?'':isLive()?'LIVE':'YOUR MOVE';
 }
 function ui(){
  el.actions.replaceChildren();keys=[];el.outcome.hidden=true;

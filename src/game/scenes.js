@@ -273,7 +273,7 @@ function caseShot(){
  }
  if(sceneName==='club'){
   if(p==='clubEntry')return look(-1.5,1.7,5,3,1.3,13);
-  if(p==='clubFace')return look(-4,4.8,4,7,1.2,13);
+  if(p==='clubFace'||p==='clubBooth')return look(-4,4.8,4,7,1.2,13);
   if(p==='clubQte')return look(-2.5,1.3,7.5,6.5,1.5,12);
   // The miss: the result camera cannot see Rook's mark, so the prompt frame holds two seconds on Rook down and Krane over him, then glides to the result camera as Krane goes after Vale.
   if(p==='clubResult'&&state.club==='late'){const a=look(-2.5,1.3,7.5,6.5,1.5,12),e=pictureClock(1);return e<2||reduce?a:blendShot(a,look(2,2.3,8,9.5,1.3,16),smooth(clamp((e-2)/2,0,1)));}

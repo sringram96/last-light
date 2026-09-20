@@ -25,24 +25,24 @@ npm test         # Save-system, story-route and renderer regression checks
 
 ## Play
 
-- Choose **New Case**, or **Continue Case** to load your saved checkpoint.
-- Watch the characters and camera; choose actions below the scene. Narration types in; chapter cards and stingers appear under the picture.
-- **GET READY** warns that a reaction is coming. During quick-time events, click an action, press **1** or **2**, or use the arrow keys (left/up for the first move, right/down for the second).
-- The header keeps a **REFLEX** tally of prompts answered in time. The closing report names the ending, the reflex score and a grade.
+- Choose **New Case**, or **Continue Case** to load your saved checkpoint. The game fills the window; **Full Screen** (or `f`) takes the whole display.
+- Watch the characters and camera. Quiet choices are buttons under the picture; narration types in and holds until it can be read, and a tap on the picture, Space or Enter shows the next sentence without skipping a beat.
+- **Text under the picture means think; a flash in the picture means move.** At an action beat two direction cues (`<<`, `>>`, `^^`, `vv`) flash on the things Rook can act on. Press that arrow key (or WASD), swipe that way on the picture, or tap the cue, within a window of 1.5 to 3 seconds. A wrong direction or no input is the miss.
+- Three **lamps** per case. Six misses are lethal: the death plays, a lamp goes out, and the night rewinds to the moment. Three are survivable with a worse story, and rewinding them costs a lamp. With no lamp left the case goes cold; restart the chapter or return to the menu.
+- Deductions cost a lamp on the second wrong answer, and Vale can stall the interview.
+- The header keeps the lamps and a **REFLEX** tally. The closing report names the ending, the inputs landed, deaths, restarts and a grade.
 - **Case File** shows the route taken, the persons of interest and the evidence gathered.
-- **Case Records** on the menu lists endings found (of six) and discoveries (of twenty). Records survive new cases.
-- After a landed move, the status line shows your reaction time. After a missed one, choose **Rewind the Moment** (three per case) to replay the beat, or **Carry On** with the consequence.
-- The header shows the current objective and rewinds left.
+- **Case Records** on the menu lists endings found (of seven), discoveries (of twenty-two) and deaths seen (of six). Records survive new cases.
 - Scene changes play an exit beat: the camera glides toward the way out while a connecting line types in, the picture dissolves, and the next set fades up already in motion. Reduced motion cuts directly.
-- **Untimed** removes reaction deadlines. **Mono** changes to monochrome. **Sound** enables short synthesized cues. All three preferences persist.
-- **Menu** pauses the story and provides resume and scene-preview controls.
+- **Untimed** removes reaction deadlines and shows the cues steadily with numbered buttons. **Mono** changes to monochrome. **Sound** enables short synthesized cues. All three preferences persist and live on the menu screen.
+- **Menu** pauses the story and provides resume and scene-preview controls. Opening the case file pauses too.
 - **Scene Reel** previews locations without overwriting story progress or records.
 
-Reduced-motion settings use stable shots, shortened travel, untimed prompts and instant narration by default. Background tabs and offscreen scenes pause. Observation jobs progress while the visible game is active; there is no offline idle economy yet.
+Reduced-motion settings use stable shots, shortened travel, untimed prompts and instant narration by default. Background tabs and offscreen scenes pause.
 
 ## Current playable case
 
-A missing lamplighter, a city running on stolen reserve power, and one night to find who signed for it. Fourteen sets, eight reaction prompts across the routes (seven on any one pursuit), three deductions, six endings and twenty discoveries. The full beat sheet is in [docs/design/BEATS.md](docs/design/BEATS.md); the cast is in [docs/design/CHARACTERS.md](docs/design/CHARACTERS.md).
+A missing lamplighter, a city running on stolen reserve power, and one night to find who signed for it. Fourteen sets, eight action beats across the routes (seven on any one pursuit), three deductions, seven endings, twenty-two discoveries and six deaths to see. The full beat sheet is in [docs/design/BEATS.md](docs/design/BEATS.md); the cast is in [docs/design/CHARACTERS.md](docs/design/CHARACTERS.md).
 
 0. **Night Division:** a skippable prologue in Rook's office: the desk, the case board with the Lumen Board memo, and the Bell file.
 1. **Station Road:** tail the courier, choose whom or what to save, then deduce where Bell is: the station, his loft over the depot, or the hotel.
@@ -59,7 +59,7 @@ A missing lamplighter, a city running on stolen reserve power, and one night to 
 12. **Interview Room:** name who signed above Vale, with whoever the night left in the chair.
 13. **Canal:** an ending derived from the evidence, the witnesses, the pursuit and the name on the warrant.
 
-Missed action prompts continue the story with their own consequence, and three rewinds per case let the player replay a missed beat. Staying with Bell on the roof skips the pursuit and reaches the interview room by the tram and the station. The case is complete and replayable; it is the foundation for a larger game, not a store-ready release.
+Six missed beats are deaths that spend a lamp and rewind the night; three are survivable with a worse story. With no lamp left the case goes cold and the chapter can be restarted. Staying with Bell on the roof skips the pursuit and reaches the interview room by the tram and the station. The case is complete and replayable; it is the foundation for a larger game, not a store-ready release.
 
 ## Project layout
 
