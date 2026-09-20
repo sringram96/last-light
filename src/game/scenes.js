@@ -290,8 +290,8 @@ function caseBlocking(){
   const u=p==='roofEntry'&&!reduce?span(8):1;
   rook={x:mix(-6,-1.6,u),z:mix(5.5,15.8,u),pose:u<1?'walk':'watch'};
   // The quiet beat: Rook walks to the north parapet to look west, and comes back to the radio for the listen.
-  if(p==='roofQuiet'){const q=reduce?1:span(4);rook={x:mix(-1.6,-1.5,q),z:mix(15.8,24.5,q),pose:q<1?'walk':'watch'};}
-  if(p==='roofListen'){const q=reduce?1:span(2.5);rook={x:mix(-1.5,-1.6,q),z:mix(24.5,15.8,q),pose:q<1?'walk':'watch'};}
+  if(p==='roofQuiet'){const q=reduce?1:span(4);rook={x:mix(-1.6,-3.4,q),z:mix(15.8,24.6,q),pose:q<1?'walk':'watch'};}
+  if(p==='roofListen'){const q=reduce?1:span(2.5);rook={x:mix(-3.4,-1.6,q),z:mix(24.6,15.8,q),pose:q<1?'walk':'watch'};}
   others.push({x:2.4,z:16.4,pose:p==='roofListen'?'radio':'stand',who:'medic'},{x:3.4,z:16.6,pose:'sit',who:'bell'});
   if(state.choice==='person')courier={x:1,z:18,pose:'stand',who:'nell'};
  }
@@ -508,6 +508,6 @@ function caseLabels(){
   const vale=tunnelVale();worldLabel([vale.x,3.3,vale.z],'VALE',3);
   if(state.phase==='tunnelQte'){const f=forkZ();worldLabel([3.4,4.6,f-1],'[1]',2);worldLabel([-3.4,4.6,f-1],'[2]',2);worldLabel([0,6.9,f-1.2],'CANAL GATE',1);}
   if(['tunnelQte','tunnelFinish'].includes(state.phase))worldLabel([-4.4,5.2,forkZ()-1],'MAINT',1);
-  if(state.phase==='tunnelFinish')worldLabel([50,12.9,state.distance+38.5],'SUBSTATION 9',1);
+  if(state.phase==='tunnelFinish')worldLabel([50,14,state.distance+38],'SUBSTATION 9',1);
  }
 }
