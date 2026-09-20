@@ -83,7 +83,8 @@ registerSet('substation',{
  start(){return look(0,8.5,-9.6,0,2,20);},
  shot(p){
   if(p==='subDeath')p='subResult';
-  if(p==='subEntry')return look(.4,5.5,2,0,1,44);
+  // The dock beat holds the end of the entry crane: the door, the van and the man on the dock beyond it.
+  if(p==='subEntry'||p==='subDock')return look(.4,5.5,2,0,1,44);
   if(p==='subManifest'){
    // Close on the clipboard for three seconds, then a pan right and down the aisle to Krane coming from the van.
    const a=look(-.6,2,36.4,2.47,2.25,38.9),b=look(-.6,2,36.4,2.2,1.5,50),u=reduce?(state.event<3?0:1):smooth(clamp((state.event-3)/2,0,1)),o={};
@@ -94,16 +95,16 @@ registerSet('substation',{
   if(p==='subDawn')return look(0,2.4,42,0,4,66);
   return look(-.6,1,31,1,2.6,39.5);
  },
- ease(p){return {subEntry:8,subManifest:1.2,subDanger:.5,subResult:1.5,subDeath:1.5,subDawn:5}[p]||1.2;},
+ ease(p){return {subEntry:8,subDock:.5,subManifest:1.2,subDanger:.5,subResult:1.5,subDeath:1.5,subDawn:5}[p]||1.2;},
  blocking(p){
-  // The death holds the rack's late picture for now (the content pass builds the real one): with no hall value written,
-  // the result branches below fall through to Rook under the rack.
-  if(p==='subDeath')p='subResult';
+  // The death is the rack's late picture (no hall value is written, so the result branches below fall through to Rook
+  // under the rack) with Krane at the fallen rack's near corner for two seconds, looking down, before he goes to the van.
+  const dead=p==='subDeath';if(dead)p='subResult';
   const others=[];let rook;
   // q: Rook's half-second step out of the rack's fall before it lands (0.6 s into the result).
   const u=p==='subEntry'&&!reduce?span(8):1,v=p==='subResult'?(reduce?1:span(4)):0,w=p==='subDawn'?(reduce?1:span(5)):0,q=reduce?1:clamp(state.event/.5,0,1);
-  const hall=state.hall,live=['subEntry','subManifest','subDanger','subQte'].includes(p);
-  if(p==='subEntry')rook={x:0,z:mix(-7,30,u),pose:u<1?'walk':'watch'};
+  const hall=state.hall,live=['subEntry','subDock','subManifest','subDanger','subQte'].includes(p);
+  if(p==='subEntry'||p==='subDock')rook={x:0,z:mix(-7,30,u),pose:u<1?'walk':'watch'};
   else if(p==='subManifest')rook={x:-1,z:40.6,pose:'read'};
   else if(p==='subResult'&&hall==='dive')rook={x:mix(0,-1,q),z:mix(38,34.6,q),pose:q<1?'walk':'crouch'};
   else if(p==='subResult'&&hall==='breaker')rook={x:mix(0,.1,q),z:mix(38,36.2,q),pose:v<.6?'reach':'stand'};
@@ -113,26 +114,31 @@ registerSet('substation',{
   // Krane: at the van in the entry, down the aisle toward Rook in the manifest beat, round the loose rack's far end to
   // heave it, then pinned at its corner (dive) or away to the van.
   let krane=null;
-  if(p==='subEntry')krane={x:2,y:-1.2,z:53,pose:'stand',who:'krane'};
+  if(p==='subEntry'||p==='subDock')krane={x:2,y:-1.2,z:53,pose:'stand',who:'krane'};
   else if(p==='subManifest'){const t=clamp((state.event-1.5)/4,0,1),z=mix(53,44,t);krane={x:mix(1.5,1.6,t),y:-1.2*clamp((z-49.6)/1.6,0,1)+(z<49.6?.3:0),z,pose:t<1?'walk':'stand',who:'krane'};}
   else if(p==='subDanger'){const t=reduce?1:span(1.2);krane={x:mix(1.6,5.4,t),y:.3,z:mix(44,43.3,t),pose:t<1?'walk':'reach',who:'krane'};}
   else if(p==='subQte')krane={x:5.4,y:.3,z:43.3,pose:'reach',who:'krane'};
   else if(p==='subResult'&&hall==='dive')krane={x:3.4,y:-.3,z:43.4,pose:'stumble',lean:-.4,who:'krane'};
+  else if(dead&&state.event<2)krane={x:1.2,y:.3,z:43,pose:'stand',lean:-.25,who:'krane'};
+  else if(dead){const s=reduce?1:clamp((state.event-2)/2,0,1),z=mix(43,53,s);krane={x:mix(1.2,1.5,s),y:-1.2*clamp((z-49.6)/1.6,0,1)+(z<49.6?.3:0),z,pose:s<1?'walk':'stand',who:'krane'};}
   else if(p==='subResult'){const z=mix(43.3,53,v);krane={x:mix(5.4,1.2,v),y:-1.2*clamp((z-49.6)/1.6,0,1)+(z<49.6?.3:0),z,pose:'walk',who:'krane'};}
   if(krane)others.push(krane);
   // Three loaders: between the loose racks and the van, then milling at the right during the prompt, then running out.
   const mill=[[6.3,45.5],[7.2,47.5],[5.6,48.9]];
   for(let i=0;i<3;i++){
-   if(p==='subEntry'||p==='subManifest')others.push(loaderAt(tri(state.t*.1+i*.37),i));
+   if(p==='subEntry'||p==='subDock'||p==='subManifest')others.push(loaderAt(tri(state.t*.1+i*.37),i));
    else if(live)others.push({x:mill[i][0],z:mill[i][1]+Math.sin(state.t*.6+i*2.1)*.5,pose:'walk',hue:0,who:'patron'});
    else if(p==='subResult')others.push(loaderOut(mill[i],i,reduce?1:span(3+i*.4)));
   }
-  if(p==='subEntry'&&state.event<6)others.push({x:-2.5,y:-1.2,z:56,pose:'stand',who:'ashe'});
+  // The man on the dock: standing beyond the van through the entry and the dock beat, then, in the beat's last second
+  // (the beat holds for its line, so the second is timed from its real end), walking left out of the door's frame.
+  if(p==='subEntry')others.push({x:-2.5,y:-1.2,z:56,pose:'stand',who:'ashe'});
+  if(p==='subDock'){const end=holdFor(reduce?1:5),s=reduce?0:clamp((state.event-(end-1))/1,0,1);others.push({x:mix(-2.5,-4.3,s),y:-1.2,z:56,pose:s>0&&s<1?'walk':'stand',who:'ashe'});}
   if(state.caught&&p==='subDawn')others.push({x:-4.4,y:-.8,z:58,pose:'stand',who:'vale'});
   return{rook,courier:null,others};
  },
  geometry(p){
-  if(p==='subDeath')p='subResult';
+  const dead=p==='subDeath';if(dead)p='subResult';
   state.dawn=p==='subDawn'?span(5)*.35:0;
   const dark=state.hall==='breaker'&&(p==='subResult'||p==='subDawn'),a=subLean(p),flat=a>=Math.PI/2-1e-6;
   // Pendants over the centre aisle: four warm pools until the breaker is thrown.
@@ -162,19 +168,21 @@ registerSet('substation',{
   // Arcs where the cells split: on the fallen rack and across the wet floor at its near end.
   if(burnt&&flat){box(-2.1,1.9,37.1,-1.5,2.25,37.9,mat('arc',6));box(-2.1,1.9,40.1,-1.5,2.25,40.9,mat('arc',6));box(1.1,1.9,36.35,1.9,2.25,36.75,mat('arc',6));box(-1.8,.02,35.5,-1.2,.25,35.85,mat('arc',6));}
   // The van on the dock, backed up to the door; it pulls away after the breaker or the miss and is gone by the dawn.
-  const leaving=state.hall!=='dive'&&state.hall!=='';
+  const leaving=dead||(state.hall!=='dive'&&state.hall!=='');
   if(!(p==='subDawn'&&leaving))car(0,p==='subResult'&&leaving?mix(56,63,span(5)):56,4,-1.2,true,{freight:true});
   if(state.caught)car(-4.4,58,1,-1.2);
  },
  labels(p){
-  if(p==='subDeath')p='subResult';
+  const dead=p==='subDeath';if(dead)p='subResult';
   // The hall's name rides the first gantry's rail (the far wall sits behind the second gantry from the entry camera);
   // LOADING is painted on the roller door, below that gantry's walkway.
-  if(p==='subEntry')worldLabel([-2.6,8.75,11.4],'SUBSTATION 9',1);
-  if(['subEntry','subManifest','subDawn'].includes(p))worldLabel([0,7,49.5],'LOADING',2);
+  if(p==='subEntry'||p==='subDock')worldLabel([-2.6,8.75,11.4],'SUBSTATION 9',1);
+  if(['subEntry','subDock','subManifest','subDawn'].includes(p))worldLabel([0,7,49.5],'LOADING',2);
   if(p==='subManifest')worldLabel([2.1,3.0,38.9],'MANIFEST',6);
-  const k=['subManifest','subDanger','subResult'].includes(p)?this.blocking(p).others.find(o=>o.who==='krane'):null;
-  if(k&&!(p==='subResult'&&state.hall!=='dive'))worldLabel([k.x,(k.y||0)+2.65,k.z],'KRANE',0);
+  // Krane's name: on him down the aisle and at the rack, on him pinned, and on him at the fallen rack's corner while he
+  // looks over it at Rook; never on his back as he walks to the van.
+  const k=['subManifest','subDanger','subResult'].includes(p)?this.blocking(dead?'subDeath':p).others.find(o=>o.who==='krane'):null;
+  if(k&&(dead?state.event<2:!(p==='subResult'&&state.hall!=='dive')))worldLabel([k.x,(k.y||0)+2.65,k.z],'KRANE',0);
   // The cues: dive clear to the left of the aisle, the breaker's lever on the right; unlit while Krane heaves.
   if(p==='subDanger'||p==='subQte'){cueLabel([-1,2.3,34.8],'left',1);cueLabel([1.2,4.05,35.6],'right',2);}
   if(p==='subDawn'&&state.caught)worldLabel([-4.4,1.95,58],'VALE',3);
@@ -183,16 +191,20 @@ registerSet('substation',{
  preview(){Object.assign(state,{pursuit:'ramp',tunnel:'right',caught:true,keeper:true,radio:true});return 'subEntry';}
 });
 registerPhases('substation',{
- subEntry:{kind:'cutscene',title:'08 / SUBSTATION NINE',duration:8,next:'subManifest',
+ subEntry:{kind:'cutscene',title:'08 / SUBSTATION NINE',duration:8,next:'subDock',
   enter:()=>{addClue('Substation Nine, the Lumen Board\'s reserve battery hall on the canal basin: the batteries are being loaded into a Board van by Vale\'s buyers, on the Board\'s own premises.');},
-  caption:()=>state.caught?'Vale is cuffed in the back of the patrol car. Rook leaves him there. The battery hall of Substation Nine is lit end to end: racks of reserve cells, a Lumen Board van backed up to the loading door, and men who are not Board engineers loading it.':'Vale\'s car is not here. The loading is. The battery hall of Substation Nine is lit end to end: racks of reserve cells, a Lumen Board van backed up to the loading door, and men who are not Board engineers loading it.'},
+  caption:()=>state.caught?'Rook leaves Vale cuffed in the patrol car. The battery hall of Substation Nine is lit end to end, a Lumen Board van backed up to the loading door.':'Vale\'s car is not here. The loading is. The battery hall of Substation Nine is lit end to end, a Lumen Board van backed up to the loading door.'},
+ // The man on the dock: seen, one line, gone. The manifest names him a moment later.
+ subDock:{kind:'cutscene',title:'THE MAN ON THE DOCK',duration:5,next:'subManifest',
+  enter:()=>{addClue('Seen on the dock at Substation Nine: a Lumen Board man in grey, dry under an umbrella, watching the loading. He left when he saw Rook. He was not hurrying.');},
+  caption:()=>'On the dock beyond the van, out of the rain under an umbrella that has not closed all night, a man in a grey coat with a lit Board pin watches the loading. He sees Rook, says "Detective. You are standing in my rain," and walks, unhurried, out of the light.'},
  subManifest:{kind:'cutscene',title:'THE MANIFEST',duration:6,next:'subDanger',
   enter:()=>{addClue('Seen on the rack: the loading manifest is countersigned H. ASHE, Commissioner of Reserve, Lumen Board. Vale is not the top of this.');},
-  caption:()=>'A manifest hangs on the nearest loose rack: RESERVE TRANSFER / ORDER 7731 / A. VALE, and under it a countersignature, H. ASHE, COMMISSIONER OF RESERVE. The loaders have seen Rook. So has Krane.'},
+  caption:()=>'The loaders are not Board engineers. On the nearest loose rack, a manifest: ORDER 7731 / A. VALE, and under it H. ASHE, COMMISSIONER OF RESERVE. Krane has seen Rook.'},
  subDanger:{kind:'windup',title:'TWO TONNES OF CELLS',next:'subQte',
-  caption:()=>'Krane puts his back to the loose rack and heaves. Two tonnes of cells tip toward Rook. The hall\'s main breaker is at Rook\'s shoulder, handle up. Get ready.'},
+  caption:()=>'Krane heaves, and two tonnes of cells tip. Get ready.'},
  subQte:{kind:'prompt',title:'THE RACK IS COMING DOWN',base:1.5,bonus:()=>state.keeper,penalty:()=>state.tunnel==='late'||state.pursuit==='late',death:'subDeath',next:'subResult',
-  caption:()=>'The rack is coming down. Dive clear and let it fall, or pull the breaker so the cells cannot arc and grab the manifest as it goes.',
+  caption:()=>'The rack is coming down. Dive left, or pull the breaker.',
   cues:[{dir:'left',label:'[1] DIVE CLEAR',id:'dive',act:()=>{state.hall='dive';}},{dir:'right',label:'[2] PULL THE BREAKER',id:'breaker',act:()=>{state.hall='breaker';}}]},
  subDeath:{kind:'death',title:'UNDER THE RACK',duration:4,dead:'rack',bit:32,back:'subDanger',reset:()=>{state.hall='';},
   stinger:()=>['CRUSHED','miss',4],
@@ -204,7 +216,8 @@ registerPhases('substation',{
    else if(state.hall==='dive')addClue('Krane, Vale\'s bodyguard, arrested at Substation Nine, pinned under the rack he pushed. The manifest burned.');
    else addClue('The Substation Nine manifest burned. Krane and the loaders escaped in the Board van.');
   },
-  caption:()=>state.hall==='dive'?'Rook goes left. The rack comes down on the floor and on Krane\'s leg behind it; cells split and arc white. The loaders run. The manifest curls and burns on the rack. Krane does not go anywhere.':state.hall==='breaker'?'Rook throws the breaker. The hall goes black and the rack lands dead beside him. He has the manifest in his fist. When the emergency lamps come up, the van is gone and so is Krane.':'The rack takes Rook across the legs. Cells arc; the manifest is ash before he can reach it. The van\'s doors slam. When Rook drags himself clear, the hall is empty.'},
+  // The dive lands Krane's confession about Pump Room 4 while he is pinned: the seed of the krane ending.
+  caption:()=>state.hall==='dive'?'Rook goes left, and the rack takes Krane\'s leg. Krane does not go anywhere. From under the rack, to nobody: "I locked the door. He said the pumps would run."':state.hall==='breaker'?'Rook throws the breaker. The hall goes black and the rack lands dead, the manifest in his fist. When the emergency lamps come up, the van and Krane are gone.':'The rack takes Rook across the legs. Cells arc; the manifest is ash before he reaches it. The van\'s doors slam. When Rook drags himself clear, the hall is empty.'},
  subDawn:{kind:'cutscene',title:'THE BASIN',duration:5,next:'roomEntry',
-  caption:()=>state.caught?'Rook walks out through the loading door. Vale watches him from the back of the patrol car. Over the basin the sky is going grey.':'Rook walks out through the loading door. The basin is empty and the sky over it is going grey. Whatever is left of tonight will be said in a room at Night Division.'}
+  caption:()=>state.caught?'Rook walks out through the loading door. Vale watches him from the back of the patrol car. Over the basin the sky is going grey.':'Rook walks out through the loading door. The basin is empty and the sky over it is going grey. What is left of tonight will be said at Night Division.'}
 });

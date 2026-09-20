@@ -62,22 +62,30 @@ registerSet('loft',{
   if(p==='loftTable')return look(-2.9,1.7,.4,-1.2,1.1,5.2);
   if(p==='loftNote')return look(-.75,1.4,2.05,-.2,1.08,3);
   if(p==='loftBoard')return look(.9,1.7,3,3.5,1.9,7);
+  // The man under the window: Rook's own eyes at the sill, looking down at the lamp pool on the street four units below.
+  // (The leave's window shot cannot serve here: it is aimed up at the clock, and the sill hides the street from it.)
+  if(p==='loftStair')return look(-.2,2.2,6.6,-2,-2.4,13);
+  // The leave: the window shot, gliding from inside the room to the sill as the clock reads five past midnight.
   const a=look(-.2,1.5,4.2,0,7.5,22),b=look(0,1.5,5.6,0,7.5,22);
   return reduce?b:loftBlend(a,b,smooth(clamp((state.event-1.5)/2.5,0,1)));
  },
- ease(p){return {loftEntry:4,loftTable:4,loftNote:4,loftBoard:5,loftLeave:4}[p]||1.5;},
+ ease(p){return {loftEntry:4,loftTable:4,loftNote:4,loftBoard:5,loftStair:4,loftLeave:4}[p]||1.5;},
  blocking(p){
   // Entry: in through the door and along the table to its far end, where he stands for the table beat. The note and the
   // window are Rook's own eyes (the camera stands where he does), the prints are read over his shoulder from the bench.
   const u=p==='loftEntry'&&!reduce?span(5):1;
   const rook=p==='loftEntry'?{x:mix(-2.7,-1.1,u),z:mix(1.9,5.2,u),pose:u<1?'walk':'watch'}:p==='loftTable'?{x:-1.1,z:5.2,pose:'watch'}:p==='loftNote'?null:p==='loftBoard'?{x:3.5,z:5,pose:'read'}:{x:1.1,z:6.4,pose:'watch'};
-  return{rook,courier:null,others:[]};
+  // Vale under the depot lamp on the street four units down, looking up at the lit window, for the stair beat only.
+  const others=p==='loftStair'?[{x:-3,y:-4,z:12,pose:'stand',who:'vale'}]:[];
+  return{rook,courier:null,others};
  },
- geometry(){
+ geometry(p){
   // The kettle is warm: two wisps of steam, drawn as thin surfaces so every mark is still a glyph.
   const t=state.t,s=Math.sin(t*1.7)*.1,r=Math.sin(t*2.3+1)*.08;
   quad([.62,1.34,3.4],[.78,1.34,3.4],[.78+s,1.74,3.42],[.62+s,1.74,3.42],mat('cable',6),[0,0,-1]);
   quad([.66+s,1.74,3.4],[.74+s,1.74,3.4],[.74+r,2.02,3.42],[.66+r,2.02,3.42],mat('cable',6),[0,0,-1]);
+  // Vale's red car at the kerb below the window with its engine running and its lights on, for the stair beat only.
+  if(p==='loftStair')car(-1,14,3,-4);
  },
  labels(p){
   if(p==='loftEntry')worldLabel([-2.15,1.9,-.2],'BELL',6);
@@ -89,7 +97,7 @@ registerSet('loft',{
 registerPhases('loft',{
  loftEntry:{kind:'cutscene',title:'01b / THE DEPOT LOFT',duration:7,next:'loftTable',
   enter:()=>{state.loftSeen=true;},
-  caption:()=>'One room over the lamp depot. A cot, a kettle, a wall of route maps pinned with battery tags. Someone has been here since Bell went missing: the kettle is warm.'},
+  caption:()=>'One room over the lamp depot. A cot, a kettle, a wall of route maps pinned with battery tags. Someone has been here since Bell vanished: the kettle is warm.'},
  loftTable:{kind:'quiet',title:'THE TABLE UNDER THE LAMP',
   caption:()=>'On the table, a folded note weighted with a lamp key. On the wall, Bell\'s route map: lamps 14 to 19 crossed out in red and tagged RESERVE PULLED / ORDER 7731 / A.V. Beside it, photographs.',
   buttons:b=>{b('[READ THE NOTE]',()=>enter('loftNote'));b('[STUDY THE MAP AND PHOTOGRAPHS]',()=>enter('loftBoard'));}},
@@ -102,9 +110,18 @@ registerPhases('loft',{
   caption:()=>ladder.loft>=2?'Rook has now been wrong twice in a room with the answer pinned to the wall. The photographs are of the club, and the van is the Board\'s.':state.misread?'The depot and the station have nothing to hide; Bell would not photograph his own workplace. The club\'s back door and the Board\'s van are in the same frame. Rook has spent a rewind\'s worth of night getting it wrong.':'The photographs: a red car at a loading bay behind a neon sign, THE FILAMENT. A Lumen Board van. A man in a division coat who does not look at the camera. Where are the batteries going?',
   buttons:b=>{
    const wrong=()=>{ladder.loft++;if(!state.misread){state.misread=true;state.rewinds=Math.max(0,state.rewinds-1);}ui();};
-   b('[UPTOWN, THROUGH THE FILAMENT]',()=>{addClue('Bell\'s photographs: reserve batteries leave by the Filament\'s back door into a Lumen Board van. The man in the division coat is Vale.');enter('loftLeave');});
+   b('[UPTOWN, THROUGH THE FILAMENT]',()=>{addClue('Bell\'s photographs: reserve batteries leave by the Filament\'s back door into a Lumen Board van. The man in the division coat is Vale.');enter('loftStair');});
    if(ladder.loft<2){b('[BACK TO THE LAMP DEPOT]',wrong);b('[INTO THE STATION VAULTS]',wrong);}
   }},
+ // Vale under the window. Facing him is texture, not a window: the save field `faced` picks the caption and the button on a
+ // redraw, so a checkpoint taken after the stair resumes with Vale already met.
+ loftStair:{kind:'quiet',title:'THE MAN UNDER THE WINDOW',
+  caption:()=>state.faced?'Vale does not step back from the stair. "Rook. You are on the wrong floor for this." He looks at Rook\'s coat where the photographs are, then at the station clock, then gets into the car.':'Below the window, under the depot lamp, a man in a Division greatcoat is looking up at the lit loft. Vale. His red car is at the kerb with the engine running.',
+  buttons:b=>{
+   if(state.faced){b('[TAKE THE PHOTOGRAPHS AND GO]',()=>enter('loftLeave'));return;}
+   b('[GO DOWN AND FACE HIM]',()=>{state.faced=true;addClue('Vale, at the depot at midnight: knows Rook is on the case and did not ask why. He looked at the station clock.');ui();});
+   b('[STAY OUT OF THE LIGHT]',()=>enter('loftLeave'));
+  }},
  loftLeave:{kind:'cutscene',title:'FIVE PAST MIDNIGHT',duration:4,next:'stationEntry',
-  caption:()=>'Rook takes the photographs. Through the window, the station clock reads five past midnight. Bell\'s job is still open.'}
+  caption:()=>state.faced?'Rook takes the photographs. The red car is gone from the kerb and the station clock reads five past midnight. Bell\'s job is still open.':'Rook takes the photographs. Through the window, the station clock reads five past midnight. Bell\'s job is still open.'}
 });

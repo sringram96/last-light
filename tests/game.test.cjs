@@ -53,7 +53,7 @@ test('the sprite loader accepts the design sheet shape and rejects unsafe rows',
 // Route helpers. A cutscene or result holds until its caption could be read, so the harness steps to the next phase (next())
 // rather than waiting a fixed second; observes, windups, prompts and transits keep their fixed clocks.
 const intro=g=>{g.click('NEW CASE');g.phase('officeEntry');g.next();g.phase('officeFile');g.next();g.phase('officeBoard');g.next();g.phase('officeWindow');g.next();g.phase('brief');};
-const throughHall=(g,move)=>{g.phase('subEntry');g.next();g.phase('subManifest');g.next();g.phase('subDanger');g.next();g.phase('subQte');g.click(move);g.phase('subResult');g.next();g.phase('subDawn');g.next();};
+const throughHall=(g,move)=>{g.phase('subEntry');g.next();g.phase('subDock');g.next();g.phase('subManifest');g.next();g.phase('subDanger');g.next();g.phase('subQte');g.click(move);g.phase('subResult');g.next();g.phase('subDawn');g.next();};
 const throughRoom=(g,pick)=>{g.phase('roomEntry');g.next();g.phase('roomDeduce');g.click(pick);g.phase('roomName');g.click('GO TO BELL');g.next();g.phase('canalEnd');};
 test('menus pause action, preferences persist, and previews preserve the story checkpoint',()=>{
  const g=game();g.click('NEW CASE');g.phase('officeEntry');g.click('SKIP INTRO');g.run(1.6);g.phase('brief');g.click('WATCH FIRST');g.run(8.3);g.phase('ready');
@@ -74,7 +74,7 @@ test('the long route: rescue, confession, the tram, the market, the club, the ro
  g.click('WATCH THE ROAD');g.run(8.3);g.phase('tramSpotted');assert(g.audit().state.tail);g.click('RIDE ON');g.next();g.phase('marketEntry');assert.equal(g.audit().card,'THE NIGHT MARKET');
  g.next();g.phase('marketAisle');g.click('ASK THE STALL');g.phase('marketKeeper');assert(g.audit().state.keeper);g.click('PUSH THROUGH');g.phase('marketDanger');assert.notEqual(g.audit().card,'GET READY');
  g.next();g.phase('marketQte');assert.equal(g.audit().objective,'REACH THE FILAMENT');g.click('GO OVER');g.phase('marketResult');assert.equal(g.audit().card,'OVER THE STALLS');g.next();g.phase('clubEntry');
- g.next();g.phase('clubFace');g.next();g.phase('clubQte');g.click('VAULT');g.next();g.phase('chaseEntry');
+ g.next();g.phase('clubBooth');g.click('SAY NOTHING');g.phase('clubFace');g.next();g.phase('clubQte');g.click('VAULT');g.next();g.phase('chaseEntry');
  g.next();g.click('DIVE RIGHT');g.next();g.click('FOLLOW OVER');g.phase('chaseFinish');assert(g.audit().state.caught);g.next();
  throughHall(g,'PULL THE BREAKER');throughRoom(g,'SOMEONE ABOVE');
  const a=g.audit();assert(a.state.caught&&a.state.twist);assert.equal(a.state.rescue,'valve');assert.equal(a.state.hall,'breaker');assert.equal(a.nonASCII,0);assert.equal(a.state.t,0);
@@ -90,7 +90,7 @@ test('the loft branch: the note, the photographs and a rewind lost to a wrong re
  assert.equal(g.audit().scene,'loft');assert.equal(g.audit().card,'THE DEPOT LOFT');assert.equal(g.audit().objective,'WHAT BELL KNEW');g.next();g.phase('loftTable');
  g.click('READ THE NOTE');g.phase('loftNote');assert(g.audit().state.note);assert.equal(g.audit().card,'NOTED');g.click('STUDY THE MAP');g.phase('loftBoard');
  g.click('BACK TO THE LAMP DEPOT');g.phase('loftBoard');assert(g.audit().state.misread);assert.equal(g.audit().state.rewinds,2);g.click('INTO THE STATION VAULTS');assert.equal(g.audit().state.rewinds,2);
- g.click('UPTOWN');g.phase('loftLeave');g.next();g.phase('stationEntry');assert.equal(g.audit().scene,'station');
+ g.click('UPTOWN');g.phase('loftStair');g.click('STAY OUT OF THE LIGHT');g.phase('loftLeave');g.next();g.phase('stationEntry');assert.equal(g.audit().scene,'station');
  assert.deepEqual(g.audit().route,['Followed at once','Saved the book','Climbed to the loft',"Read Nell's note",'Misread the photographs']);
  assert(g.audit().board.some(l=>l.startsWith('THE COURIER: signed a note')));
  const n=game({reduced:true});n.click('NEW CASE');n.click('SKIP INTRO');n.click('FOLLOW');n.next();n.next();n.click('CATCH');n.next();n.click('CONNECT');
@@ -163,7 +163,7 @@ test('a survivable miss plays its worse story and offers the night for a lamp, o
  g.click('REWIND');g.phase('danger');a=g.audit();assert.equal(a.state.rewinds,2);assert.equal(a.state.choice,'');assert(g.elements['.lc-caption'].textContent.startsWith('The night rewinds. The courier is upright'));
  g.run(2.2);g.phase('qte');assert(!g.audit().state.rewound||true);g.key('ArrowDown');g.phase('result');assert.equal(g.audit().state.choice,'book');assert.equal(g.elements['.lc-actions'].children.length,0);
  // The club: a wrong direction is the bottle; Krane takes the ledger; carrying on goes to the road without it.
- const c=game({reduced:true});c.click('CLUB','reel-actions');c.elements['.lc-timing'].click();c.next();c.phase('clubFace');assert.equal(c.audit().card,'');c.run(2.2);c.phase('clubQte');
+ const c=game({reduced:true});c.click('CLUB','reel-actions');c.elements['.lc-timing'].click();c.next();c.phase('clubBooth');c.click('SAY NOTHING');c.phase('clubFace');assert.equal(c.audit().card,'');c.run(2.2);c.phase('clubQte');
  assert.deepEqual(c.audit().labels.map(l=>l.dir),['down','up']);c.key('ArrowLeft');c.phase('clubResult');a=c.audit();assert.equal(a.card,'SIT DOWN');assert.equal(a.state.club,'late');assert.equal(a.state.rescue,'valve');
  assert(c.elements['.lc-caption'].textContent.includes('with Bell\'s ledger in his jacket'));assert(a.board.some(l=>l.startsWith('KRANE, Vale\'s bodyguard: has the signed ledger')));
  assert(c.elements['.lc-actions'].children.some(b=>b.textContent==='[REWIND THE NIGHT / 3 LAMPS]'));c.click('CARRY ON');c.phase('chaseEntry');assert(c.audit().state.clues.some(l=>l.startsWith('Krane took Vale\'s signed ledger')));
@@ -172,6 +172,18 @@ test('a survivable miss plays its worse story and offers the night for a lamp, o
  assert.deepEqual(b.audit().labels.map(l=>l.dir),['left','up']);assert(b.audit().window>=2);b.run(3,50);b.phase('chaseFinish');a=b.audit();assert.equal(a.card,'GONE');assert.equal(a.state.pursuit,'late');assert(b.elements['.lc-caption'].textContent.startsWith('Rook stands on the brakes'));
  b.click('REWIND');b.phase('chaseQteB');assert.equal(b.audit().state.pursuit,'chasing');b.key('ArrowUp');b.phase('gapDeath');a=b.audit();assert.equal(a.card,'SHORT');assert.equal(a.state.deaths,8);assert.equal(a.state.rewinds,1);
  b.next();b.phase('chaseQteB');b.key('ArrowLeft');b.phase('tunnelEntry');assert.equal(b.audit().state.pursuit,'ramp');
+});
+test('the back booth: showing Vale the order costs half a second at the bottle and puts his words in the notebook',()=>{
+ const c=game({reduced:true});c.click('CLUB','reel-actions');c.elements['.lc-timing'].click();c.next();c.phase('clubBooth');
+ assert(c.elements['.lc-caption'].textContent.startsWith('Vale does not get up.'));assert.deepEqual(c.elements['.lc-actions'].children.map(b=>b.textContent),['[SHOW HIM ORDER 7731]','[SAY NOTHING]']);
+ c.click('SHOW HIM');c.phase('clubBooth');assert(c.audit().state.shown);assert(c.elements['.lc-caption'].textContent.includes('"Reserve batteries. Signed. Nobody reads a maintenance order."'));
+ assert(c.audit().state.clues.some(l=>l.startsWith('Vale, shown order 7731')));assert.deepEqual(c.elements['.lc-actions'].children.map(b=>b.textContent),['[STAND YOUR GROUND]']);
+ c.click('STAND YOUR GROUND');c.phase('clubFace');assert.equal(c.elements['.lc-caption'].textContent,'The bottle leaves Krane\'s hand. Get ready.');c.run(2.2);c.phase('clubQte');assert.equal(c.audit().window,1.5,'2 s less the half second for Krane already up');
+ // The bottle lands and Krane takes the ledger; Vale is caught over the gap and Krane pinned, so the case ends word against word, with the booth in the closing.
+ c.key('ArrowLeft');c.phase('clubResult');c.click('CARRY ON');c.phase('chaseEntry');c.next();c.key('ArrowRight');c.phase('chaseBank');c.next();c.phase('chaseQteB');c.key('ArrowUp');c.phase('chaseFinish');assert(c.audit().state.caught);c.next();
+ c.elements['.lc-timing'].click();throughHall(c,'DIVE CLEAR');throughRoom(c,'NOT ENOUGH');
+ assert(c.elements['.lc-outcome'].textContent.startsWith('ENDING: WORD AGAINST WORD'));assert(c.elements['.lc-caption'].textContent.endsWith(', and Vale\'s own words about the order are in Rook\'s notebook. It will have to be enough.'));
+ assert(c.audit().route.includes('Took the bottle'));
 });
 test('a tap on a cue is that cue, a swipe is its direction, and a tap elsewhere is nothing',()=>{
  const g=game({reduced:true,width:732});g.click('FLOOD','reel-actions');g.elements['.lc-timing'].click();g.next();g.click('GET BELL');g.run(2.2);g.phase('pumpQte');
@@ -186,7 +198,7 @@ test('a tap on a cue is that cue, a swipe is its direction, and a tap elsewhere 
 test('short windows are deterministic at any step, and a rewound beat counts once in the tally',()=>{
  // A live beat caps the step at 50 ms, so the harness steps a prompt at 50 ms or finer.
  for(const step of [50,25,16.7]){
-  const g=game({reduced:true});g.click('SUBSTATION','reel-actions');g.elements['.lc-timing'].click();g.next();g.next();g.phase('subDanger');g.next();g.phase('subQte');
+  const g=game({reduced:true});g.click('SUBSTATION','reel-actions');g.elements['.lc-timing'].click();g.next();g.phase('subDock');g.next();g.next();g.phase('subDanger');g.next();g.phase('subQte');
   const w=g.audit().window;assert.equal(w,2,'1.5 s plus the keeper');g.run(w-.05,step);g.phase('subQte');g.run(.15,step);g.phase('subDeath');assert.equal(g.audit().card,'CRUSHED');
   g.next();g.phase('subDanger');g.run(2.2);g.key('d');g.phase('subResult');const a=g.audit();assert.equal(a.state.hall,'breaker');assert.equal(a.card,'LIGHTS OUT');
   // The preview stands past the market, the club and the carrier without playing them: faced, not landed.
@@ -202,7 +214,7 @@ test('a death on the road stops flawless; the deduction ladder costs a lamp, the
  g.click('THE HOTEL');assert.equal(g.audit().state.rewinds,2);assert.equal(g.audit().card,'REWIND');assert(g.elements['.lc-caption'].textContent.startsWith('The hotel night clerk has never heard of Bell'));
  assert(!g.elements['.lc-actions'].children.some(b=>b.textContent.includes('HOTEL')));g.click('STATION SERVICE');g.next();g.next();g.click('FOLLOW THE KNOCKING');g.next();
  assert(g.elements['.lc-caption'].textContent.includes('You took your time'));g.click('GET BELL');g.run(2.2);g.phase('pumpQte');assert.equal(g.audit().window,2,'the false lead costs half a second');g.key('ArrowRight');g.next();g.click('TAKE BELL');g.next();
- g.click('STAY WITH');g.phase('roomEntry');g.next();g.click('NOT ENOUGH');g.click('GO TO BELL');g.next();g.phase('canalEnd');
+ g.click('STAY WITH');g.phase('roomEntry');g.next();g.phase('roomVale');g.click('LET HIM WALK');g.click('NOT ENOUGH');g.click('GO TO BELL');g.next();g.phase('canalEnd');
  const a=g.audit();assert.deepEqual(a.records.endings,['home']);assert(!a.records.discoveries.includes('flawless'));assert(!a.records.discoveries.includes('sharp'));assert.deepEqual(a.reflex,{faced:2,landed:1,deaths:0,restarts:0,grade:'A'});
  // Vale in the chair: the second wrong answer stalls the interview and the Board's ending is lost.
  const r=game({reduced:true});r.click('INTERVIEW','reel-actions');r.next();r.phase('roomDeduce');r.click('VALE SIGNED ALONE');assert(r.audit().state.slip&&!r.audit().state.stalled);r.click('NOT ENOUGH');
@@ -210,7 +222,7 @@ test('a death on the road stops flawless; the deduction ladder costs a lamp, the
  r.click('WRITE THE WARRANT');r.phase('roomName');assert(r.audit().state.clues.some(c=>c.includes('stalled the interview')));r.click('GO TO BELL');r.next();r.phase('canalEnd');
  assert(r.elements['.lc-outcome'].textContent.startsWith('ENDING: WORD AGAINST WORD'));assert(r.audit().route.includes('Left the line blank (second try)'));
  // Bell in the chair: the second wrong answer only removes the last wrong button.
- const s=game({reduced:true});s.click('ROOFTOP','reel-actions');s.next();s.click('STAY WITH');s.next();s.phase('roomDeduce');s.click('VALE SIGNED ALONE');s.click('VALE SIGNED ALONE');
+ const s=game({reduced:true});s.click('ROOFTOP','reel-actions');s.next();s.click('STAY WITH');s.next();s.phase('roomVale');s.click('LET HIM WALK');s.phase('roomDeduce');s.click('VALE SIGNED ALONE');s.click('VALE SIGNED ALONE');
  assert(!s.audit().state.stalled);assert(s.elements['.lc-caption'].textContent.startsWith('Bell waits.'));assert.deepEqual(s.elements['.lc-actions'].children.map(b=>b.textContent),['[SOMEONE ABOVE VALE SIGNED]'],'the preview holds the dry ledger, so the right answer stays');
  // The loft: the second wrong reading removes both wrong buttons.
  const l=game({reduced:true});l.click('LOFT','reel-actions');l.next();l.click('STUDY THE MAP');l.click('BACK TO THE LAMP DEPOT');assert.equal(l.audit().state.rewinds,2);l.click('INTO THE STATION VAULTS');assert.equal(l.audit().state.rewinds,2);
@@ -242,7 +254,7 @@ test('closing a case records the ending and discoveries; previews and new cases 
  const g=game({reduced:true});g.click('NEW CASE');g.click('SKIP INTRO');g.click('FOLLOW');g.next();g.next();g.click('CATCH');g.next();g.click('CONNECT');g.click('STATION SERVICE');g.next();g.next();
  g.click('READ THE TAPE');g.run(8.3);g.click('FOLLOW THE KNOCKING');g.next();g.click('GET BELL');g.next();g.click('CLOSE THE INLET');g.next();g.click('TAKE BELL');g.next();
  g.click('LISTEN');g.run(8.3);g.click('ASK NELL');g.click('PURSUE');g.next();g.click('RIDE ON');g.next();g.next();g.click('PUSH THROUGH');g.next();g.click('SLIP INTO');g.next();
- g.next();g.next();g.click('VAULT');assert.equal(g.audit().card,'OVER THE BAR');g.next();
+ g.next();g.click('SAY NOTHING');g.next();g.click('VAULT');assert.equal(g.audit().card,'OVER THE BAR');g.next();
  g.next();g.click('DIVE RIGHT');g.next();g.click('FOLLOW OVER');g.next();
  throughHall(g,'DIVE CLEAR');g.phase('roomEntry');g.next();g.phase('roomDeduce');g.click('VALE SIGNED ALONE');g.phase('roomDeduce');assert(g.audit().state.slip);g.click('SOMEONE ABOVE');g.click('GO TO BELL');g.next();g.phase('canalEnd');
  assert.equal(g.audit().card,'CASE CLOSED');
@@ -266,12 +278,12 @@ test('timed misses, pausing and declining pursuit still reach coherent outcomes'
  // The carrier left to time out is a death; the bridge left to time out is survivable and carried; the rack is a death, rewound and landed.
  g.run(3,50);g.phase('chaseDeath');assert.equal(g.audit().card,'OVER THE EDGE');assert.equal(g.audit().state.deaths,4);g.next();g.phase('chaseQteA');assert(g.elements['.lc-caption'].textContent.startsWith('The night rewinds. The carrier is in its own lane'));
  g.key('ArrowRight');g.phase('chaseBank');assert.equal(g.audit().card,'CLEAR');g.next();g.phase('chaseQteB');g.run(3,50);g.phase('chaseFinish');assert.equal(g.audit().card,'GONE');g.click('CARRY ON');g.phase('subEntry');
- g.next();g.phase('subManifest');g.next();g.phase('subDanger');g.next();g.phase('subQte');g.run(2.2,50);g.phase('subDeath');assert.equal(g.audit().state.hall,'');assert.equal(g.elements['.lc-actions'].children.length,0);
+ g.next();g.phase('subDock');g.next();g.phase('subManifest');g.next();g.phase('subDanger');g.next();g.phase('subQte');g.run(2.2,50);g.phase('subDeath');assert.equal(g.audit().state.hall,'');assert.equal(g.elements['.lc-actions'].children.length,0);
  g.next();g.phase('subDanger');g.run(2.2);g.phase('subQte');g.key('ArrowLeft');g.phase('subResult');assert.equal(g.audit().state.hall,'dive');g.next();g.phase('subDawn');g.next();
  throughRoom(g,'SOMEONE ABOVE');assert(!g.audit().state.caught);assert.deepEqual(g.audit().reflex,{faced:7,landed:4,deaths:2,restarts:0,grade:'B'});
  assert(g.elements['.lc-outcome'].textContent.includes('THE BODYGUARD TALKS'));assert.equal(g.audit().state.rewinds,1);
  const s=game({reduced:true});s.click('ROOFTOP','reel-actions');s.next();s.click('STAY WITH');s.phase('roomEntry');assert.equal(s.audit().scene,'room');s.next();
- assert(s.audit().board.some(l=>l.startsWith('IVO BELL')));s.click('SOMEONE ABOVE');s.click('GO TO BELL');s.next();s.phase('canalEnd');assert.equal(s.audit().state.pursuit,'stay');
+ assert(s.audit().board.some(l=>l.startsWith('IVO BELL')));s.phase('roomVale');s.click('LET HIM WALK');s.click('SOMEONE ABOVE');s.click('GO TO BELL');s.next();s.phase('canalEnd');assert.equal(s.audit().state.pursuit,'stay');
  assert(s.elements['.lc-outcome'].textContent.includes('THE LAMPLIGHTER HOME'));assert.deepEqual(s.audit().reflex,{faced:2,landed:2,deaths:0,restarts:0,grade:'A'});
 });
 // The stage: the picture fills its area by the vertical field-of-view rule and the approved frame is reproduced exactly.

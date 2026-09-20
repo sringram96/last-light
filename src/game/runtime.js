@@ -38,7 +38,13 @@ function blocking(){
  }
  if(['result','evidence','deduce','loftTurn','arrival'].includes(state.phase)){
   const u=state.phase==='result'&&!reduce?span(3.8):1;
-  if(state.choice==='person'){
+  if(state.phase==='result'&&state.choice==='missed'){
+   // The miss: the courier flat across the rail, Rook reaching from the curb, and the red car back for her; she is gone once it goes.
+   const e=streetMissClock();
+   rook={x:-2.2,z:17.8,pose:'reach'};
+   courier=e<4?{x:.6,z:20,pose:'stumble',lean:-.6,who:'nell'}:null;
+   book={x:1.48,y:.07,z:19.65,flat:true};
+  }else if(state.choice==='person'){
    rook={x:mix(-2.2,-.85,u),z:mix(17.8,19.5,u),pose:u<.8?'reach':'support'};
    courier={x:.6,z:20,pose:'stand',lean:(1-u)*.5,who:'nell'};
    book={x:1.48,y:mix(.6,.07,u),z:19.65,flat:u>.65};
@@ -62,6 +68,16 @@ function blocking(){
   book=null;
  }
  return{rook,courier,book};
+}
+// The street miss picture's clock: the phase clock, or the still it holds under reduced motion (the car stopped beside the rail).
+function streetMissClock(){return reduce?3.9:state.event;}
+// The red car on the miss: back from the far corner along the rails over three seconds, a second beside the courier, then away past the camera with its lights off.
+function streetMissCar(){
+ const e=streetMissClock();
+ if(e<1){const u=smooth(e);car(mix(-12,-3,u),mix(36,35,u),3,0,false,{dark:true});}
+ else if(e<3){const u=smooth((e-1)/2);car(mix(-3,-1.7,u),mix(35,21.6,u),3,0,false,{dark:true});}
+ else if(e<4)car(-1.7,21.6,3,0,false,{dark:true});
+ else if(e<5.2){const u=(e-4)/1.2;car(mix(-1.7,-.4,u),mix(21.6,4,u*u),3,0,false,{dark:true});}
 }
 // Walk cycles advance with distance travelled (one frame every SPRITE_STRIDE world units), so a standing character never flickers.
 const SPRITE_STRIDE=.3,walkMeters=new Map();
@@ -130,12 +146,15 @@ function geometry(){
   if(b.flat)box(b.x-.42,.06,b.z-.33,b.x+.42,.11,b.z+.33,{kind:'dispatch',hue:6});
   else box(b.x-.32,b.y-.35,b.z-.06,b.x+.32,b.y+.35,b.z+.06,{kind:'dispatch',hue:6});
  }
- if(a.courier){
+ const missed=state.phase==='result'&&state.choice==='missed';
+ if(a.courier&&!missed){
   const p=a.courier;
   // A physical lantern is bright enough to lead the eye through the street.
   const y=['danger','qte'].includes(state.phase)?1.02:.95;
   box(p.x-.7,y-.22,p.z-.12,p.x-.43,y+.22,p.z+.12,{kind:'lamp',hue:2});
  }
+ // The miss: the lantern already in the gutter, still burning, and the red car back for the courier.
+ if(missed){box(1.35,.15,19.65,1.65,.45,19.95,{kind:'lamp',hue:2});streetMissCar();}
  // Per-phase props keep the approved first frame untouched: the red car leaving during the follow, the dropped lantern
  // in the gutter on the routes without Nell, and the depot door, stair and lit window once the deduction names them.
  if(state.phase==='follow'&&!reduce){const u=clamp((state.event-3)/4,0,1);if(u<1)car(mix(-4,-12,u),36,3,0,false,{dark:true});}
@@ -275,16 +294,16 @@ function ui(){
   el.caption.textContent='The courier is limping. Rook will have two extra seconds to react if that leg gives way.';
   button('[FOLLOW THE LANTERN]',()=>enter('follow'));break;
  case 'follow':
-  el.caption.textContent='Rook keeps to the shadows. The stranger heads toward the station clock. A red car idles at the far corner with its lights off, then pulls away.';break;
+  el.caption.textContent='Rook keeps to the shadows. The stranger heads for the station clock across the wet tram rails. A red car idles at the far corner, lights off, then pulls away.';break;
  case 'danger':
-  el.caption.textContent='A boot catches the wet tram rail. The courier pitches forward; the dispatch book slips free. Get ready.';break;
+  el.caption.textContent='The courier pitches forward. The book slips free. Get ready.';break;
  case 'qte':
-  promptUI('Catch the courier, or save the dispatch book before the rain destroys it.',[['[1] CATCH THE COURIER','up'],['[2] SAVE THE BOOK','down']]);break;
+  promptUI('Catch the courier, or save the dispatch book from the rain.',[['[1] CATCH THE COURIER','up'],['[2] SAVE THE BOOK','down']]);break;
  case 'result':
   el.caption.textContent=state.choice==='person'?'Rook catches the courier. The book hits the wet street; ink begins to run.':state.choice==='book'?'Rook saves the book. The courier catches their balance and limps away toward the station.':'Rook reaches too late. The courier is down across the rail, and the red car comes back round the corner with its lights off. When it pulls away the rail is empty and the lantern is still burning in the gutter.';
   rewindActions();break;
  case 'evidence':
-  el.caption.textContent=state.choice==='person'?'Nell: "Bell is alive. Pump Room 4, below the station. Knock three times. I will take you."':state.choice==='book'?'The page is fresh: "00:17 / I. BELL / PUMP ROOM 4 / JOB OPEN." The station is still being used. The courier\'s lantern is stencilled BELL / DEPOT LOFT.':'The rain has erased the entries. The cover still reads "PUMP ROOM 4." The lantern the courier dropped is stencilled BELL / DEPOT LOFT.';
+  el.caption.textContent=state.choice==='person'?'Nell: "Bell is alive. Pump Room 4, below the station. Knock three times. I will take you."':state.choice==='book'?'The page is fresh: "00:17 / I. BELL / PUMP ROOM 4 / JOB OPEN." The station is still being used. The courier\'s lantern is stencilled BELL / DEPOT LOFT.':'The rain has erased the entries. The cover still reads "PUMP ROOM 4." The lantern is stencilled BELL / DEPOT LOFT, and its carrier is in the back of a red car.';
   button('[CONNECT THE CLUE]',()=>enter('deduce'));break;
  case 'deduce':
   el.caption.textContent=ladder.street>=2?'The hotel night clerk has never heard of Bell and says so twice. Rook has spent the kind of time a life is made of, and the water under the station has spent it with him.':state.wrong?'The hotel desk has no Bell and the tram is empty. The clue says PUMP ROOM 4, and pump rooms sit under the station. Rook has lost minutes; the water below has not.':'Bell is somewhere below. Where does the trail go first?';
