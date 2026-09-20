@@ -4,10 +4,11 @@
 // heaves that rack over onto Rook: dive clear (Krane pinned, the manifest burns) or pull the breaker (the hall goes
 // dark, the manifest saved, Krane gone).
 function subWindow(){return clamp(7+(state.keeper?2:0)-(state.tunnel==='late'||state.pursuit==='late'?2:0),5,9);}
-// The loose rack Krane heaves: x 2..4, z 36.5..42.5, 4.5 high. It tips toward the aisle about its aisle base edge
-// (x 2 on the floor), the edge a rack really pivots on: at 90 degrees it lies flat across the aisle, x -2.5..2, 2 high.
-// (Rotating about the far base edge at x 4 would swing the whole rack under the floor.) `a` is the lean in radians.
-const RACK={x0:2,x1:4,z0:36.5,z1:42.5,h:4.5};
+// The loose rack Krane heaves: x 2.5..4.5, z 36.5..42.5, 4.5 high. It tips toward the aisle about its aisle base edge
+// (x 2.5 on the floor), the edge a rack really pivots on: at 90 degrees it lies flat across the aisle, x -2..2.5, 2 high,
+// which is why the centre aisle is 4.5 wide. (Rotating about the far base edge at x 4.5 would swing the whole rack under
+// the floor.) `a` is the lean in radians.
+const RACK={x0:2.5,x1:4.5,z0:36.5,z1:42.5,h:4.5};
 function tipPoint(x,y,z,a){const c=Math.cos(a),s=Math.sin(a),dx=x-RACK.x0;return[RACK.x0+dx*c-y*s,dx*s+y*c,z];}
 function tipBox(x0,y0,z0,x1,y1,z1,m,a){
  const P=(x,y,z)=>tipPoint(x,y,z,a),c=Math.cos(a),s=Math.sin(a),N=(nx,ny,nz)=>[nx*c-ny*s,nx*s+ny*c,nz];
@@ -53,7 +54,7 @@ registerSet('substation',{
   for(const x of [-3.1,3.1])box(x-.1,0,49.85,x+.1,5.6,50.35,mat('metal'));
   quad([-15,12,-10],[15,12,-10],[15,12,50],[-15,12,50],mat('ceiling'),[0,-1,0]);for(let z=-5;z<50;z+=10)box(-15,11.4,z-.2,15,11.8,z+.2,mat('metal'));
   // Rails under every row, the full length of the hall.
-  for(const x of [-9,-3,3,9])for(const dx of [-.8,.8])box(x+dx-.05,0,-1,x+dx+.05,.12,43.5,mat('metal'));
+  for(const x of [-9,-3,3.5,9.5])for(const dx of [-.8,.8])box(x+dx-.05,0,-1,x+dx+.05,.12,43.5,mat('metal'));
   // Gantries at z 12 and 30: grate walkways, handrails, hangers to the trusses, a rung ladder on the left wall.
   for(const z of [12,30]){
    box(-14,7,z-.6,14,7.3,z+.6,mat('grate'));
@@ -82,7 +83,7 @@ registerSet('substation',{
   if(p==='subEntry')return look(.4,5.5,2,0,1,44);
   if(p==='subManifest'){
    // Close on the clipboard for three seconds, then a pan right and down the aisle to Krane coming from the van.
-   const a=look(-.6,2,36.4,1.97,2.25,38.9),b=look(-.6,2,36.4,2.2,1.5,50),u=reduce?(state.event<3?0:1):smooth(clamp((state.event-3)/2,0,1)),o={};
+   const a=look(-.6,2,36.4,2.47,2.25,38.9),b=look(-.6,2,36.4,2.2,1.5,50),u=reduce?(state.event<3?0:1):smooth(clamp((state.event-3)/2,0,1)),o={};
    for(const k of Object.keys(a))o[k]=mix(a[k],b[k],u);return o;
   }
   // The results crane up so the fallen rack, Krane at its corner and the door beyond it share one frame.
@@ -93,13 +94,14 @@ registerSet('substation',{
  ease(p){return {subEntry:8,subManifest:1.2,subDanger:.5,subResult:1.5,subDawn:5}[p]||1.2;},
  blocking(p){
   const others=[];let rook;
-  const u=p==='subEntry'&&!reduce?span(8):1,v=p==='subResult'?(reduce?1:span(4)):0,w=p==='subDawn'?(reduce?1:span(5)):0,q=Math.min(1,v*3);
+  // q: Rook's half-second step out of the rack's fall before it lands (0.6 s into the result).
+  const u=p==='subEntry'&&!reduce?span(8):1,v=p==='subResult'?(reduce?1:span(4)):0,w=p==='subDawn'?(reduce?1:span(5)):0,q=reduce?1:clamp(state.event/.5,0,1);
   const hall=state.hall,live=['subEntry','subManifest','subDanger','subQte'].includes(p);
   if(p==='subEntry')rook={x:0,z:mix(-7,30,u),pose:u<1?'walk':'watch'};
   else if(p==='subManifest')rook={x:-1,z:40.6,pose:'read'};
   else if(p==='subResult'&&hall==='dive')rook={x:mix(0,-1,q),z:mix(38,34.6,q),pose:q<1?'walk':'crouch'};
   else if(p==='subResult'&&hall==='breaker')rook={x:mix(0,.1,q),z:mix(38,36.2,q),pose:v<.6?'reach':'stand'};
-  else if(p==='subResult')rook={x:-2.35,y:-.4,z:36.8,pose:'stumble',lean:-.6};
+  else if(p==='subResult')rook={x:-.6,y:-.45,z:36,pose:'stumble',lean:-.6};
   else if(p==='subDawn')rook={x:mix(.6,0,w),z:mix(41,49,w),pose:w<1?'walk':'watch'};
   else rook={x:0,z:38,pose:'watch',lean:p==='subQte'?.15:.1};
   // Krane: at the van in the entry, down the aisle toward Rook in the manifest beat, round the loose rack's far end to
@@ -107,10 +109,10 @@ registerSet('substation',{
   let krane=null;
   if(p==='subEntry')krane={x:2,y:-1.2,z:53,pose:'stand',who:'krane'};
   else if(p==='subManifest'){const t=clamp((state.event-1.5)/4,0,1),z=mix(53,44,t);krane={x:mix(1.5,1.6,t),y:-1.2*clamp((z-49.6)/1.6,0,1)+(z<49.6?.3:0),z,pose:t<1?'walk':'stand',who:'krane'};}
-  else if(p==='subDanger'){const t=reduce?1:span(1.2);krane={x:mix(1.6,4.9,t),y:.3,z:mix(44,43.3,t),pose:t<1?'walk':'reach',who:'krane'};}
-  else if(p==='subQte')krane={x:4.9,y:.3,z:43.3,pose:'reach',who:'krane'};
-  else if(p==='subResult'&&hall==='dive')krane={x:2.9,y:-.3,z:43.4,pose:'stumble',lean:-.4,who:'krane'};
-  else if(p==='subResult'){const z=mix(43.3,53,v);krane={x:mix(4.9,1.2,v),y:-1.2*clamp((z-49.6)/1.6,0,1)+(z<49.6?.3:0),z,pose:'walk',who:'krane'};}
+  else if(p==='subDanger'){const t=reduce?1:span(1.2);krane={x:mix(1.6,5.4,t),y:.3,z:mix(44,43.3,t),pose:t<1?'walk':'reach',who:'krane'};}
+  else if(p==='subQte')krane={x:5.4,y:.3,z:43.3,pose:'reach',who:'krane'};
+  else if(p==='subResult'&&hall==='dive')krane={x:3.4,y:-.3,z:43.4,pose:'stumble',lean:-.4,who:'krane'};
+  else if(p==='subResult'){const z=mix(43.3,53,v);krane={x:mix(5.4,1.2,v),y:-1.2*clamp((z-49.6)/1.6,0,1)+(z<49.6?.3:0),z,pose:'walk',who:'krane'};}
   if(krane)others.push(krane);
   // Three loaders: between the loose racks and the van, then milling at the right during the prompt, then running out.
   const mill=[[6.3,45.5],[7.2,47.5],[5.6,48.9]];
@@ -131,8 +133,8 @@ registerSet('substation',{
   for(const z of [3,15,27,39]){if(dark){box(-.04,10,z-.04,.04,11.4,z+.04,mat('metal'));box(-.5,9.7,z-.4,.5,10.15,z+.4,mat('metal'));}else pendant(0,z,10);}
   // The racks: lit cells until the breaker, dead slabs after it. The nearest loose unit is drawn tipped.
   const cells=seed=>dark?mat('ceiling'):{kind:'cell',hue:2,seed};
-  for(const [x,chained] of [[-9,true],[-3,true],[3,false],[9,false]])for(let i=0;i<5;i++){
-   if(x===3&&i===4)continue;
+  for(const [x,chained] of [[-9,true],[-3,true],[3.5,false],[9.5,false]])for(let i=0;i<5;i++){
+   if(x===3.5&&i===4)continue;
    rackUnit(x,i*9+(chained?0:.2+hash(i,x+10)*.7),cells(i*7+x+20),chained);
   }
   tipBox(RACK.x0,0,RACK.z0,RACK.x1,RACK.h,RACK.z1,cells(5),a);
@@ -141,26 +143,28 @@ registerSet('substation',{
   box(1.15,2.2,35.55,1.25,6,35.65,mat('cable'));box(1.1,5.85,35.45,14.9,6.1,35.75,dark?mat('metal'):mat('pipe',2));box(14.6,5.85,-10,14.9,6.1,50,dark?mat('metal'):mat('pipe',2));
   if(dark){
    for(const x of [-15,15])box(x-.08,10.9,-10,x+.08,11.3,50,mat('neon',3));
-   for(const x of [-2.15,2.15])box(x-.04,.02,-1,x+.04,.2,43.5,mat('neon',3));
+   for(const x of [-1.9,2.4])box(x-.04,.02,-1,x+.04,.2,49,mat('neon',3));
    box(-3.2,5.6,49.75,3.2,5.9,49.95,mat('neon',3));
   }
   // The manifest: clipped to the loose rack's aisle face and tipping with it; burning on the fallen rack after the dive
   // or the miss; in Rook's hand after the breaker.
   const held=p==='subResult'&&state.hall==='breaker',burnt=p==='subResult'&&!held;
-  if(!held&&!(burnt&&flat))tipBox(1.95,2.05,38.7,2,2.55,39.05,mat('paper',6),a);
+  if(!held&&!(burnt&&flat))tipBox(2.45,2.05,38.7,2.5,2.55,39.05,mat('paper',6),a);
   if(burnt&&flat){const s=1-clamp((state.event-.6)/3.5,0,1)*.85;box(-.45-.2*s,2,37.1-.2*s,-.45+.2*s,2+.4*s,37.1+.2*s,mat('tail',3));}
   if(held&&Math.min(1,span(4)*3)>=1)box(.55,1.15,35.95,.58,1.6,36.3,mat('paper',6));
   // Arcs where the cells split: on the fallen rack and across the wet floor at its near end.
-  if(burnt&&flat){box(-2.7,1.9,37,-1.9,2.3,38.2,mat('arc',6));box(-2.7,1.9,40,-1.9,2.3,41.1,mat('arc',6));box(.4,1.9,36.3,1.6,2.3,36.8,mat('arc',6));box(-2.2,.02,35.4,-1.4,.3,35.9,mat('arc',6));}
+  if(burnt&&flat){box(-2.2,1.9,37,-1.4,2.3,38.2,mat('arc',6));box(-2.2,1.9,40,-1.4,2.3,41.1,mat('arc',6));box(.9,1.9,36.3,2.1,2.3,36.8,mat('arc',6));box(-1.9,.02,35.4,-1.1,.3,35.9,mat('arc',6));}
   // The van on the dock, backed up to the door; it pulls away after the breaker or the miss and is gone by the dawn.
   const leaving=state.hall!=='dive'&&state.hall!=='';
   if(!(p==='subDawn'&&leaving))car(0,p==='subResult'&&leaving?mix(56,63,span(5)):56,4,-1.2,true,{freight:true});
   if(state.caught)car(-4.4,58,1,-1.2);
  },
  labels(p){
-  if(p==='subEntry')worldLabel([-5,10.6,49.3],'SUBSTATION 9',1);
-  if(['subEntry','subManifest','subDawn'].includes(p))worldLabel([0,8.6,49.5],'LOADING',2);
-  if(p==='subManifest')worldLabel([1.6,3.0,38.9],'MANIFEST',6);
+  // The hall's name rides the first gantry's rail (the far wall sits behind the second gantry from the entry camera);
+  // LOADING is painted on the roller door, below that gantry's walkway.
+  if(p==='subEntry')worldLabel([-2.6,8.75,11.4],'SUBSTATION 9',1);
+  if(['subEntry','subManifest','subDawn'].includes(p))worldLabel([0,7,49.5],'LOADING',2);
+  if(p==='subManifest')worldLabel([2.1,3.0,38.9],'MANIFEST',6);
   const k=['subManifest','subDanger','subResult'].includes(p)?this.blocking(p).others.find(o=>o.who==='krane'):null;
   if(k&&!(p==='subResult'&&state.hall!=='dive'))worldLabel([k.x,(k.y||0)+2.65,k.z],'KRANE',0);
   if(p==='subQte'){worldLabel([-1,2.3,34.8],'[1]',2);worldLabel([1.2,4.05,35.6],'[2]',2);}
