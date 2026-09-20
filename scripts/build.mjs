@@ -26,7 +26,9 @@ export async function build() {
   const script = [renderer, ...sources].join('\n');
   const shell = await read('src/ui/shell.html');
   const fragment = shell.replace('<!-- CINEMA_SCRIPT -->', `<script>\n${script}\n</script>`);
-  const html = `<!doctype html>\n<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#03070b"><meta name="description" content="A cinematic ASCII detective mystery. Find the missing lamplighter, save a witness, and choose whether to pursue his captor."><title>The Last Light</title><style>body{margin:0;background:#03070b}main{max-width:1024px;margin:auto}.cursor-interaction{cursor:pointer}</style></head><body><main>${fragment}</main></body></html>\n`;
+  // The stage is a fixed, full-viewport element: the page itself never scrolls, the viewport reaches under phone notches, and a
+  // home-screen launch on iOS runs without browser chrome (iPhone Safari has no element fullscreen).
+  const html = `<!doctype html>\n<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#03070b"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="description" content="A cinematic ASCII detective mystery. Find the missing lamplighter, save a witness, and choose whether to pursue his captor."><title>The Last Light</title><style>html,body{margin:0;height:100%;background:#03070b;overflow:hidden;overscroll-behavior:none}main{margin:0}.cursor-interaction{cursor:pointer}</style></head><body><main>${fragment}</main></body></html>\n`;
   await mkdir(path.join(root, 'dist'), { recursive: true });
   await writeFile(path.join(root, 'dist/index.html'), html);
   await writeFile(path.join(root, 'dist/game.js'), script);

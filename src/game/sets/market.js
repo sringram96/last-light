@@ -3,7 +3,8 @@
 // The aisle runs along z from the arch (z -8) to the club's sign (z 46) and rises 3 degrees: everything standing on it
 // takes its base from marketY(z), and the camera heights below are eye heights above that slope.
 const marketY=z=>(z+8)*.05;
-function marketWindow(){return clamp(7+(state.tail?2:0)-(state.misread?2:0),5,9);}
+// The cart's run down the aisle covers the prompt's window (base 2.5 s, +0.5 with the tail spotted, -0.5 after the misread).
+function marketWindow(){return caseDuration();}
 // Stall bases along the aisle. The left row keeps its gaps (the one under [1] is the only one with a lamp); the right
 // row's awnings run as one ledge from the rope to the club, the way Rook runs them on the cut route.
 const MARKET_STALLS=[2,6,10,14,18,22,26,30,34,38];
@@ -79,7 +80,8 @@ registerSet('market',{
  // From the tram's rail above the arch: the fade-up looks down through the arch at the lit aisle.
  start(){return look(0,7,-16,0,2,14);},
  shot(p){
-  const y=marketY,t=state.event,m=state.market;
+  const dead=p==='marketDeath';if(dead)p='marketResult';
+  const y=marketY,t=state.event,m=dead?'late':state.market;
   const qte=look(-.2,y(-2)+2.4,-2,0,2.4,24);
   if(p==='marketEntry')return look(-.4,y(-1)+1.75,-1,0,6.2,44);
   if(p==='marketAisle')return look(-1.4,y(15.5)+1.9,15.5,-1,1.9,2);
@@ -92,7 +94,9 @@ registerSet('market',{
  },
  ease(p){return {marketEntry:8,marketAisle:3,marketKeeper:3,marketDanger:.5,marketQte:.8,marketResult:.6}[p]||1.2;},
  blocking(p){
-  const y=marketY,others=[],res=p==='marketResult',m=state.market,t=state.event;
+  // The death holds the cart's late picture for now (the content pass builds the real one): Rook down among the arcs.
+  const dead=p==='marketDeath';if(dead)p='marketResult';
+  const y=marketY,others=[],res=p==='marketResult',m=dead?'late':state.market,t=state.event;
   const u=p==='marketEntry'?(reduce?1:span(8)):1,v=res?(reduce?1:span(4)):0,w=p==='marketDanger'?(reduce?1:span(2)):1;
   let rook;
   if(p==='marketEntry'){const z=mix(-6,8,u);rook={x:-1.6,y:y(z),z,pose:u<1?'walk':'watch'};}
@@ -117,7 +121,8 @@ registerSet('market',{
   return{rook,courier:null,others};
  },
  geometry(p){
-  const y=marketY,t=state.event,res=p==='marketResult',m=state.market;
+  const dead=p==='marketDeath';if(dead)p='marketResult';
+  const y=marketY,t=state.event,res=p==='marketResult',m=dead?'late':state.market;
   lamps.length=marketLamps;
   // Krane's cart: parked on the centre line, tipped into motion in the windup, rolling down the aisle over the window.
   let cz=30,cx=0,burst=false;
@@ -147,7 +152,8 @@ registerSet('market',{
   if(p==='marketAisle'||p==='marketKeeper')worldLabel([-3.4,y(12)+1.9,12],'QUILL',6);
   worldLabel([0,y(46)+5.8,46],'THE FILAMENT',3);
   if(p==='marketDanger')worldLabel([.3,y(31.6)+3.2,31.6],'KRANE',0);
-  if(p==='marketQte'){worldLabel([-4.6,y(9.2)+2.85,9.2],'[1]',2);worldLabel([4.68,y(9.9)+3.75,9.9],'[2]',2);}
+  // The cues: the gap on the left, the awning rope up; unlit while Krane tips the cart, live once it rolls.
+  if(p==='marketDanger'||p==='marketQte'){cueLabel([-4.6,y(9.2)+2.85,9.2],'left',1);cueLabel([4.68,y(9.9)+3.75,9.9],'up',2);}
   if(p==='marketResult'&&state.market==='cut')worldLabel([7.2,y(44)+3.95,44.2],'VINE ALLEY',1);
  },
  exit(){return [0,marketY(46)+2.5,46];},
@@ -166,13 +172,14 @@ registerPhases('market',{
   buttons:b=>{b('[PUSH THROUGH TO THE CLUB]',()=>enter('marketDanger'));}},
  marketDanger:{kind:'windup',title:'KRANE',next:'marketQte',
   caption:()=>'The big man is Krane, Vale\'s bodyguard, and he has seen Rook. He puts his shoulder into a loaded cell-cart and sends it down the aisle. Get ready.'},
- marketQte:{kind:'prompt',title:'THE CART IS COMING',window:marketWindow,next:'marketResult',
+ marketQte:{kind:'prompt',title:'THE CART IS COMING',base:2.5,bonus:()=>state.tail,penalty:()=>state.misread,death:'marketDeath',next:'marketResult',
   caption:()=>'The cart is coming down the aisle. Slip into the gap on the left, or go up the awning rope and over the stalls after Krane.',
-  moves:[{label:'[1] SLIP INTO THE STALL',id:'slip',act:()=>{state.market='slip';}},{label:'[2] GO OVER THE STALLS',id:'cut',act:()=>{state.market='cut';}}],
-  miss:()=>{state.market='late';}},
+  cues:[{dir:'left',label:'[1] SLIP INTO THE STALL',id:'slip',act:()=>{state.market='slip';}},{dir:'up',label:'[2] GO OVER THE STALLS',id:'cut',act:()=>{state.market='cut';}}]},
+ marketDeath:{kind:'death',title:'UNDER THE CART',duration:4,dead:'market',bit:2,back:'marketDanger',reset:()=>{state.market='';},
+  stinger:()=>['DOWN','miss',4],
+  caption:()=>'The cart takes Rook at the knee and the cells go over with him. They arc on the wet paving, and the paving is where he is lying. Krane does not look back.'},
  marketResult:{kind:'result',title:'UNDER THE ARCH',duration:4,next:'clubEntry',
   stinger:()=>state.market==='slip'?['CLEAR','hit']:state.market==='cut'?['OVER THE STALLS','hit']:['HIT','miss'],
   enter:()=>{if(state.market==='cut')addClue('Krane entered The Filament by the back door on Vine Alley. The back door is the way out too.');},
-  caption:()=>state.market==='slip'?'Rook goes into the gap. The cart goes past and into the arch pier; cells burst white against the concrete. Krane is gone.':state.market==='cut'?'Rook goes up the rope and over the awnings as the cart passes under him. Krane is ahead, moving fast, and he goes in by a door marked VINE ALLEY behind The Filament.':'The cart takes Rook at the knee. Cells spill and arc on the wet ground. He gets up cut and slow, and Krane is gone.',
-  rewind:{miss:()=>state.market==='late',back:'marketDanger',reset:()=>{state.market='';}}}
+  caption:()=>state.market==='slip'?'Rook goes into the gap. The cart goes past and into the arch pier; cells burst white against the concrete. Krane is gone.':state.market==='cut'?'Rook goes up the rope and over the awnings as the cart passes under him. Krane is ahead, moving fast, and he goes in by a door marked VINE ALLEY behind The Filament.':'The cart takes Rook at the knee. Cells spill and arc on the wet ground. He gets up cut and slow, and Krane is gone.'}
 });

@@ -80,10 +80,10 @@ function chaseSet(){
 const chaseRowIdx=[0,0],chasePostIdx=[0,0],HIDDEN={v:[[0,0,-999],[0,0,-999],[0,0,-999],[0,0,-999]],mat:{kind:'metal'},n:[0,0,1]},chasePos={vale:null,freight:null};
 // The freight carrier: in the left lane ahead, drifting toward Rook's lane in the entry's last two seconds, close for the prompt, then passed or lost.
 function chaseFreight(){
- const d=state.distance,p=state.phase,pd=state.phaseDistance||d,e=state.event;
+ const d=state.distance,p=picturePhase(),pd=state.phaseDistance||d,e=state.event;
  if(p==='chaseEntry')return{x:reduce?-2.2:mix(-3,-2.2,smooth(clamp((e-4)/2,0,1))),z:d+13};
  if(p==='chaseQteA')return{x:-2.2,z:mix(d+13,d+9,reduce?1:span(1.5))};
- if(p==='chaseBank'){const rel=state.firstMove==='dodge'?9-.45*(d-pd):9+.35*(d-pd);return rel>-30&&rel<70?{x:-2.2,z:d+rel}:null;}
+ if(p==='chaseBank'||p==='chaseDeath'){const rel=state.firstMove==='dodge'?9-.45*(d-pd):9+.35*(d-pd);return rel>-30&&rel<70?{x:-2.2,z:d+rel}:null;}
  return null;
 }
 // Substation Nine across the basin: a long lit building on the far shore (base is the shore's height) with a cyan strip along its eave.
@@ -192,13 +192,27 @@ function car(x,z,hue=1,y=0,large=false,{dark=false,freight=false}={}){
  if(!dark)for(const dx of [-w*.7,w*.7]){box(x+dx-.22,y+.58,z-l-.06,x+dx+.22,y+.83,z-l,mat('tail',3));box(x+dx-.22,y+.65,z+l,x+dx+.22,y+.88,z+l+.06,mat('lamp',2));}
 }
 function extended(){return !['brief','watch','ready','follow','danger','qte','result','evidence','deduce','loftTurn','arrival'].includes(state.phase);}
-function sceneFor(p){const d=phaseDef(p);if(d)return d.set;for(const name of ['office','station','pump','roof','club','chase','tunnel','canal'])if(p.startsWith(name))return name;return 'street';}
+function sceneFor(p){const d=phaseDef(p);if(d){if(d.set!=='*')return d.set;const dp=deathPhases[state.dead];return dp?sceneFor(dp):sceneName;}for(const name of ['office','station','pump','roof','club','chase','tunnel','canal'])if(p.startsWith(name))return name;return 'street';}
+// The phase the picture shows: a cold case holds the frame of the death that closed it.
+function picturePhase(){return state.phase==='coldCase'&&deathPhases[state.dead]||state.phase;}
+// A cue in the scene: two glyphs of the direction at the target's world point, cyan, flashing at 4 Hz for the first two
+// thirds of the window and 8 Hz for the last third (the beat's first rendered frame is always on); steady with its number
+// in untimed mode or under reduced motion; dim and steady during the windup or when the move is not open (lit=false).
+// The label's cell rectangle is recorded every frame, lit or not, so a tap lands between flashes too.
+const cueGlyphs={left:'<<',right:'>>',up:'^^',down:'vv'};
+function cueLabel(p,dir,index,lit=true){
+ const glyph=cueGlyphs[dir];
+ if(!isQte()||!lit){worldLabel(p,glyph,1,{dir,level:6});return;}
+ if(state.untimed||reduce){worldLabel(p,glyph+' '+index,1,{dir});return;}
+ const T=caseDuration(),e=state.event,on=frame===cueFirstFrame||fract(e*(e<T*2/3?4:8))<.5;
+ worldLabel(p,glyph,1,{dir,draw:on});
+}
 const moving=()=>sceneName==='chase'||sceneName==='tunnel'||!!sets[sceneName]?.moving;
 const look=(x,y,z,tx,ty,tz)=>({x,y,z,yaw:Math.atan2(tx-x,tz-z),pitch:Math.atan2(ty-y,Math.hypot(tx-x,tz-z))});
 // A shot part-way between two others: the second half of a beat that pans or tilts after its first move has settled.
 function blendShot(a,b,t){const o={};let ay=a.yaw;if(b.yaw-ay>Math.PI)ay+=Math.PI*2;else if(ay-b.yaw>Math.PI)ay-=Math.PI*2;for(const k of Object.keys(a))o[k]=mix(k==='yaw'?ay:a[k],b[k],t);return o;}
 function caseShot(){
- const p=state.phase,set=sets[sceneName];
+ const p=picturePhase(),set=sets[sceneName];
  if(set&&set.shot)return set.shot(p);
  if(sceneName==='station'){
   // The crane settles behind Rook; the listen pushes in beside him onto the reels, then tilts to the floor where the knocking is; ready pans right to the hatch.
@@ -219,9 +233,9 @@ function caseShot(){
  }
  if(sceneName==='chase'){
   const d=state.distance;
-  if(p==='chaseBank')return look(-13,3.5,d-10,0,1.3,d+6);
+  if(p==='chaseBank'||p==='chaseDeath')return look(-13,3.5,d-10,0,1.3,d+6);
   if(p==='chaseQteB')return look(-.6,3.3,d-11,0,2,d+29);
-  if(p==='chaseFinish'&&state.pursuit!=='ramp'){
+  if((p==='chaseFinish'||p==='gapDeath')&&state.pursuit!=='ramp'){
    // Caught: from the far span, three seconds on Vale's stopped car, then the pan across the water to the lit hall. Otherwise from the near deck toward it.
    const bz=(state.phaseDistance||d)+26;
    if(state.pursuit==='jump'&&state.caught){const a=look(4,5,bz+18,1.6,1,bz+38);return state.event<3||reduce?a:blendShot(a,look(4,5,bz+18,44,-8,bz+39),smooth(clamp((state.event-3)/3,0,1)));}
@@ -245,7 +259,7 @@ function caseShot(){
  }
  if(sceneName==='tunnel'){
   const d=state.distance;
-  if(p==='tunnelQte')return look(-6,2.4,d-9,.5,1,d+12);
+  if(p==='tunnelQte'||p==='tunnelDeath')return look(-6,2.4,d-9,.5,1,d+12);
   // The finish: caught is head-on in reverse, then a pan right to the basin opening; otherwise from behind toward the opening.
   if(p==='tunnelFinish'){
    if(!state.caught)return look(-.5,2.6,d-8,20,1,d+34);
@@ -273,7 +287,7 @@ function casePose(){
  state.moving=/Entry|Bank|Finish|Result|File|Window/.test(state.phase);
 }
 function caseBlocking(){
- const p=state.phase,others=[];let rook=null,courier=null;
+ const p=picturePhase(),others=[];let rook=null,courier=null;
  const set=sets[sceneName];if(set&&set.blocking){const b=set.blocking(p);return{rook:b.rook||null,courier:b.courier||null,book:null,others:b.others||[]};}
  if(sceneName==='station'){
   const u=p==='stationEntry'&&!reduce?span(7):1;
@@ -322,33 +336,33 @@ function caseBlocking(){
 }
 function caseGeometry(){
  surfaces.length=staticCount;
- const set=sets[sceneName];if(set){if(set.geometry)set.geometry(state.phase);return caseBlocking();}
+ const set=sets[sceneName];if(set){if(set.geometry)set.geometry(picturePhase());return caseBlocking();}
  if(sceneName==='station'){
   // The tape reels on the console face turn: eight wedges, alternately steel and paper, spun with the clock.
-  const spin=state.t*(state.phase==='stationListen'?3:1.2);
+  const spin=state.t*(picturePhase()==='stationListen'?3:1.2);
   for(const cx of [-.45,.45])for(let i=0;i<8;i++){const a=i*Math.PI/4+spin,b=a+Math.PI/4,c=q=>[cx+Math.cos(q)*.31,2.06+Math.sin(q)*.31,19.52],e=q=>[cx+Math.cos(q)*.08,2.06+Math.sin(q)*.08,19.52];quad(c(a),c(b),e(b),e(a),i%2?mat('rubber'):mat('dispatch',6),[0,0,-1]);}
  }
  if(sceneName==='pump'){
-  const spin=state.phase==='pumpResult'&&state.rescue==='valve'?span(4)*Math.PI:0;
+  const p=picturePhase(),spin=p==='pumpResult'&&state.rescue==='valve'?span(4)*Math.PI:0;
   const x=-1.25,z=11.88,y=1.35;
   for(let i=0;i<12;i++){const a=i*Math.PI/6+spin,b=(i+1)*Math.PI/6+spin;quad([x+Math.cos(a)*.6,y+Math.sin(a)*.6,z],[x+Math.cos(b)*.6,y+Math.sin(b)*.6,z],[x+Math.cos(b)*.43,y+Math.sin(b)*.43,z],[x+Math.cos(a)*.43,y+Math.sin(a)*.43,z],mat('lamp',2),[0,0,-1]);}
   box(-1.3,1.29,11.85,-1.2,1.41,12,mat('metal'));
-  const p=state.phase,valve=state.rescue==='valve',v=p==='pumpResult'&&!reduce?span(4):p==='pumpTruth'?1:0;
+  const valve=state.rescue==='valve',v=p==='pumpResult'&&!reduce?span(4):p==='pumpTruth'?1:0;
   // The joint splits in the windup: the pipe section drops 0.6 and water pours from it until the inlet is closed.
-  const jd=p==='pumpDanger'?span(2)*.6:['pumpQte','pumpResult','pumpTruth'].includes(p)?.6:0;
+  const jd=p==='pumpDanger'?span(2)*.6:['pumpQte','pumpResult','pumpTruth','pumpDeath'].includes(p)?.6:0;
   box(2.5,6.8-jd,16.5,3.5,7.6-jd,17.5,mat('pipe',2));
   if(jd>0){box(2.5,6.5-jd,16.5,3.5,6.8-jd,17.5,mat('water',1));if(!(valve&&(p==='pumpTruth'||v>.5)))box(2.85,-.7,16.85,3.15,6.5-jd,17.15,mat('water',1));}
   // Bell's satchel at his hip, carried across on the valve route and dropped into the torrent on the others.
-  const bx=mix(4.8,3.25,v),by=1.2*(1-v),bz=mix(17.8,16.2,v),lost=['pumpResult','pumpTruth'].includes(p)&&!valve;
+  const bx=mix(4.8,3.25,v),by=1.2*(1-v),bz=mix(17.8,16.2,v),lost=['pumpResult','pumpTruth','pumpDeath'].includes(p)&&!valve;
   if(!lost)box(bx+.25,by+.75,bz-.08,bx+.6,by+1.2,bz+.07,mat('wood',2));
-  else if(p==='pumpResult'){const fy=mix(1.95,-1.2,clamp(state.event/1.5,0,1));if(fy>-1)box(4.95,fy,17.7,5.3,fy+.45,17.85,mat('wood',2));}
+  else if(p!=='pumpTruth'){const fy=mix(1.95,-1.2,clamp(state.event/1.5,0,1));if(fy>-1)box(4.95,fy,17.7,5.3,fy+.45,17.85,mat('wood',2));}
   // The ledger open on the walkway between them once the story reaches it dry, and the water dropping as the inlet closes.
   if(p==='pumpTruth'&&valve)box(2.2,0,15.2,2.8,.2,15.6,mat('dispatch',6));
   const drop=valve?v*.4:0,w0=sceneCache.pump.surfaces[0];
   surfaces[0]=drop>0?{...w0,v:w0.v.map(q=>[q[0],q[1]-drop,q[2]])}:w0;
  }
  if(sceneName==='roof'){
-  const d=reduce?4:state.t*3,p=state.phase,e=state.event;
+  const d=reduce?4:state.t*3,p=picturePhase(),e=state.event;
   for(let i=0;i<4;i++)car(-27+fract(i*.27+d*.008)*65,30+i*6,i%2?3:1,7+i*2);
   lamps.length=sceneCache.roof.lamps.length;
   // Below the parapet: Vale's red car heads west along the elevated road while the last tram crosses the viaduct beside it.
@@ -359,14 +373,14 @@ function caseGeometry(){
   if(['roofSignal','roofConfession'].includes(p)&&state.choice==='person'){box(1.5,.15,17.7,1.8,.5,18,mat('lamp',2));lamps.push([1.65,17.85]);}
  }
  if(sceneName==='chase'){
-  const d=state.distance,p=state.phase,pd=state.phaseDistance||d,shift=p==='chaseBank'||p==='chaseQteB'||p==='chaseFinish'?state.firstMove==='dodge'?2.4:-2.2:-2.2;
+  const d=state.distance,p=picturePhase(),pd=state.phaseDistance||d,shift=p==='chaseBank'||p==='chaseQteB'||p==='chaseFinish'||p==='gapDeath'?state.firstMove==='dodge'?2.4:-2.2:-2.2;
   let y=0,x=shift,rookZ=d;
   if(p==='chaseBank'&&!reduce)x=mix(-2.2,shift,span(3));
   // The lifting bridge: from the second prompt the far span rises 1.5 units and the gap shows the basin below.
-  const bridgeZ=pd+26,gz=p==='chaseFinish'?bridgeZ:d+29,lifted=['chaseQteB','chaseFinish'].includes(p);
-  const rise=p==='chaseQteB'?1.5*(reduce?1:span(3)):p==='chaseFinish'?1.5:0,deckY=z=>lifted?rise*clamp((z-gz-7)/8,0,1):0;
+  const bridgeZ=pd+26,gz=p==='chaseFinish'||p==='gapDeath'?bridgeZ:d+29,lifted=['chaseQteB','chaseFinish','gapDeath'].includes(p);
+  const rise=p==='chaseQteB'?1.5*(reduce?1:span(3)):p==='chaseFinish'||p==='gapDeath'?1.5:0,deckY=z=>lifted?rise*clamp((z-gz-7)/8,0,1):0;
   const caught=p==='chaseFinish'&&state.pursuit==='jump'&&state.caught;
-  if(p==='chaseFinish'&&!caught&&state.pursuit!=='ramp')rookZ=Math.min(d,bridgeZ-5);
+  if((p==='chaseFinish'||p==='gapDeath')&&!caught&&state.pursuit!=='ramp')rookZ=Math.min(d,bridgeZ-5);
   if(caught){rookZ=Math.min(d,bridgeZ+36);y=(reduce?0:Math.sin(clamp((state.event-.5)/4.5,0,1)*Math.PI)*3.2)+deckY(rookZ);}
   if(p==='chaseFinish'&&state.pursuit==='ramp'){
    x=mix(shift,-10.2,span(4));y=-clamp((d-state.phaseDistance-29)/50,0,1)*7.5;
@@ -399,12 +413,12 @@ function caseGeometry(){
   }else{surfaces[0]=cache[0];for(let i=chaseRowIdx[0];i<chaseRowIdx[1];i++)surfaces[i]=cache[i];for(let i=chasePostIdx[0];i<chasePostIdx[1];i++)surfaces[i]=cache[i];}
  }
  if(sceneName==='tunnel'){
-  const d=state.distance,p=state.phase,fork=forkZ(),u=p==='tunnelFinish'?span(4):0,vale=tunnelVale();
+  const d=state.distance,p=picturePhase(),fork=forkZ(),u=p==='tunnelFinish'?span(4):0,vale=tunnelVale();
   const rookX=p==='tunnelFinish'?mix(-1.8,state.tunnel==='left'?-3.6:state.caught?1:-1.8,u):-1.8;
   car(rookX,d,1,0);box(rookX-.45,2.07,d-.2,rookX+.45,2.15,d+.2,mat('lamp',2));
   car(vale.x,vale.z,3,0);
   const cache=sceneCache.tunnel;lamps.length=cache.lamps.length;
-  if(['tunnelQte','tunnelFinish'].includes(p)){
+  if(['tunnelQte','tunnelFinish','tunnelDeath'].includes(p)){
    // The drain forks around a brick pier; a service gate closes the left branch when the shortcut fails.
    box(-1,0,fork,1,7,fork+30,mat('brick'));box(-2.6,5.4,fork-.4,2.6,6.4,fork,mat('highway-sign',1));
    if(p==='tunnelFinish'&&state.tunnel==='left'&&!state.caught)box(-7.5,0,fork+24,-1,6.8,fork+24.6,mat('grate'));
@@ -424,7 +438,7 @@ function caseGeometry(){
   }else{surfaces[tunnelIdx.wall]=wq;for(let i=tunnelIdx.strips[0];i<tunnelIdx.strips[1];i++)surfaces[i]=cache.surfaces[i];for(let i=tunnelIdx.pipes[0];i<tunnelIdx.pipes[1];i++)surfaces[i]=cache.surfaces[i];}
  }
  if(sceneName==='canal'){
-  state.dawn=state.phase==='canalEnd'?mix(.5,1,clamp(state.event/10,0,1)):.5*clamp(state.event/7,0,1);
+  state.dawn=picturePhase()==='canalEnd'?mix(.5,1,clamp(state.event/10,0,1)):.5*clamp(state.event/7,0,1);
   // Over the last six seconds of the crane the lamps go out one after another from far to near: each lamp box turns to metal and leaves the pool list.
   const cache=sceneCache.canal,n=canalLampIdx.length;lamps.length=0;
   canalLampIdx.forEach(([idx,z],k)=>{const out=state.phase==='canalEnd'&&state.event>4+(n-1-k)*6/n;for(let j=0;j<5;j++)surfaces[idx+j]=out?{...cache.surfaces[idx+j],mat:mat('metal')}:cache.surfaces[idx+j];if(!out)lamps.push([-3.3,z]);});
@@ -432,7 +446,7 @@ function caseGeometry(){
  }
  if(sceneName==='club'){
   // The bottle crosses the room during the prompt and bursts on the neon if it is not answered.
-  const p=state.phase;
+  const p=picturePhase();
   if(p==='clubQte'){const u=clamp(state.event/caseDuration(),0,1),x=mix(6,.8,u),y=1.4+Math.sin(u*Math.PI)*2.3,z=mix(11,9.4,u);box(x-.12,y-.2,z-.12,x+.12,y+.2,z+.12,mat('glass',1));}
   if(p==='clubResult'&&state.club==='vault')for(let i=0;i<4;i++)box(7.4+i*.5,1,12.9+hash(i,2)*.6,7.7+i*.5,1.08,13.2+hash(i,2)*.6,mat('lamp',2));
   // The back door: closed until the result, when it stands open on Vine Alley and Vale's red car beyond it.
@@ -487,32 +501,35 @@ function tunnelVale(){
  return{x:p==='tunnelFinish'&&state.tunnel==='left'&&state.caught?3.2:1.6,z};
 }
 function caseLabels(){
- const set=sets[sceneName];if(set){if(set.labels)set.labels(state.phase);return;}
- if(sceneName==='station'){worldLabel([0,6.3,43.2],'PUMP ROOM 4',2);worldLabel([0,2.9,19.1],'MAINTENANCE',2);if(state.phase==='stationQuiet')worldLabel([.4,1.7,19.3],'ORDER 7731',6);}
- if(sceneName==='pump'){worldLabel([-2.1,1.6,12.2],'INLET',2);if(!['pumpResult','pumpTruth'].includes(state.phase))worldLabel([4.8,3.9,17.7],'BELL',2);if(state.phase==='pumpQte'){worldLabel([-1.25,2.15,11.8],'[1]',2);worldLabel([4.8,4.5,17.7],'[2]',2);}}
- if(sceneName==='roof'){worldLabel([0,3.2,17],'RADIO',2);if(state.phase==='roofQuiet')worldLabel([-30,-6.9,58],'THE FILAMENT',3);}
+ const set=sets[sceneName],p=picturePhase();if(set){if(set.labels)set.labels(p);return;}
+ if(sceneName==='station'){worldLabel([0,6.3,43.2],'PUMP ROOM 4',2);worldLabel([0,2.9,19.1],'MAINTENANCE',2);if(p==='stationQuiet')worldLabel([.4,1.7,19.3],'ORDER 7731',6);}
+ // The cues: the wheel (left) and Bell (right), unlit through the windup's cuts and live on the wide prompt frame.
+ if(sceneName==='pump'){worldLabel([-2.1,1.6,12.2],'INLET',2);if(!['pumpResult','pumpTruth'].includes(p))worldLabel([4.8,3.9,17.7],'BELL',2);if(p==='pumpDanger'||p==='pumpQte'){cueLabel([-1.25,2.15,11.8],'left',1);cueLabel([4.8,4.5,17.7],'right',2);}}
+ if(sceneName==='roof'){worldLabel([0,3.2,17],'RADIO',2);if(p==='roofQuiet')worldLabel([-30,-6.9,58],'THE FILAMENT',3);}
  if(sceneName==='chase'){
-  const p=state.phase,v=chasePos.vale,f=chasePos.freight;
+  const v=chasePos.vale,f=chasePos.freight;
   if(v)worldLabel([v.x,v.y+3.3,v.z],'VALE',3);
   if(f&&(p==='chaseQteA'||p==='chaseEntry'&&state.event>=4))worldLabel([f.x,3.0,f.z],'FREIGHT',2);
   if(p==='chaseQteB')worldLabel([0,6.9,state.distance+29],'BRIDGE UP',2);
-  // The move markers: brake in Rook's own lane behind the carrier or dive into the clear right lane; the service ramp off the left rail or the rising span.
-  if(p==='chaseQteA'){worldLabel([-2.2,1.7,state.distance+5],'[1]',2);worldLabel([2.6,1.7,state.distance+8],'[2]',2);}
-  if(p==='chaseQteB'){worldLabel([-7.2,2.2,state.distance+14],'[1]',2);worldLabel([3.2,5.2,state.distance+27],'[2]',2);}
-  // The hall's label waits for the finish: during the bridge prompt only the two move markers belong in the picture, and at phone width it clipped at the frame edge.
+  // The cues: brake (down) in Rook's own lane behind the carrier or dive (right) into the clear lane; the service ramp (left) off the rail or the rising span (up), lit only while the gap is closed.
+  if(p==='chaseQteA'){cueLabel([-2.2,1.7,state.distance+5],'down',1);cueLabel([2.6,1.7,state.distance+8],'right',2);}
+  if(p==='chaseQteB'){cueLabel([-7.2,2.2,state.distance+14],'left',1);cueLabel([3.2,5.2,state.distance+27],'up',2,state.gap===0);}
+  // The hall's label waits for the finish: during the bridge prompt only the two cues belong in the picture, and at phone width it clipped at the frame edge.
   if(p==='chaseFinish')worldLabel([44,-2.2,(state.phaseDistance||state.distance)+26+30.5],'SUBSTATION 9',1);
  }
  if(sceneName==='canal')worldLabel([7.4,3.3,20.2],'CITY MEDIC',2);
- if(sceneName==='office'){worldLabel([-7.4,4.5,7],'CASE BOARD',2);worldLabel([0,4.6,16.2],'NIGHT DIVISION',1);if(state.phase!=='officeEntry')worldLabel([-.4,1.55,8.3],'I. BELL',6);if(state.phase==='officeBoard'){worldLabel([-7.55,2.2,5],'I. BELL',6);worldLabel([-7.55,2.0,6.2],'A. VALE',3);worldLabel([-12.8,3.9,-10.6],'VALE',0);}}
+ if(sceneName==='office'){worldLabel([-7.4,4.5,7],'CASE BOARD',2);worldLabel([0,4.6,16.2],'NIGHT DIVISION',1);if(p!=='officeEntry')worldLabel([-.4,1.55,8.3],'I. BELL',6);if(p==='officeBoard'){worldLabel([-7.55,2.2,5],'I. BELL',6);worldLabel([-7.55,2.0,6.2],'A. VALE',3);worldLabel([-12.8,3.9,-10.6],'VALE',0);}}
  if(sceneName==='club'){
   worldLabel([0,5.5,16],'THE FILAMENT',3);worldLabel([11.6,5.3,16.5],'NO EXIT',3);
-  if(!['clubEntry','clubQte'].includes(state.phase)){worldLabel([9,3.4,14],'VALE',3);worldLabel([6.5,3.25,11.5],'KRANE',0);}
-  if(state.phase==='clubQte'){worldLabel([.5,1.85,9],'[1]',2);worldLabel([8.3,2,10.5],'[2]',2);}
+  if(!['clubEntry','clubQte'].includes(p)){worldLabel([9,3.4,14],'VALE',3);worldLabel([6.5,3.25,11.5],'KRANE',0);}
+  // The cues: duck (down) at Rook's mark, vault (up) over the bar top.
+  if(p==='clubFace'||p==='clubQte'){cueLabel([.5,1.85,9],'down',1);cueLabel([8.3,2,10.5],'up',2);}
  }
  if(sceneName==='tunnel'){
   const vale=tunnelVale();worldLabel([vale.x,3.3,vale.z],'VALE',3);
-  if(state.phase==='tunnelQte'){const f=forkZ();worldLabel([3.4,4.6,f-1],'[1]',2);worldLabel([-3.4,4.6,f-1],'[2]',2);worldLabel([0,6.9,f-1.2],'CANAL GATE',1);}
-  if(['tunnelQte','tunnelFinish'].includes(state.phase))worldLabel([-4.4,5.2,forkZ()-1],'MAINT',1);
-  if(state.phase==='tunnelFinish')worldLabel([50,14,state.distance+38],'SUBSTATION 9',1);
+  // The cues: the right branch under the canal gate, the maintenance channel on the left.
+  if(p==='tunnelQte'){const f=forkZ();cueLabel([3.4,4.6,f-1],'right',1);cueLabel([-3.4,4.6,f-1],'left',2);worldLabel([0,6.9,f-1.2],'CANAL GATE',1);}
+  if(['tunnelQte','tunnelFinish','tunnelDeath'].includes(p))worldLabel([-4.4,5.2,forkZ()-1],'MAINT',1);
+  if(p==='tunnelFinish')worldLabel([50,14,state.distance+38],'SUBSTATION 9',1);
  }
 }

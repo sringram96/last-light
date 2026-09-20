@@ -98,11 +98,12 @@ registerPhases('loft',{
   caption:()=>'The note, in a quick hand: "Ivo. I called it in so the Board would have to log you at the station. I did not think. Forgive me. N." Rook folds it into the file.',
   buttons:b=>{b('[STUDY THE MAP AND PHOTOGRAPHS]',()=>enter('loftBoard'));}},
  loftBoard:{kind:'quiet',title:'WHERE ARE THE BATTERIES GOING?',
-  caption:()=>state.misread?'The depot and the station have nothing to hide; Bell would not photograph his own workplace. The club\'s back door and the Board\'s van are in the same frame. Rook has spent a rewind\'s worth of night getting it wrong.':'The photographs: a red car at a loading bay behind a neon sign, THE FILAMENT. A Lumen Board van. A man in a division coat who does not look at the camera. Where are the batteries going?',
+  // The deduction ladder: the first wrong answer costs a lamp and marks the misread; the second removes both wrong buttons.
+  caption:()=>ladder.loft>=2?'Rook has now been wrong twice in a room with the answer pinned to the wall. The photographs are of the club, and the van is the Board\'s.':state.misread?'The depot and the station have nothing to hide; Bell would not photograph his own workplace. The club\'s back door and the Board\'s van are in the same frame. Rook has spent a rewind\'s worth of night getting it wrong.':'The photographs: a red car at a loading bay behind a neon sign, THE FILAMENT. A Lumen Board van. A man in a division coat who does not look at the camera. Where are the batteries going?',
   buttons:b=>{
-   const wrong=()=>{if(!state.misread){state.misread=true;state.rewinds=Math.max(0,state.rewinds-1);}ui();};
+   const wrong=()=>{ladder.loft++;if(!state.misread){state.misread=true;state.rewinds=Math.max(0,state.rewinds-1);}ui();};
    b('[UPTOWN, THROUGH THE FILAMENT]',()=>{addClue('Bell\'s photographs: reserve batteries leave by the Filament\'s back door into a Lumen Board van. The man in the division coat is Vale.');enter('loftLeave');});
-   b('[BACK TO THE LAMP DEPOT]',wrong);b('[INTO THE STATION VAULTS]',wrong);
+   if(ladder.loft<2){b('[BACK TO THE LAMP DEPOT]',wrong);b('[INTO THE STATION VAULTS]',wrong);}
   }},
  loftLeave:{kind:'cutscene',title:'FIVE PAST MIDNIGHT',duration:4,next:'stationEntry',
   caption:()=>'Rook takes the photographs. Through the window, the station clock reads five past midnight. Bell\'s job is still open.'}

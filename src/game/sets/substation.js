@@ -3,7 +3,8 @@
 // a Board van backed up to the loading door. The manifest on the nearest loose rack carries the countersignature. Krane
 // heaves that rack over onto Rook: dive clear (Krane pinned, the manifest burns) or pull the breaker (the hall goes
 // dark, the manifest saved, Krane gone).
-function subWindow(){return clamp(7+(state.keeper?2:0)-(state.tunnel==='late'||state.pursuit==='late'?2:0),5,9);}
+// The rack closes over the prompt's window (base 1.5 s, +0.5 with the keeper's tip, -0.5 after a survived miss on the road).
+function subWindow(){return caseDuration();}
 // The loose rack Krane heaves: x 2.5..4.5, z 36.5..42.5, 4.5 high. It tips toward the aisle about its aisle base edge
 // (x 2.5 on the floor), the edge a rack really pivots on: at 90 degrees it lies flat across the aisle, x -2..2.5, 2 high,
 // which is why the centre aisle is 4.5 wide. (Rotating about the far base edge at x 4.5 would swing the whole rack under
@@ -21,6 +22,7 @@ function tipBox(x0,y0,z0,x1,y1,z1,m,a){
 // The rack's lean per beat: upright in the entry, leaving vertical in the windup, closing over Rook across the window,
 // flat in the first 0.6 s of any result.
 function subLean(p){
+ if(p==='subDeath')p='subResult';
  const deg=p==='subDanger'?span(2)*10:p==='subQte'?10+clamp(state.event/subWindow(),0,1)*30:p==='subResult'?40+clamp(state.event/.6,0,1)*50:0;
  return deg*Math.PI/180;
 }
@@ -80,6 +82,7 @@ registerSet('substation',{
  },
  start(){return look(0,8.5,-9.6,0,2,20);},
  shot(p){
+  if(p==='subDeath')p='subResult';
   if(p==='subEntry')return look(.4,5.5,2,0,1,44);
   if(p==='subManifest'){
    // Close on the clipboard for three seconds, then a pan right and down the aisle to Krane coming from the van.
@@ -91,8 +94,11 @@ registerSet('substation',{
   if(p==='subDawn')return look(0,2.4,42,0,4,66);
   return look(-.6,1,31,1,2.6,39.5);
  },
- ease(p){return {subEntry:8,subManifest:1.2,subDanger:.5,subResult:1.5,subDawn:5}[p]||1.2;},
+ ease(p){return {subEntry:8,subManifest:1.2,subDanger:.5,subResult:1.5,subDeath:1.5,subDawn:5}[p]||1.2;},
  blocking(p){
+  // The death holds the rack's late picture for now (the content pass builds the real one): with no hall value written,
+  // the result branches below fall through to Rook under the rack.
+  if(p==='subDeath')p='subResult';
   const others=[];let rook;
   // q: Rook's half-second step out of the rack's fall before it lands (0.6 s into the result).
   const u=p==='subEntry'&&!reduce?span(8):1,v=p==='subResult'?(reduce?1:span(4)):0,w=p==='subDawn'?(reduce?1:span(5)):0,q=reduce?1:clamp(state.event/.5,0,1);
@@ -126,6 +132,7 @@ registerSet('substation',{
   return{rook,courier:null,others};
  },
  geometry(p){
+  if(p==='subDeath')p='subResult';
   state.dawn=p==='subDawn'?span(5)*.35:0;
   const dark=state.hall==='breaker'&&(p==='subResult'||p==='subDawn'),a=subLean(p),flat=a>=Math.PI/2-1e-6;
   // Pendants over the centre aisle: four warm pools until the breaker is thrown.
@@ -160,6 +167,7 @@ registerSet('substation',{
   if(state.caught)car(-4.4,58,1,-1.2);
  },
  labels(p){
+  if(p==='subDeath')p='subResult';
   // The hall's name rides the first gantry's rail (the far wall sits behind the second gantry from the entry camera);
   // LOADING is painted on the roller door, below that gantry's walkway.
   if(p==='subEntry')worldLabel([-2.6,8.75,11.4],'SUBSTATION 9',1);
@@ -167,7 +175,8 @@ registerSet('substation',{
   if(p==='subManifest')worldLabel([2.1,3.0,38.9],'MANIFEST',6);
   const k=['subManifest','subDanger','subResult'].includes(p)?this.blocking(p).others.find(o=>o.who==='krane'):null;
   if(k&&!(p==='subResult'&&state.hall!=='dive'))worldLabel([k.x,(k.y||0)+2.65,k.z],'KRANE',0);
-  if(p==='subQte'){worldLabel([-1,2.3,34.8],'[1]',2);worldLabel([1.2,4.05,35.6],'[2]',2);}
+  // The cues: dive clear to the left of the aisle, the breaker's lever on the right; unlit while Krane heaves.
+  if(p==='subDanger'||p==='subQte'){cueLabel([-1,2.3,34.8],'left',1);cueLabel([1.2,4.05,35.6],'right',2);}
   if(p==='subDawn'&&state.caught)worldLabel([-4.4,1.95,58],'VALE',3);
  },
  exit(){return [0,1.5,50];},
@@ -182,10 +191,12 @@ registerPhases('substation',{
   caption:()=>'A manifest hangs on the nearest loose rack: RESERVE TRANSFER / ORDER 7731 / A. VALE, and under it a countersignature, H. ASHE, COMMISSIONER OF RESERVE. The loaders have seen Rook. So has Krane.'},
  subDanger:{kind:'windup',title:'TWO TONNES OF CELLS',next:'subQte',
   caption:()=>'Krane puts his back to the loose rack and heaves. Two tonnes of cells tip toward Rook. The hall\'s main breaker is at Rook\'s shoulder, handle up. Get ready.'},
- subQte:{kind:'prompt',title:'THE RACK IS COMING DOWN',window:subWindow,next:'subResult',
+ subQte:{kind:'prompt',title:'THE RACK IS COMING DOWN',base:1.5,bonus:()=>state.keeper,penalty:()=>state.tunnel==='late'||state.pursuit==='late',death:'subDeath',next:'subResult',
   caption:()=>'The rack is coming down. Dive clear and let it fall, or pull the breaker so the cells cannot arc and grab the manifest as it goes.',
-  moves:[{label:'[1] DIVE CLEAR',id:'dive',act:()=>{state.hall='dive';}},{label:'[2] PULL THE BREAKER',id:'breaker',act:()=>{state.hall='breaker';}}],
-  miss:()=>{state.hall='late';}},
+  cues:[{dir:'left',label:'[1] DIVE CLEAR',id:'dive',act:()=>{state.hall='dive';}},{dir:'right',label:'[2] PULL THE BREAKER',id:'breaker',act:()=>{state.hall='breaker';}}]},
+ subDeath:{kind:'death',title:'UNDER THE RACK',duration:4,dead:'rack',bit:32,back:'subDanger',reset:()=>{state.hall='';},
+  stinger:()=>['CRUSHED','miss',4],
+  caption:()=>'The rack comes down across Rook and the cells split around him. Krane looks over the top of it once, then goes to the van.'},
  subResult:{kind:'result',title:'IN THE HALL',duration:5,next:'subDawn',
   stinger:()=>state.hall==='dive'?['PINNED','hit']:state.hall==='breaker'?['LIGHTS OUT','hit']:['CRUSHED','miss'],
   enter:()=>{
@@ -193,8 +204,7 @@ registerPhases('substation',{
    else if(state.hall==='dive')addClue('Krane, Vale\'s bodyguard, arrested at Substation Nine, pinned under the rack he pushed. The manifest burned.');
    else addClue('The Substation Nine manifest burned. Krane and the loaders escaped in the Board van.');
   },
-  caption:()=>state.hall==='dive'?'Rook goes left. The rack comes down on the floor and on Krane\'s leg behind it; cells split and arc white. The loaders run. The manifest curls and burns on the rack. Krane does not go anywhere.':state.hall==='breaker'?'Rook throws the breaker. The hall goes black and the rack lands dead beside him. He has the manifest in his fist. When the emergency lamps come up, the van is gone and so is Krane.':'The rack takes Rook across the legs. Cells arc; the manifest is ash before he can reach it. The van\'s doors slam. When Rook drags himself clear, the hall is empty.',
-  rewind:{miss:()=>state.hall==='late',back:'subDanger',reset:()=>{state.hall='';}}},
+  caption:()=>state.hall==='dive'?'Rook goes left. The rack comes down on the floor and on Krane\'s leg behind it; cells split and arc white. The loaders run. The manifest curls and burns on the rack. Krane does not go anywhere.':state.hall==='breaker'?'Rook throws the breaker. The hall goes black and the rack lands dead beside him. He has the manifest in his fist. When the emergency lamps come up, the van is gone and so is Krane.':'The rack takes Rook across the legs. Cells arc; the manifest is ash before he can reach it. The van\'s doors slam. When Rook drags himself clear, the hall is empty.'},
  subDawn:{kind:'cutscene',title:'THE BASIN',duration:5,next:'roomEntry',
   caption:()=>state.caught?'Rook walks out through the loading door. Vale watches him from the back of the patrol car. Over the basin the sky is going grey.':'Rook walks out through the loading door. The basin is empty and the sky over it is going grey. Whatever is left of tonight will be said in a room at Night Division.'}
 });

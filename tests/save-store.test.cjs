@@ -18,20 +18,27 @@ test('legacy prototype checkpoints migrate; clearing also prevents legacy resurr
 test('malformed saves and future schemas never enter the runtime',()=>{
  assert.equal(createSaveStore(memoryStorage(),phases).save(state)&&createSaveStore(memoryStorage(),phases).load(),null);
  const s=memoryStorage();createSaveStore(s,phases).save(state);assert.equal(createSaveStore(s,phases).load().rewinds,3);
- for(const stateValue of [{...state,phase:'unknown'},{...state,distance:'far'},{...state,gap:1.5},{...state,twist:'yes'},{...state,clues:[{}]},{...state,rewinds:5},{...state,rewinds:1.5}]){
+ // The lamps, deaths and restarts fields default when absent and are bounded integers; the cold-case fields have their defaults.
+ const loaded=createSaveStore(s,phases).load();assert.deepEqual([loaded.deaths,loaded.restarts,loaded.dead,loaded.stalled,loaded.faced,loaded.shown],[0,0,'',false,false,false]);
+ const t=memoryStorage();createSaveStore(t,phases).save({...state,deaths:63,restarts:9,dead:'rack',stalled:true,shown:true});const kept=createSaveStore(t,phases).load();assert.deepEqual([kept.deaths,kept.restarts,kept.dead,kept.stalled,kept.shown],[63,9,'rack',true,true]);
+ for(const stateValue of [{...state,phase:'unknown'},{...state,distance:'far'},{...state,gap:1.5},{...state,twist:'yes'},{...state,clues:[{}]},{...state,rewinds:5},{...state,rewinds:1.5},{...state,deaths:64},{...state,deaths:2.5},{...state,restarts:10},{...state,dead:'street'},{...state,stalled:'yes'}]){
   const storage=memoryStorage();storage.setItem('last-light/save/v1',JSON.stringify({version:1,state:stateValue}));assert.equal(createSaveStore(storage,phases).load(),null);
  }
  for(const value of ['broken','{"version":99,"state":{}}']){const storage=memoryStorage();storage.setItem('last-light/save/v1',value);assert.equal(createSaveStore(storage,phases).load(),null);}
 });
 test('case records accumulate endings and discoveries, survive new cases, and reject malformed data',()=>{
  const storage=memoryStorage(),store=createSaveStore(storage,phases);
- assert.deepEqual(store.readRecords(),{endings:[],discoveries:[],cases:0});
- store.record({ending:'home',discoveries:['tape','tape']});store.record({ending:'home',discoveries:['ledger']});
- assert.deepEqual(store.readRecords(),{endings:['home'],discoveries:['tape','ledger'],cases:2});
+ assert.deepEqual(store.readRecords(),{endings:[],discoveries:[],cases:0,cold:0,deaths:[]});
+ store.record({ending:'home',discoveries:['tape','tape']});store.record({ending:'home',discoveries:['ledger'],deaths:['drowned']});
+ assert.deepEqual(store.readRecords(),{endings:['home'],discoveries:['tape','ledger'],cases:2,cold:0,deaths:['drowned']});
+ // A cold case counts under cold, not under the cases closed; its deaths join the list once.
+ store.record({ending:'cold',cold:1,deaths:['drowned','arc']});assert.deepEqual(store.readRecords(),{endings:['home','cold'],discoveries:['tape','ledger'],cases:2,cold:1,deaths:['drowned','arc']});
  store.clear();assert.equal(createSaveStore(storage,phases).readRecords().cases,2);
  for(const value of ['broken','{"version":2,"endings":["home"],"discoveries":[]}','{"version":1,"endings":[{}],"discoveries":[]}','{"version":1,"endings":["home"],"discoveries":"tape"}']){
-  const s=memoryStorage();s.setItem('last-light/records/v1',value);assert.deepEqual(createSaveStore(s,phases).readRecords(),{endings:[],discoveries:[],cases:0});
+  const s=memoryStorage();s.setItem('last-light/records/v1',value);assert.deepEqual(createSaveStore(s,phases).readRecords(),{endings:[],discoveries:[],cases:0,cold:0,deaths:[]});
  }
+ // Older records without the cold count or the deaths list read back with their defaults.
+ const old=memoryStorage();old.setItem('last-light/records/v1','{"version":1,"endings":["arrest-word"],"discoveries":["tape"],"cases":1}');assert.deepEqual(createSaveStore(old,phases).readRecords(),{endings:['word'],discoveries:['tape'],cases:1,cold:0,deaths:[]});
  assert.deepEqual(createSaveStore(storage,phases).readSettings({mono:false,untimed:false,sound:false}),{mono:false,untimed:false,sound:false});
 });
 test('blocked browser storage keeps a session checkpoint and settings',()=>{

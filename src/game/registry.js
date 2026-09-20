@@ -13,15 +13,22 @@
 // registerPhases('loft',{ loftEntry:{ kind:'cutscene', title:'THE DEPOT LOFT', duration:7, next:'loftTable',
 //  caption:()=>'...', enter:()=>{ fields, addClue(...) }, buttons:(button)=>{ button('[LABEL]',()=>enter('x')) } }, ... })
 // Kinds: cutscene (duration seconds, then next), quiet (waits for a button), observe (8 seconds, then next),
-// windup (2 seconds and GET READY, then next), prompt (window() seconds, moves:[{label,id,act}], miss(), next = result),
-// result (stinger():[text,tone], duration seconds unless a rewind is offered, rewind:{miss(),back,reset()}, next).
+// windup (1.5 to 2.5 seconds jittered, no card, then next),
+// prompt (cues:[{dir:'left'|'right'|'up'|'down', label:'[1] ...' for the untimed button, id, act()}], one directional input;
+//  the window is base seconds +0.5 when bonus() and -0.5 when penalty(), clamped 1.25..3.5, or window() returning seconds
+//  already clamped; a timeout or a wrong direction goes to death:'<death phase>' (lethal) or miss:'<result phase>' (survivable,
+//  with a late() that writes the miss value); next = the result after a landed cue),
+// result (stinger():[text,tone], duration seconds unless a rewind is offered, rewind:{miss(),back,reset()}, next),
+// death ({duration:4, caption(), stinger(), dead:'pump'|'market'|'carrier'|'gap'|'pier'|'rack', bit, back:'<windup>', reset()}:
+//  a lamp goes on entry and deaths gains bit; after the duration the night rewinds to back, or the case goes cold).
+// A phase registered with set '*' (coldCase) belongs to whichever set the story is in.
 const sets={},phaseDefs={};
 function registerSet(name,def){sets[name]={name,...def};}
 function registerPhases(setName,defs){for(const [id,def] of Object.entries(defs))phaseDefs[id]={id,set:setName,...def};}
 function phaseDef(p){return phaseDefs[p===undefined?state.phase:p]||null;}
 const nextOf=d=>typeof d.next==='function'?d.next():d.next;
 // Derived story terms, never stored: what Rook is holding and where the pursuit stands.
-const ledgerHeld=()=>state.rescue==='valve';
+const ledgerHeld=()=>state.rescue==='valve'&&state.club!=='late';
 const manifestHeld=()=>state.hall==='breaker';
 const chipHeld=()=>state.club==='vault';
 const proofHeld=()=>ledgerHeld()||manifestHeld();

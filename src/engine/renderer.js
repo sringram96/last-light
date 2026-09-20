@@ -123,4 +123,8 @@ function triangle(a,b,c,mat,n){
  }
 }
 function pixel(x,y,z,g,k){x=Math.round(x);y=Math.round(y);if(x<0||x>=W||y<0||y>=H)return;const i=y*W+x;if(z<zbuf[i]){zbuf[i]=z;chars[i]=g;ink[i]=k;}}
-function worldLabel(p,text,hue=2){const v=cam(p);if(v.z<1)return;const s=project(v),start=Math.round(s.x-text.length/2);for(let i=0;i<text.length;i++)if(text[i]!==' ')pixel(start+i,s.y,v.z-.6,text[i],hue*20+16);}
+// Cue labels (cue:{dir,level,draw}) record their cell rectangle for pointer hit-testing; render() resets the list each frame.
+let labelRects=[];
+function worldLabel(p,text,hue=2,cue){const v=cam(p);if(v.z<1)return;const s=project(v),start=Math.round(s.x-text.length/2),row=Math.round(s.y);
+ if(cue){labelRects.push({text,dir:cue.dir,x0:start,x1:start+text.length-1,y0:row,y1:row});if(cue.draw===false)return;}
+ for(let i=0;i<text.length;i++)if(text[i]!==' ')pixel(start+i,s.y,v.z-.6,text[i],hue*20+(cue&&cue.level||16));}
