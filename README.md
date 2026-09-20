@@ -31,7 +31,9 @@ npm test         # Save-system, story-route and renderer regression checks
 - The header keeps a **REFLEX** tally of prompts answered in time. The closing report names the ending, the reflex score and a grade.
 - **Case File** shows the route taken, the persons of interest and the evidence gathered.
 - **Case Records** on the menu lists endings found (of five) and discoveries (of eleven). Records survive new cases.
-- After a landed move, the status line shows your reaction time.
+- After a landed move, the status line shows your reaction time. After a missed one, choose **Rewind the Moment** (three per case) to replay the beat, or **Carry On** with the consequence.
+- The header shows the current objective and rewinds left.
+- Scene changes play an exit beat: the camera glides toward the way out while a connecting line types in, the picture dissolves, and the next set fades up already in motion. Reduced motion cuts directly.
 - **Untimed** removes reaction deadlines. **Mono** changes to monochrome. **Sound** enables short synthesized cues. All three preferences persist.
 - **Menu** pauses the story and provides resume and scene-preview controls.
 - **Scene Reel** previews locations without overwriting story progress or records.
