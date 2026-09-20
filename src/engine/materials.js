@@ -71,4 +71,27 @@ else if(kind==='map'){
 }
 // An electrical arc: bright, flickering, white to cyan.
 else if(kind==='arc'){const on=hash(Math.floor(state.t*14),Math.floor(x*3),Math.floor(y*3))>.35;hue=on?6:1;lum=on?1.5:.9;g=on?'#':'%';}
+// A video billboard: a quad whose picture cycles through the material's frames on the story clock. mat carries the
+// face's frame: origin (x0,y0,z0), the unit direction (ux,uz) and length w of its bottom edge, its height h, and
+// frames, each {rows:[...28-glyph strings...],ink:{glyph:[hue,lum]}} or {bands:true,hue} (a sweep of scan bands).
+// A bright border, a scanline rolling down the picture, and the dark cells of a frame are the material's own.
+else if(kind==='video'){
+ const u=((x-mat.x0)*mat.ux+(z-mat.z0)*mat.uz)/mat.w,v=(y-mat.y0)/mat.h,F=mat.frames,f=F[Math.floor(state.t/(mat.period||2.6))%F.length];
+ if(u<.04||u>.96||v<.075||v>.925){hue=6;lum=1.15;g='#';}
+ else if(f.bands){const b=fract(v*3-state.t*.6);hue=f.hue;lum=.35+.9*Math.max(0,1-Math.abs(b-.5)*3);g=b>.3&&b<.7?'=':'-';}
+ else{const R=f.rows,row=R[clamp(Math.floor((1-v)*R.length),0,R.length-1)],c=row[clamp(Math.floor(u*row.length),0,row.length-1)],ink=f.ink[c];if(ink){hue=ink[0];lum=ink[1];g=c;}else{hue=4;lum=.16;g='.';}}
+ if(fract(v*1.5-state.t*.4)<.06)lum*=.45;
+}
+// A neon sign board: stacked clusters of ASCII strokes on a dark board that read as ideograms at a distance (the grid
+// is single-width printable ASCII, so real characters cannot be drawn). Glyphs sit on the faces whose normal runs
+// along z; mat carries x0/y0 (the board's lower-left on that face), cell (a glyph cell's width; a cluster is 5 by 5
+// cells in the screen's aspect), pad, count, seed, glyphs (the pattern table) and flicker (the neon rule).
+else if(kind==='ideogram'){
+ const on=!mat.flicker||hash(Math.floor(state.t*6),mat.hue+7)>.08;
+ hue=mat.hue;lum=.12;g='.';
+ if(!mat.roof&&Math.abs(n[2])>.5){
+  const gw=mat.cell,gh=gw*1.72,pitch=gh*6.5,u=x-mat.x0-mat.pad,v=y-mat.y0-gh*.75,gi=Math.floor(v/pitch),cy=Math.floor((v-gi*pitch)/gh),cx=Math.floor(u/gw);
+  if(gi>=0&&gi<mat.count&&cx>=0&&cx<5&&cy>=0&&cy<5){const P=mat.glyphs,c=P[Math.floor(hash(gi,mat.seed)*P.length)][4-cy][cx];if(c!==' '){lum=on?1.4:.3;g=on?c:'-';}}
+ }
+}
 else

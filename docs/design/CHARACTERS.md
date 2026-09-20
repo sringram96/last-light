@@ -1,6 +1,6 @@
 # The Last Light: characters
 
-This is the cast bible and the sprite sheet for the case described in `BRIEF.md`. Part 1 says who each person is, what they want, what they hide, how they change, which hue the renderer gives them and how they talk. Part 2 gives every sprite the engine needs to draw them, at three sizes, as arrays an engineer can paste. `sprites.json` next to this file holds the same arrays.
+This is the cast bible and the sprite sheet for the case described in `BRIEF.md`. Part 1 says who each person is, what they want, what they hide, how they change, which hue the renderer gives them and how they talk. Part 2 gives every sprite the engine needs to draw them, at three sizes (Rook also has a `hero` close-up for the menu), as arrays an engineer can paste. `sprites.json` next to this file holds the same arrays.
 
 The house voice for captions and lines: present tense, terse, concrete. People say what they see and what they want. Nobody explains the theme.
 
@@ -11,12 +11,12 @@ Palette hues, as the renderer numbers them: 0 slate-blue, 1 cyan, 2 amber, 3 red
 ### Detective Rook
 
 - **Role.** Night Division, missing-persons desk. The last honest light on that floor. He is "Rook" on the desk plate and in every caption; no first name is ever given.
-- **Age and look.** Forty-four. Tall and heavy in the shoulders, a fedora with the brim pulled down, a long dark coat and one warm thing on him, an amber scarf; he is always drawn in profile because he is always looking at something.
+- **Age and look.** Forty-four. Tall and heavy in the shoulders, a fedora with the brim pulled down, a long dark coat and one warm thing on him, an amber scarf; he is always drawn in profile because he is always looking at something. The menu tableau shows him close: fedora brim down over the one eye, collar up, belted trench coat to the shin, rain on the shoulders, a cigarette in the near hand and the far hand in a pocket, three-quarter to the city at his back. That is the `hero` sheet below; the story sets never draw it.
 - **Wants.** To bring the missing man home. To keep his own desk lamp honest.
 - **Hides.** He has filed "no further action" on Night Division cases for years without asking whose signature closes them. He chose the desk over the floor, and he knows it.
 - **Change.** He starts the night following a stranger's lantern and ends it either arresting the colleague next door or watching his tail lights go. Either way he stands at the canal with Bell as the lamps go out because morning has come, and the office he goes back to is not the one he left.
-- **Hue.** 1 cyan. The `~` scarf is amber (2); the face glyphs are white (6). This is the existing rule and it stays.
-- **Appears in.** Every set: 00 Night Division, 01 Station Road, 02 Concourse, 03 Pump Room 4, 04 Rooftop, 05 The Filament, 06 Elevated Road (in the patrol car), 07 The Undercity (in the patrol car), 08 Canal; the planned Night Market and Substation Nine.
+- **Hue.** 1 cyan. The `~` scarf is amber (2); the face glyphs are white (6). This is the existing rule and it stays. The cigarette ember on the `hero` sheet is a second accent in the rose hue (3): `*` on the draw, `+` between draws.
+- **Appears in.** The menu tableau (`smoke`, from the `hero` sheet) and every set: 00 Night Division, 01 Station Road, 02 Concourse, 03 Pump Room 4, 04 Rooftop, 05 The Filament, 06 Elevated Road (in the patrol car), 07 The Undercity (in the patrol car), 08 Canal; the planned Night Market and Substation Nine.
 - **Lines.**
   - "The lamp is out. Someone switched it off, or nobody came."
   - "Three knocks. If nobody answers, I use my shoulder."
@@ -155,22 +155,23 @@ Palette hues, as the renderer numbers them: 0 slate-blue, 1 cyan, 2 amber, 3 red
 ### Hard rules every sprite obeys (and the check script enforces)
 
 1. Printable ASCII only, codes 32 to 126.
-2. Every row in a sprite has exactly the same length: 11 for `full`, 7 for `mid`, 5 for `small`.
+2. Every row in a sprite has exactly the same length: 11 for `full`, 7 for `mid`, 5 for `small`; Rook's `hero` sheet is 36 rows of 25, the width the projection rule gives a 36-row figure (`round(36 * 1.72 * 0.41)`), so at the menu distance it is drawn cell for cell.
 3. Facial glyphs are only `o` (eye), `.` (eye or mouth) and `>` (nose or mouth in profile); nothing else in a sprite uses those three glyphs, and they appear in one row only.
 4. Body fill is `#`; shading is `=`, `:` and `-`; outlines are `/ \ | ( ) _`; space is transparent.
-5. At most one accent glyph per character, taking a second hue (table below). Krane's bottle `!` appears only in his throw pose.
+5. Accent glyphs take a second hue (table below): one per character, except Rook, whose `hero` sheet adds the ember (`*` and `+`, rose) beside the scarf. Krane's bottle `!` appears only in his throw pose.
 6. The book prop in a `read` pose is drawn with `[` and `]`, as Rook's existing read pose already does. They are the only glyphs outside the sets above, and only in `read`.
 7. Row counts: 11 rows for adults; Bell is 10 rows and 1.95 units tall; `crouch` is 7 rows at 1.35 units (Bell 1.3); Bell's `sit` is 6 rows at 1.15 units. Heights are in `sprites.json`: `height` is the standing height and `heights` holds the per-pose overrides.
 
 ### The file: `docs/design/sprites.json`
 
-One object per character, keyed `rook`, `nell`, `bell`, `vale`, `krane`, `medic`, `performer`, `ashe` and `generic` (the extras, under the name the loader falls back to). Each has `full`, `mid` and `small` (an object of poses; `walk` is an array of two frames, every other pose one array of rows), `accent` (`{glyph, hue}` or `null`), and the metadata the loader reads: `hue`, `level` (ink brightness, 14 for named characters, 11 for extras), `faceHue` (Rook only, 6), `height` and `heights`. Blocking selects a sheet with `who: 'nell'` and so on on the actor; an actor without `who` draws `generic` (Rook keeps `isRook`).
+One object per character, keyed `rook`, `nell`, `bell`, `vale`, `krane`, `medic`, `performer`, `ashe` and `generic` (the extras, under the name the loader falls back to). Each has `full`, `mid` and `small` (an object of poses; `walk` is an array of two frames, every other pose one array of rows), Rook alone a `hero` size ahead of them (`stand`, and `smoke` as two frames the clock alternates every 1.5 s), `accent` (`{glyph, hue}`, a list of them, or `null`), and the metadata the loader reads: `hue`, `level` (ink brightness, 14 for named characters, 11 for extras), `faceHue` (Rook only, 6), `height` and `heights`. Blocking selects a sheet with `who: 'nell'` and so on on the actor; an actor without `who` draws `generic` (Rook keeps `isRook`).
 
 ### Accent table
 
 | Character | Hue | Accent glyph | Accent hue | What it is |
 |---|---|---|---|---|
 | Rook | 1 cyan | `~` | 2 amber | scarf (existing; face glyphs are white) |
+| Rook, `hero` only | 1 cyan | `*` and `+` | 3 red | the cigarette ember: `*` on the draw frame, `+` between draws |
 | Nell Marrow | 6 white | `@` | 2 amber | Bell's hand lantern |
 | Ivo Bell | 2 amber | `Y` | 6 white | the wrench |
 | Inspector Vale | 3 red | `*` | 6 white | the badge |
@@ -184,7 +185,7 @@ One object per character, keyed `rook`, `nell`, `bell`, `vale`, `krane`, `medic`
 
 | Character | Full-size cue | What survives at 5 by 5 |
 |---|---|---|
-| Rook | wide fedora brim, profile face, scarf, arms akimbo, mid-length coat | brim `_/=\_`, scarf `~`, profile `(o>` |
+| Rook | wide fedora brim, profile face, scarf, arms akimbo, mid-length coat; at `hero`: pinched crown, brim over the eye, upturned collar, bent arm with the cigarette, belt buckle `(=)`, a coat that flares to the hem | brim `_/=\_`, scarf `~`, profile `(o>` |
 | Nell | hood, pole down the whole left edge, strap across the chest, lantern at the right hip, stiff right leg | pole `\|` on the left edge, `@` at the hip |
 | Bell | flat cap with a peak, beard, broadest torso, satchel `(=)` at the left hip, wrench hanging right, ten rows | cap `(===)`, satchel and `Y` on one row |
 | Vale | peaked cap, long coat with a `:` centre seam, badge `*`, narrow and upright | cap `_\|=\|_`, `*`, seam `:` |
@@ -198,6 +199,7 @@ One object per character, keyed `rook`, `nell`, `bell`, `vale`, `krane`, `medic`
 
 The existing blocking in `scenes.js` maps onto these sheets without new logic; the new poses replace a few generic ones.
 
+- **Menu tableau.** Rook `smoke` from the `hero` sheet (34 to 40 rows on the 70-row picture at desktop widths; at phone width he projects to about 20 rows and the `full` sheet's `stand` stands in for `smoke`). Nobody else.
 - **01 Station Road.** Nell `walk` (the stiff right leg is the tell the watch beat promises), `stumble` with the existing lean, `stand` with lean when caught; Rook `watch`, `walk`, `reach` then `support`, `read`, `crouch` as today.
 - **02 Concourse.** Rook `read` at the desk; Nell `stand`.
 - **03 Pump Room 4.** Bell `wrench` while the knocking plays (`pumpEntry`, `pumpFind`), `reach` during `pumpDanger` and `pumpQte`, `sit` on the walkway after `pumpResult` (replaces the `stand` at `y: 1.2`), `stand` for `pumpTruth`; Rook `watch`, `support`; Nell `watch`, `reach` when she throws the line.
@@ -210,7 +212,7 @@ The existing blocking in `scenes.js` maps onto these sheets without new logic; t
 
 ### Reading the sheets
 
-Each character below has a picture of every pose (as the check script prints them) followed by the arrays. `walk` is always two frames; the engine alternates them at `floor(t * 5) % 2` as it does today. Reduced sizes cover `stand` and `walk` only: `crouch`, `sit`, `stumble`, `reach`, `support`, `read` and the character-specific poses happen close to the camera, and the engine falls back to sampling the full sprite for them at any size.
+Each character below has a picture of every pose (as the check script prints them) followed by the arrays. `walk` is always two frames; the engine advances them with distance walked. Rook's `hero` `smoke` is two frames too, an idle cycle the engine alternates on the story clock every 1.5 seconds (draw, then the hand at the chest with the ember dimmed); it holds while the game is paused and stays on the draw frame under reduced motion. Reduced sizes cover `stand` and `walk` only: `crouch`, `sit`, `stumble`, `reach`, `support`, `read` and the character-specific poses happen close to the camera, and the engine falls back to sampling the full sprite for them at any size.
 
 ### Rook (`rook`)
 
@@ -251,6 +253,48 @@ small stand  small walk 1  small walk 2
 [ | | ]  [/  | ]  [ |  \]
 ```
 
+Hero sheet, the menu close-up (36 rows of 25; `smoke` is the two-frame cycle, `stand` the fallback with both hands in the pockets):
+
+```text
+hero smoke 1                 hero smoke 2                 hero stand
+[      ____  ____         ]  [      ____  ____         ]  [      ____  ____         ]
+[    _/====\/====\_       ]  [    _/====\/====\_       ]  [    _/====\/====\_       ]
+[   /==============\      ]  [   /==============\      ]  [   /==============\      ]
+[   |::::::::::::::|      ]  [   |::::::::::::::|      ]  [   |::::::::::::::|      ]
+[ __/==============\__    ]  [ __/==============\__    ]  [ __/==============\__    ]
+[/====================\__ ]  [/====================\__ ]  [/====================\__ ]
+[\___/            \_____/ ]  [\___/            \_____/ ]  [\___/            \_____/ ]
+[  ' (   o        _>      ]  [  ' (   o        _>   '  ]  [  ' (   o        _>      ]
+[    (  )         |    '  ]  [    (  )         |  '    ]  [    (  )         |    '  ]
+[  __ \           |(##)==*]  [  __ \           |'    ' ]  [  __ \           |  '    ]
+[ /=| \_________/  |##| ' ]  [ /=| \_________/ |=\     ]  [ /=| \_________/ |=\     ]
+[/==|_|  ~~~~~~    |==|   ]  [/==|_|  ~~~~~~   |==\    ]  [/==|_|  ~~~~~~   |==\    ]
+[|===| '~~~~~~~ '  |==| ' ]  [|===| '~~~~~~~ ' |==| '  ]  [|===| '~~~~~~~ ' |==| '  ]
+[|===|____~~~~_____|==|__ ]  [|===|____~~~~____|==|__  ]  [|===|____~~~~____|==|__  ]
+[|====|###########|==|==\ ]  [|====|###########|==|==\ ]  [|====|###########|==|==\ ]
+[|====|####:######|==|===\]  [|====|####:######|==|===\]  [|====|####:######|==|===\]
+[|====|####:######|==|===|]  [|====|####:###==+|==|===|]  [|====|####:######|==|===|]
+[\====|####:######|==|===|]  [|====|###(##)=======/===|]  [|====|####:######|==|===|]
+[ |===|####:#####/==/====|]  [\====|####:######\__/===|]  [\====|####:######|==|===|]
+[ |===|####:#####|==|====|]  [ |===|####:#############|]  [ |===|####:######|==|===|]
+[ \===|####:#####\__/===/ ]  [ \===|####:############/ ]  [ \===|####:######|==|==/ ]
+[  \=/|####:###########/  ]  [  \=/|####:###########/  ]  [  \=/|####:######\==/=/  ]
+[  |_||####:##########/   ]  [  |_||####:##########/   ]  [  |_||####:######|__|/   ]
+[  \=====:==(=)======/    ]  [  \=====:==(=)======/    ]  [  \=====:==(=)======/    ]
+[  |#####:###########|    ]  [  |#####:###########|    ]  [  |#####:###########|    ]
+[  |#####:###########|    ]  [  |#####:###########|    ]  [  |#####:###########|    ]
+[ /######:###########\    ]  [ /######:###########\    ]  [ /######:###########\    ]
+[ |######:############\   ]  [ |######:############\   ]  [ |######:############\   ]
+[/######:##############\  ]  [/######:##############\  ]  [/######:##############\  ]
+[|######:###############\ ]  [|######:###############\ ]  [|######:###############\ ]
+[|######:################|]  [|######:################|]  [|######:################|]
+[|______:________________|]  [|______:________________|]  [|______:________________|]
+[     |---|    |---|      ]  [     |---|    |---|      ]  [     |---|    |---|      ]
+[     |---|    |---|      ]  [     |---|    |---|      ]  [     |---|    |---|      ]
+[     |---|_   |---|_     ]  [     |---|_   |---|_     ]  [     |---|_   |---|_     ]
+[     |_____)  |_____)    ]  [     |_____)  |_____)    ]  [     |_____)  |_____)    ]
+```
+
 Arrays:
 
 ```js
@@ -260,6 +304,124 @@ const rook = {
   level: 14,
   height: 2.15,
   heights: {"crouch":1.35},
+  hero: {
+    stand: [
+      "      ____  ____         ",
+      "    _/====\\/====\\_       ",
+      "   /==============\\      ",
+      "   |::::::::::::::|      ",
+      " __/==============\\__    ",
+      "/====================\\__ ",
+      "\\___/            \\_____/ ",
+      "  ' (   o        _>      ",
+      "    (  )         |    '  ",
+      "  __ \\           |  '    ",
+      " /=| \\_________/ |=\\     ",
+      "/==|_|  ~~~~~~   |==\\    ",
+      "|===| '~~~~~~~ ' |==| '  ",
+      "|===|____~~~~____|==|__  ",
+      "|====|###########|==|==\\ ",
+      "|====|####:######|==|===\\",
+      "|====|####:######|==|===|",
+      "|====|####:######|==|===|",
+      "\\====|####:######|==|===|",
+      " |===|####:######|==|===|",
+      " \\===|####:######|==|==/ ",
+      "  \\=/|####:######\\==/=/  ",
+      "  |_||####:######|__|/   ",
+      "  \\=====:==(=)======/    ",
+      "  |#####:###########|    ",
+      "  |#####:###########|    ",
+      " /######:###########\\    ",
+      " |######:############\\   ",
+      "/######:##############\\  ",
+      "|######:###############\\ ",
+      "|######:################|",
+      "|______:________________|",
+      "     |---|    |---|      ",
+      "     |---|    |---|      ",
+      "     |---|_   |---|_     ",
+      "     |_____)  |_____)    ",
+    ],
+    smoke: [
+      [
+        "      ____  ____         ",
+        "    _/====\\/====\\_       ",
+        "   /==============\\      ",
+        "   |::::::::::::::|      ",
+        " __/==============\\__    ",
+        "/====================\\__ ",
+        "\\___/            \\_____/ ",
+        "  ' (   o        _>      ",
+        "    (  )         |    '  ",
+        "  __ \\           |(##)==*",
+        " /=| \\_________/  |##| ' ",
+        "/==|_|  ~~~~~~    |==|   ",
+        "|===| '~~~~~~~ '  |==| ' ",
+        "|===|____~~~~_____|==|__ ",
+        "|====|###########|==|==\\ ",
+        "|====|####:######|==|===\\",
+        "|====|####:######|==|===|",
+        "\\====|####:######|==|===|",
+        " |===|####:#####/==/====|",
+        " |===|####:#####|==|====|",
+        " \\===|####:#####\\__/===/ ",
+        "  \\=/|####:###########/  ",
+        "  |_||####:##########/   ",
+        "  \\=====:==(=)======/    ",
+        "  |#####:###########|    ",
+        "  |#####:###########|    ",
+        " /######:###########\\    ",
+        " |######:############\\   ",
+        "/######:##############\\  ",
+        "|######:###############\\ ",
+        "|######:################|",
+        "|______:________________|",
+        "     |---|    |---|      ",
+        "     |---|    |---|      ",
+        "     |---|_   |---|_     ",
+        "     |_____)  |_____)    ",
+      ],
+      [
+        "      ____  ____         ",
+        "    _/====\\/====\\_       ",
+        "   /==============\\      ",
+        "   |::::::::::::::|      ",
+        " __/==============\\__    ",
+        "/====================\\__ ",
+        "\\___/            \\_____/ ",
+        "  ' (   o        _>   '  ",
+        "    (  )         |  '    ",
+        "  __ \\           |'    ' ",
+        " /=| \\_________/ |=\\     ",
+        "/==|_|  ~~~~~~   |==\\    ",
+        "|===| '~~~~~~~ ' |==| '  ",
+        "|===|____~~~~____|==|__  ",
+        "|====|###########|==|==\\ ",
+        "|====|####:######|==|===\\",
+        "|====|####:###==+|==|===|",
+        "|====|###(##)=======/===|",
+        "\\====|####:######\\__/===|",
+        " |===|####:#############|",
+        " \\===|####:############/ ",
+        "  \\=/|####:###########/  ",
+        "  |_||####:##########/   ",
+        "  \\=====:==(=)======/    ",
+        "  |#####:###########|    ",
+        "  |#####:###########|    ",
+        " /######:###########\\    ",
+        " |######:############\\   ",
+        "/######:##############\\  ",
+        "|######:###############\\ ",
+        "|######:################|",
+        "|______:________________|",
+        "     |---|    |---|      ",
+        "     |---|    |---|      ",
+        "     |---|_   |---|_     ",
+        "     |_____)  |_____)    ",
+      ],
+    ],
+  },
   full: {
     watch: [
       "    ____   ",
@@ -433,7 +595,7 @@ const rook = {
       ],
     ],
   },
-  accent: {"glyph":"~","hue":2},
+  accent: [{"glyph":"~","hue":2},{"glyph":"*","hue":3},{"glyph":"+","hue":3}],
 };
 ```
 
@@ -2163,3 +2325,4 @@ The sheets were built and checked with a Node script that loads every sprite, as
 12. **Names invented here:** Ines Okafor (medic), Heddy Lasko (bridge operator), Delphine Arlo (singer), Halden Ashe (Lumen Board; the beat sheet's H. ASHE, reconciled in DECISIONS.md). Rook's first name is deliberately not given. Krane has no first name on the record.
 13. **Faces stay in the character's hue** for everyone but Rook, as today. If the team wants white faces for all named characters, it is a one-line change in `inkFor`, and no sprite here would need to change.
 14. **`sprites.json` matches the loader in progress.** Beyond the required shape (`full`, `mid`, `small`, `accent`) each entry carries `hue`, `level`, `faceHue` (Rook), `height` and `heights`, which is what `loadSprites()` in `src/game/sprites.js` reads, and the extras publish as `generic`, the name it falls back to. Two things for that loader when it takes these sheets: its fill-priority list (`spriteFill`) should include the accent glyphs `Y`, `!` and `^` so they survive a squeeze the way `@`, `+` and `&` already do; and its walk frames start on the opposite leg from these, which does not matter. Nothing in `src/` was modified by this document.
+15. **Rook's `hero` sheet is for the menu only.** It is 36 by 25 so that, at the tableau's distance (34 to 40 rows), it is drawn cell for cell; the loader offers it only for a pose the full sheet does not draw itself, from 26 rows (0.7 of its height), so the story shots that carry Rook past the camera (the loft entry, the market aisle) keep the approved 11-row art. `smoke` exists only there; at every other size the loader borrows `stand` for it. The ember is the one place a character carries a second accent hue, and the loader takes `accent` as a list for it. `stand` at `hero` costs three rows of change (both hands pocketed); it is there because every size must have one, and the loader never picks it while `full` draws `stand`.

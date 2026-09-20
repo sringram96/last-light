@@ -67,8 +67,11 @@ function loadSprites(data){
  for(const [name,raw] of Object.entries(data||{})){
   if(!raw||typeof raw!=='object'){warnings.push(name+': expected an object');continue;}
   const prev=spriteSheets[name]||{};
-  const accent=raw.accent===undefined?prev.accent||null:raw.accent&&typeof raw.accent.glyph==='string'&&raw.accent.glyph.length===1&&/[ -~]/.test(raw.accent.glyph)?{glyph:raw.accent.glyph,hue:Number.isInteger(raw.accent.hue)?raw.accent.hue:2}:null;
-  const sheet={hue:Number.isInteger(raw.hue)?raw.hue:prev.hue??6,faceHue:Number.isInteger(raw.faceHue)?raw.faceHue:prev.faceHue??null,level:Number.isInteger(raw.level)?raw.level:prev.level??11,height:typeof raw.height==='number'&&raw.height>0?raw.height:prev.height??2.05,heights:{...(prev.heights||{}),...(raw.heights&&typeof raw.heights==='object'?raw.heights:{})},accent,sizes:{...(prev.sizes||{})}};
+  // `accent` is one {glyph, hue} or a list of them (Rook: the amber scarf and the rose ember). `accent` on the sheet stays
+  // the first for callers that expect one; `accentHues` maps every accent glyph to its hue.
+  const accentOf=x=>x&&typeof x.glyph==='string'&&x.glyph.length===1&&/[ -~]/.test(x.glyph)?{glyph:x.glyph,hue:Number.isInteger(x.hue)?x.hue:2}:null;
+  const accents=raw.accent===undefined?prev.accents||[]:(Array.isArray(raw.accent)?raw.accent:[raw.accent]).map(accentOf).filter(Boolean);
+  const sheet={hue:Number.isInteger(raw.hue)?raw.hue:prev.hue??6,faceHue:Number.isInteger(raw.faceHue)?raw.faceHue:prev.faceHue??null,level:Number.isInteger(raw.level)?raw.level:prev.level??11,height:typeof raw.height==='number'&&raw.height>0?raw.height:prev.height??2.05,heights:{...(prev.heights||{}),...(raw.heights&&typeof raw.heights==='object'?raw.heights:{})},accent:accents[0]||null,accents,accentHues:Object.fromEntries(accents.map(x=>[x.glyph,x.hue])),sizes:{...(prev.sizes||{})}};
   for(const size of SPRITE_SIZES){
    const poses=raw[size];if(poses===undefined)continue;
    if(!poses||typeof poses!=='object'){warnings.push(`${name}.${size}: expected an object of poses`);continue;}
@@ -107,12 +110,16 @@ function spriteHoles(rows){
 function spriteHeight(sheet,pose){return sheet.heights[pose]??(pose==='crouch'?sheet.height*.63:sheet.height);}
 // The frames of a pose at one size, or null when that size does not draw it (an alias such as watch->stand may stand in).
 function spriteFrames(sheet,size,pose){const s=sheet.sizes[size];return s?s.poses[pose]||(SPRITE_ALIAS[pose]&&s.poses[SPRITE_ALIAS[pose]])||null:null;}
+// The hero tier is a close-up for poses drawn nowhere else (Rook's `smoke` in the menu tableau). It is never chosen for a
+// pose the full sheet draws itself, so a story shot that walks a character past the camera keeps the approved art.
+const heroDraws=(sheet,pose)=>!!(sheet.sizes.hero&&sheet.sizes.hero.poses[pose]&&!(sheet.sizes.full&&sheet.sizes.full.poses[pose]));
+const spriteDraws=(sheet,size,pose)=>spriteFrames(sheet,size,pose)&&(size!=='hero'||heroDraws(sheet,pose));
 // Chooses the sheet for a projected size of h rows by w columns: among the sizes that draw the pose, the largest one
 // that is not squeezed below SPRITE_MIN_SCALE in rows or columns, else the smallest of them. A pose no size draws
 // falls back to stand. Returns {size, frames}.
 function spriteSize(sheet,pose,h,w){
- let sizes=SPRITE_SIZES.filter(size=>spriteFrames(sheet,size,pose));
- if(!sizes.length){pose='stand';sizes=SPRITE_SIZES.filter(size=>spriteFrames(sheet,size,pose));}
+ let sizes=SPRITE_SIZES.filter(size=>spriteDraws(sheet,size,pose));
+ if(!sizes.length){pose='stand';sizes=SPRITE_SIZES.filter(size=>spriteDraws(sheet,size,pose));}
  let pick=null;
  for(const size of sizes){
   const frames=spriteFrames(sheet,size,pose);pick={size,frames};

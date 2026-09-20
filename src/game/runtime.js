@@ -81,9 +81,12 @@ function streetMissCar(){
  else if(e<5.2){const u=(e-4)/1.2;car(mix(1.9,4.2,u),mix(22.6,4,u*u),3,0,false,{dark:true});}
 }
 // Walk cycles advance with distance travelled (one frame every SPRITE_STRIDE world units), so a standing character never flickers.
-const SPRITE_STRIDE=.3,walkMeters=new Map();
+// Any other pose with frames (Rook's `smoke`) is an idle cycle: it advances with the story clock, one frame every SPRITE_BEAT
+// seconds, so a pause, a menu or a hidden tab holds it and reduced motion leaves it on its first frame.
+const SPRITE_STRIDE=.3,SPRITE_BEAT=1.5,walkMeters=new Map();
 function spriteFrame(key,a,frames){
  if(frames.length<2)return 0;
+ if((a.pose||'stand')!=='walk')return Math.floor(state.t/SPRITE_BEAT)%frames.length;
  const m=walkMeters.get(key),d=m&&m.scene===sceneName?m.d+Math.hypot(a.x-m.x,a.z-m.z):0;
  walkMeters.set(key,{x:a.x,z:a.z,d,scene:sceneName});
  return Math.floor(d/SPRITE_STRIDE)%frames.length;
@@ -110,8 +113,8 @@ function actor(a,isRook=false,key){
  let eyes=0;for(const r of rows)for(const g of r)if(g==='o')eyes++;
  spriteRects.push({x0:minLeft-1,x1:maxLeft+w,y0:yt-1,y1:yb+1,who,sheet:pick.size,rows:h,cols:w,eyes});
  if(yb<0||yt>=H)return;
- const hue=a.hue??sheet.hue,faceHue=sheet.faceHue??hue,accent=sheet.accent;
- const inkFor=g=>(accent&&g===accent.glyph?accent.hue:spriteFace(g)?faceHue:hue)*20+sheet.level;
+ const hue=a.hue??sheet.hue,faceHue=sheet.faceHue??hue,accents=sheet.accentHues||{};
+ const inkFor=g=>(g in accents?accents[g]:spriteFace(g)?faceHue:hue)*20+sheet.level;
  const zAt=ly=>mix(top.z,bottom.z,(ly+.5)/h)-.06,faceZ=Math.min(top.z,bottom.z)-.1;
  // Each screen cell is written once per sprite, in priority order, so a squeezed sheet keeps its eyes and edges and a
  // stretched sheet never repeats a face or an outline stroke. Fill glyphs cover their whole band; outlines run once
