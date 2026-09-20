@@ -50,7 +50,7 @@ else if(kind==='paper'){hue=6;lum=mat.roof?.95:.7;g=mat.roof?(fract(z*7)<.4?'-':
 else if(kind==='screen'){hue=1;lum=.5+.4*(fract(y*6-state.t*.4)<.5?1:0);g=fract(y*6-state.t*.4)<.5?'=':'-';if(mat.roof){lum=.4;g='=';}}
 else if(kind==='neon'){const on=hash(Math.floor(state.t*6),mat.hue)>.08;hue=mat.hue;lum=on?1.45:.4;g=on?(mat.roof?'=':'#'):'-';}
 else if(kind==='velvet'){hue=3;lum=.28+(fract(x*.9+z*.9)<.5?.16:0)+grain*.06;g=fract((x+z)*.9)<.12?'|':grain>.6?':':'.';if(y<.4){hue=2;lum=.6;g='=';}}
-else if(kind==='sewer'){hue=5;lum=.36+grain*.14;g=fract(y*1.5)<.12?'-':fract(z*.6+Math.floor(y*1.5)*.5)<.06?'|':grain>.86?'~':grain>.5?':':'.';if(y>5.6){lum=.2;g=grain>.5?':':'.';}}
+else if(kind==='sewer'){hue=5;lum=.46+grain*.14;g=fract(y*1.5)<.12?'-':fract(z*.6+Math.floor(y*1.5)*.5)<.06?'|':grain>.86?'~':grain>.5?':':'.';if(y>5.6){lum=.3;g=grain>.5?':':'.';}}
 // Substation Nine: battery racks. Shelves, dividers, and cell faces lit (charged) or dark (drained) by hash.
 else if(kind==='cell'){
  const along=Math.abs(n[0])>.5?z:x,shelf=Math.floor(y/.9),bay=Math.floor(along/.6);

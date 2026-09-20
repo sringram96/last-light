@@ -213,7 +213,11 @@ function caseShot(){
  if(sceneName==='tunnel'){
   const d=state.distance;
   if(p==='tunnelQte')return look(-6,2.4,d-9,.5,1,d+12);
-  if(p==='tunnelFinish')return state.caught?look(2,3.2,d+24,-.5,1,d-2):look(-.5,2.6,d-8,.5,1,d+16);
+  // The finish: caught is head-on in reverse, then a pan right to the basin opening; otherwise from behind toward the opening.
+  if(p==='tunnelFinish'){
+   if(!state.caught)return look(-.5,2.6,d-8,20,1,d+34);
+   const a=look(2,3.2,d+24,-.5,1,d-2);return state.event<3||reduce?a:blendShot(a,look(2,3.2,d+24,50,5,d+46),smooth(clamp((state.event-3)/2,0,1)));
+  }
   return look(-.5,2.4,d-10,0,1,d+14);
  }
  return look(-1.2,3.1,5,3,1.5,15);
@@ -442,5 +446,7 @@ function caseLabels(){
  if(sceneName==='tunnel'){
   const vale=tunnelVale();worldLabel([vale.x,3.3,vale.z],'VALE',3);
   if(state.phase==='tunnelQte'){const f=forkZ();worldLabel([3.4,4.6,f-1],'[1]',2);worldLabel([-3.4,4.6,f-1],'[2]',2);worldLabel([0,6.3,f-.5],'CANAL GATE',1);}
+  if(['tunnelQte','tunnelFinish'].includes(state.phase))worldLabel([-4.4,5.2,forkZ()-1],'MAINT',1);
+  if(state.phase==='tunnelFinish')worldLabel([50,12.7,state.distance+39.5],'SUBSTATION 9',1);
  }
 }
