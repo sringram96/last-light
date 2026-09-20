@@ -85,11 +85,11 @@ function officeSet(){
  pendant(-3,-3,3.8);pendant(5.5,13.5,3.8);
  // Bell's lantern on the desk corner, and the two photographs pinned to the board: Bell's, and Vale's commendation with its ribbon.
  box(-2.2,1.14,7.2,-1.8,1.8,7.6,mat('glass',1));box(-2.25,1.8,7.15,-1.75,1.88,7.65,mat('metal'));box(-2.06,1.88,7.36,-1.94,1.98,7.44,mat('metal'));
- box(-7.7,2.55,4.75,-7.62,3.15,5.25,mat('dispatch',6));box(-7.7,2.55,5.95,-7.62,3.15,6.45,mat('dispatch',6));box(-7.7,2.36,6.05,-7.62,2.52,6.35,mat('sign'));
+ box(-7.7,2.55,4.75,-7.62,3.15,5.25,mat('poster',2));box(-7.7,2.55,5.95,-7.62,3.15,6.45,mat('poster',2));box(-7.7,2.36,6.05,-7.62,2.52,6.35,mat('sign'));
  // The front wall and the office door, hinged open against the corridor wall. Beyond it the corridor: three dark desks,
  // Vale's dark door opposite with its name plate and no light under it, and the stairwell door under the only lit box.
  box(-5,0,-6.1,8,5,-5.9,mat('brick',2));box(-5,0,-6.35,-2,4,-6.15,mat('door',2));
- floor(-22,-11,8,-6,0,'plank',2);wall(8,-11,-22,-11,4,'brick',0);wall(-22,-6,-22,-11,4,'brick',0);wall(-8,-6,-22,-6,4,'brick',0);
+ floor(-22,-11,8,-6,0,'plank',2);wall(-22,-11,8,-11,4,'brick',0);wall(-22,-6,-22,-11,4,'brick',0);wall(-8,-6,-22,-6,4,'brick',0);
  quad([-22,4,-11],[8,4,-11],[8,4,-6],[-22,4,-6],mat('ceiling'),[0,-1,0]);
  for(const x of [-20,-16,-12]){box(x-1.3,.95,-9.9,x+1.3,1.05,-8.3,mat('wood',2));for(const [dx,dz] of [[-1.15,-9.75],[1.15,-9.75],[-1.15,-8.45],[1.15,-8.45]])box(x+dx-.05,0,dz-.05,x+dx+.05,.95,dz+.05,mat('metal'));}
  box(-14,0,-10.95,-11.6,3.2,-10.9,mat('hatch'));box(-13.4,3.25,-10.95,-12.2,3.5,-10.9,mat('sign'));
