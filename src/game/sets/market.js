@@ -15,12 +15,13 @@ let marketLamps=0;
 const marketBlend=(a,b,s)=>({x:mix(a.x,b.x,s),y:mix(a.y,b.y,s),z:mix(a.z,b.z,s),yaw:mix(a.yaw,b.yaw,s),pitch:mix(a.pitch,b.pitch,s)});
 // Krane's cart: rubber wheels, a wood bed, metal rails and twelve cells in two layers; unloaded once it has burst.
 function marketCart(x,z,y,loaded=true){
- for(const dx of [-.7,.7])for(const dz of [-.8,.8])box(x+dx-.1,y,z+dz-.24,x+dx+.1,y+.45,z+dz+.24,mat('rubber'));
- box(x-.8,y+.4,z-1.1,x+.8,y+.7,z+1.1,mat('wood',2));
- for(const dx of [-.8,.8])box(x+dx-.05,y+.7,z-1.1,x+dx+.05,y+1.35,z+1.1,mat('metal'));
- box(x-.85,y+1.25,z+1.05,x+.85,y+1.35,z+1.15,mat('metal'));
- for(const dx of [-.55,.55])box(x+dx-.14,y+.85,z-1.22,x+dx+.14,y+1.1,z-1.1,mat('lamp',2));
- if(loaded)for(let i=0;i<3;i++)for(let j=0;j<2;j++)for(let k=0;k<2;k++)box(x-.72+i*.5,y+.7+k*.55,z-1+j*1.05,x-.3+i*.5,y+1.22+k*.55,z-.1+j*1.05,mat('console',2));
+ for(const dx of [-.9,.9])for(const dz of [-.8,.8])box(x+dx-.1,y,z+dz-.26,x+dx+.1,y+.5,z+dz+.26,mat('rubber'));
+ box(x-1,y+.45,z-1.15,x+1,y+.75,z+1.15,mat('wood',2));
+ box(x-1,y+.75,z-1.2,x+1,y+1.35,z-1.1,mat('metal'));
+ for(const dx of [-1,1])box(x+dx-.05,y+.75,z-1.15,x+dx+.05,y+1.4,z+1.15,mat('metal'));
+ box(x-1.05,y+1.3,z+1.1,x+1.05,y+1.4,z+1.2,mat('metal'));
+ for(const dx of [-.62,.62])box(x+dx-.16,y+.95,z-1.28,x+dx+.16,y+1.22,z-1.15,mat('lamp',2));
+ if(loaded)for(let i=0;i<3;i++)for(let j=0;j<2;j++)for(let k=0;k<2;k++)box(x-.93+i*.64,y+.75+k*.6,z-1.05+j*1.1,x-.35+i*.64,y+1.32+k*.6,z-.1+j*1.1,mat('console',2));
 }
 registerSet('market',{
  chapter:'05a / NIGHT MARKET',card:'THE NIGHT MARKET',objective:()=>'REACH THE FILAMENT',
@@ -41,7 +42,7 @@ registerSet('market',{
   for(const z of MARKET_STALLS)for(const side of [-1,1]){
    const base=y(z+1.2),near=z===2,inner=side*(near?3.4:z===6&&side<0?4.8:4.1),outer=side*(near?5.8:6.5);
    const x0=Math.min(inner,outer),x1=Math.max(inner,outer),hue=((z/4)|0)%2?2:3;
-   box(x0,base,z,x1,base+2.2,z+2.4,((z/4)|0)%2?mat('wood',2):{kind:'kiosk',hue:1,baseY:base+.85});
+   box(x0,base,z,x1,base+2.2,z+2.4,((z/4)|0)%2?{kind:'kiosk',hue:1,baseY:base+.85}:mat('wood',2));
    const ax0=side<0?x0:inner-1.4,ax1=side<0?inner+1.4:x1,az1=side>0&&z>=10&&z<38?z+3.9:z+2.5;
    box(ax0,base+2.3,z-.1,ax1,base+2.55,az1,mat('awning',hue));
    if(((z/4)|0)%3===0)box(x0+.3,base+2.55,z+.6,x1-.3,base+3.1,z+1.8,mat('poster',2));
@@ -56,7 +57,7 @@ registerSet('market',{
   // The gap under [1]: the one gap on the left with a lamp over it, hung from a bar between the two stall roofs.
   {const g=y(9.2);box(-5.4,g+3.65,8.3,-5.2,g+3.75,10.1,mat('metal'));box(-5.47,g+3.15,9.03,-5.13,g+3.65,9.37,mat('console',2));box(-5.45,g+3,9.05,-5.15,g+3.15,9.35,mat('lamp',2));lamps.push([-5.3,9.2]);}
   // The awning rope under [2]: from a cleat at the aisle's edge up to the front edge of the right awnings' ledge.
-  {const r=y(9.1)+.9;quad([3.85,r,9.1],[5.6,3.3,9.9],[5.76,3.3,9.96],[4.01,r,9.16],mat('cable'),[0,0,-1]);box(3.72,r-.25,8.98,4.0,r+.02,9.26,mat('metal'));box(5.5,3.28,9.78,5.72,3.7,10.0,mat('metal'));}
+  {const r=y(9.1)+.9;quad([3.85,r,9.1],[5.6,3.3,9.9],[5.82,3.3,9.98],[4.07,r,9.18],mat('metal'),[0,0,-1]);quad([4.07,r,9.18],[5.82,3.3,9.98],[5.6,3.3,9.9],[3.85,r,9.1],mat('metal'),[0,0,1]);box(3.72,r-.25,8.98,4.0,r+.02,9.26,mat('metal'));box(5.5,3.28,9.78,5.72,3.7,10.0,mat('metal'));}
   // Marta's cart: a wood bed on rubber wheels, eight cells in a rack, a paper plate (QUILL is the label above it).
   {const b=y(12);for(const dx of [-.45,.45])for(const dz of [-.65,.65])box(-3.6+dx-.1,b,12+dz-.2,-3.6+dx+.1,b+.4,12+dz+.2,mat('rubber'));
    box(-4.2,b+.35,11.1,-3,b+.9,12.9,mat('wood',2));for(let i=0;i<4;i++)for(let j=0;j<2;j++)box(-4.1+i*.28,b+.9,11.3+j*.8,-3.88+i*.28,b+1.42,11.9+j*.8,mat('console',2));
@@ -120,8 +121,8 @@ registerSet('market',{
   lamps.length=marketLamps;
   // Krane's cart: parked on the centre line, tipped into motion in the windup, rolling down the aisle over the window.
   let cz=30,cx=0,burst=false;
-  if(p==='marketDanger')cz=30-span(2)*2.5;
-  else if(p==='marketQte')cz=mix(27.5,6.3,clamp(t/marketWindow(),0,1));
+  if(p==='marketDanger')cz=30-span(2)*6;
+  else if(p==='marketQte')cz=mix(24,6.3,clamp(t/marketWindow(),0,1));
   else if(res&&m!=='late'){const r=reduce?1:clamp(t,0,1);cz=mix(6.3,-3.2,r);cx=mix(0,-4.6,r);burst=r>=1;}
   if(res&&m==='late'){
    // Stopped across the aisle: four cells still on the bed, six spilled and arcing on the wet paving.
