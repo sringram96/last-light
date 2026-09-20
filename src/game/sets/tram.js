@@ -99,9 +99,12 @@ registerSet('tram',{
 });
 registerPhases('tram',{
  tramEntry:{kind:'cutscene',title:'04b / THE LAST TRAM',duration:8,next:'tramRide',
-  caption:()=>'Rook drops from the service lift onto the roof of the last tram. Below, lamps 14 to 19 stand dark on their posts. Dispatch will bring the patrol car round to Market Arch.'},
+  caption:()=>'Rook drops from the service lift onto the roof of the last tram. Below, lamps 14 to 19 stand dark. Dispatch will bring the patrol car to Market Arch.'},
+ // With the roof radio still open, Heddy's second line rides the quiet bridge: a witness with a dated book. No field; `radio`
+ // and reached('tramRide') carry it into the case file.
  tramRide:{kind:'quiet',title:'ACROSS THE DARK DISTRICT',
-  caption:()=>'The tram crosses the dark district on its own reserve. Behind it, one pair of headlights keeps the same speed on the road below, then goes dark.',
+  enter:()=>{if(state.radio)addClue('Heddy Lasko keeps a dated log of the red car crossing Lift Bridge Two at the same hour every week. A second witness with paper.');},
+  caption:()=>state.radio?'The tram crosses the dark district on its own reserve. Heddy on the channel, unasked: "Red car again. Same hour as last week. I write these down, detective." Behind the tram, one pair of headlights keeps the same speed on the road below, then goes dark.':'The tram crosses the dark district on its own reserve. Behind it, one pair of headlights keeps the same speed on the road below, then goes dark.',
   buttons:b=>{b('[WATCH THE ROAD / 8s]',()=>enter('tramWatch'));b('[RIDE ON]',()=>enter('tramArrive'));}},
  tramWatch:{kind:'observe',title:'WATCHING THE ROAD',next:'tramSpotted',
   caption:()=>'Rook watches the road. The car with no lights holds its distance. A division plate, black body. It is not dispatch.'},

@@ -6,7 +6,7 @@ Conventions used below:
 
 - `phaseId` names are camelCase and prefixed by the set. Set names (for `sceneFor`, exit points and transition lines): `office`, `street`, `loft`, `station`, `pump`, `roof`, `tram`, `market`, `club`, `chase`, `tunnel`, `substation`, `room`, `canal`.
 - Kinds: **cutscene (Ns)** advances by itself; **quiet choice** waits for a button; **timed observation (8s)** runs a visible 8-second count and then advances; **windup (2s)** shows `GET READY`; **prompt (Ns)** is a two-move quick-time event; **result** shows the stinger and, after a miss, the rewind buttons.
-- Prompt windows are given as a base with modifiers. The floor is 5 seconds; the ceiling is 9. Windups are always 2 seconds.
+- Prompt windows are given as a base with modifiers. The floor is 5 seconds; the ceiling is 9. Windups are always 2 seconds. **Round two supersedes this:** windows are 1.25 to 3.5 s from the first flash of a directional cue, windups are 1.5 to 2.5 s without a card, and the miss table below is joined by the death and survivable-miss beats in `review/STAKES.md` section 2 and `DECISIONS.md` "Round two".
 - Every prompt's miss table entry says what a rewind resets and which windup it re-enters. A rewind never restores anything else.
 - Quiet-choice buttons are shown in square brackets exactly as labelled. Prompt buttons are always `[1] ...` and `[2] ...`, matching the `[1]` and `[2]` labels placed in the world.
 - "Clue" is the exact string added to the case file. A clue is added once, at the phase named.

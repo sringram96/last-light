@@ -1,10 +1,12 @@
 // Menus and scene previews do not become story checkpoints.
 const session={menu:true,mode:'story',confirmNew:false};
 let browserStorage=null;try{browserStorage=localStorage;}catch(e){}
-const saveStore=createSaveStore(browserStorage,[...Object.keys(caseTitles),'brief','watch','ready','follow','danger','qte','result','evidence','deduce','arrival','ending']);
+// Every phase a checkpoint can name: the street's, the hand-written case's and every registered set's.
+const saveStore=createSaveStore(browserStorage,[...Object.keys(caseTitles),...Object.keys(phaseDefs),'brief','watch','ready','follow','danger','qte','result','evidence','deduce','loftTurn','arrival','ending']);
 Object.assign(state,saveStore.readSettings({mono:false,untimed:reduce,sound:false}));
 function savePreferences(){saveStore.saveSettings({mono:state.mono,untimed:state.untimed,sound:state.sound});}
-function checkpoint(){if(session.mode==='story'&&!session.menu)saveStore.save(state);}
+// A death is never a resume point: a checkpoint written during one names the windup it rewinds to.
+function checkpoint(){if(session.mode!=='story'||session.menu)return;const d=phaseDef();saveStore.save(d&&d.kind==='death'?{...state,phase:d.back}:state);}
 function savedCase(){return saveStore.load();}
 function continueCase(){
  const s=savedCase();if(!s)return;
@@ -25,7 +27,7 @@ function menuUI(){
   button('[START NEW CASE]',startNewCase);button('[KEEP CURRENT CASE]',()=>{session.confirmNew=false;ui();});return;
  }
  const saved=savedCase(),records=saveStore.readRecords();
- el.caption.textContent='A missing lamplighter. A city running on stolen power. Follow Detective Rook through the rain, react when the picture turns, and choose what the case becomes.'+(records.endings.length?' Endings on record: '+records.endings.length+' of 6.':' Six endings are waiting.');
+ el.caption.textContent='A missing lamplighter. A city running on stolen power. Follow Detective Rook through the rain, react when the picture turns, and choose what the case becomes.'+(records.endings.length?' Endings on record: '+records.endings.length+' of 7.':' Seven endings are waiting.');
  if(session.mode==='story'&&state.phase!=='brief')button('[RESUME]',resumeSession);
  else if(saved)button('[CONTINUE CASE]',continueCase);
  button('[NEW CASE]',requestNewCase);

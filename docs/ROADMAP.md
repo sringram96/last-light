@@ -10,6 +10,8 @@ Also completed: fluid scene transitions (exit beat, connecting line, ASCII disso
 
 Also completed: the studio design pack under `docs/design/` (brief, beat sheet, cast bible, location designs, sprite sheets, decisions), the set and phase registries, and the full fourteen-set case: Bell's loft, the last tram, the night market, Substation Nine and the interview room join the nine earlier sets. Six endings, twenty discoveries, three deductions and eight prompts across the routes.
 
+Also completed, round two: the stage fills the viewport with the picture fitted at 70 rows; one directional input per action beat with cues flashing in the picture, answered by keys, swipe or tap; three lamps, six deaths with their own pictures, a cold case with a chapter restart, deaths seen in the records; captions that hold until read; deductions that bite; Vale, Krane and Ashe earlier in the night; the stay route's arrest. The reviews that led there are under `docs/design/review/`.
+
 Also completed: three new sets with their own camera work. A Night Division office prologue cutscene, The Filament club with a bottle-throw prompt and a new evidence item, and the Undercity storm-drain chase reached from the lower ramp. Close-up character sprites no longer duplicate facial details.
 
 ## 0.3 — Detective interaction
@@ -25,6 +27,8 @@ Replace the short observation waits with useful assigned work: watch a location,
 Acceptance: returning after a break reveals useful progress, without silently choosing a branch or missing an action scene.
 
 ## 0.5 — Cinematic action
+
+Partly done: every action beat has a cue in the picture, a short window and a death or a worse story. Next, the four single-input survival beats from `docs/design/review/GAME.md` so the later sets are denser, and a fresh-player playtest of the windows.
 
 Give each action beat a clear visual warning, a response window and a visible consequence. Add authored camera tracks and vehicle/actor poses rather than increasing the number of prompts. Extend the chase into a complete pursuit with readable traffic and alternate routes.
 

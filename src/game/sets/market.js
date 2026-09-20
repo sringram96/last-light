@@ -3,7 +3,8 @@
 // The aisle runs along z from the arch (z -8) to the club's sign (z 46) and rises 3 degrees: everything standing on it
 // takes its base from marketY(z), and the camera heights below are eye heights above that slope.
 const marketY=z=>(z+8)*.05;
-function marketWindow(){return clamp(7+(state.tail?2:0)-(state.misread?2:0),5,9);}
+// The cart's run down the aisle covers the prompt's window (base 2.5 s, +0.5 with the tail spotted, -0.5 after the misread).
+function marketWindow(){return caseDuration();}
 // Stall bases along the aisle. The left row keeps its gaps (the one under [1] is the only one with a lamp); the right
 // row's awnings run as one ledge from the rope to the club, the way Rook runs them on the cut route.
 const MARKET_STALLS=[2,6,10,14,18,22,26,30,34,38];
@@ -79,20 +80,29 @@ registerSet('market',{
  // From the tram's rail above the arch: the fade-up looks down through the arch at the lit aisle.
  start(){return look(0,7,-16,0,2,14);},
  shot(p){
-  const y=marketY,t=state.event,m=state.market;
+  const dead=p==='marketDeath';if(dead)p='marketResult';
+  const y=marketY,t=state.event,m=dead?'late':state.market;
   const qte=look(-.2,y(-2)+2.4,-2,0,2.4,24);
   if(p==='marketEntry')return look(-.4,y(-1)+1.75,-1,0,6.2,44);
   if(p==='marketAisle')return look(-1.4,y(15.5)+1.9,15.5,-1,1.9,2);
   if(p==='marketKeeper')return look(-.6,y(11)+1.9,11,-3.6,y(13.4)+1.4,13.4);
-  if(p==='marketDanger')return look(1.6,y(21)+1.7,21,0,y(30)+1.3,30);
+  // The windup is two cuts: one second on Krane tipping the cart at the top of the aisle, then the prompt's wide frame
+  // with the cart already rolling and both cues in it, so the frame is up before the clock starts and the prompt never
+  // has to swing the camera down the aisle.
+  if(p==='marketDanger')return t<1?look(1.6,y(21)+1.7,21,0,y(30)+1.3,30):qte;
   if(p==='marketResult'&&m==='cut'){const s=reduce?1:smooth(clamp((t-1.2)/2.8,0,1)),cz=mix(6,28,s),hold=look(1.2,y(3.5)+1.9,3.5,4.9,2.8,9.9);return marketBlend(hold,look(.2,y(cz)+4.6,cz,6.4,y(cz+12)+2.4,cz+12),reduce?1:smooth(clamp((t-.9)/.8,0,1)));}
   if(p==='marketResult'&&m==='slip'){const s=reduce?1:smooth(clamp((t-.9)/2,0,1));return marketBlend(qte,look(.4,y(0)+2.8,0,-5.2,.8,-4.6),s);}
-  if(p==='marketResult'){const s=reduce?0:smooth(clamp((t-4)/2,0,1));return marketBlend(qte,look(-.4,y(3)+2.2,3,0,y(46)+4.5,46),s);}
+  // Rook down among the arcs: the prompt frame held, then the slow tilt up the aisle to the club sign over the beat's
+  // last two seconds (the beat holds for its caption, so the tilt is timed from its real end).
+  if(p==='marketResult'){const end=dead?holdFor(4):4,s=reduce?0:smooth(clamp((t-(end-2))/2,0,1));return marketBlend(qte,look(-.4,y(3)+2.2,3,0,y(46)+4.5,46),s);}
   return qte;
  },
  ease(p){return {marketEntry:8,marketAisle:3,marketKeeper:3,marketDanger:.5,marketQte:.8,marketResult:.6}[p]||1.2;},
  blocking(p){
-  const y=marketY,others=[],res=p==='marketResult',m=state.market,t=state.event;
+  // The death is the cart's late picture held: Rook down on the paving among the arcs, the crowd pressed to the stalls,
+  // Krane walking up the aisle and gone by 3 s.
+  const dead=p==='marketDeath';if(dead)p='marketResult';
+  const y=marketY,others=[],res=p==='marketResult',m=dead?'late':state.market,t=state.event;
   const u=p==='marketEntry'?(reduce?1:span(8)):1,v=res?(reduce?1:span(4)):0,w=p==='marketDanger'?(reduce?1:span(2)):1;
   let rook;
   if(p==='marketEntry'){const z=mix(-6,8,u);rook={x:-1.6,y:y(z),z,pose:u<1?'walk':'watch'};}
@@ -107,7 +117,8 @@ registerSet('market',{
   if(p==='marketAisle'||p==='marketKeeper'){const s=p==='marketAisle'&&!reduce?span(3):1,z=mix(-1,4,s);krane={x:1.2,y:y(z)+.3,z,pose:s<1?'walk':'stand',who:'krane'};}
   else if(p==='marketDanger'||p==='marketQte')krane={x:.3,y:y(31.6)+.3,z:31.6,pose:'reach',who:'krane'};
   else if(res&&m==='cut'){const z=mix(31.5,43.5,v);krane={x:mix(.4,7.2,v),y:y(z)+.3,z,pose:'walk',who:'krane'};}
-  else if(res&&v<.95){const z=mix(31.6,47,v);krane={x:mix(.3,1.2,v),y:y(z)+.3,z,pose:'walk',who:'krane'};}
+  else if(dead&&!reduce&&t<3){const s=clamp(t/3,0,1),z=mix(31.6,46.5,s);krane={x:mix(.3,1.2,s),y:y(z)+.3,z,pose:'walk',who:'krane'};}
+  else if(res&&!dead&&v<.95){const z=mix(31.6,47,v);krane={x:mix(.3,1.2,v),y:y(z)+.3,z,pose:'walk',who:'krane'};}
   if(krane)others.push(krane);
   const scattered=p==='marketDanger'||p==='marketQte'||res;
   for(const [x0,z0,hue,x1,z1] of MARKET_CROWD){
@@ -117,7 +128,8 @@ registerSet('market',{
   return{rook,courier:null,others};
  },
  geometry(p){
-  const y=marketY,t=state.event,res=p==='marketResult',m=state.market;
+  const dead=p==='marketDeath';if(dead)p='marketResult';
+  const y=marketY,t=state.event,res=p==='marketResult',m=dead?'late':state.market;
   lamps.length=marketLamps;
   // Krane's cart: parked on the centre line, tipped into motion in the windup, rolling down the aisle over the window.
   let cz=30,cx=0,burst=false;
@@ -125,7 +137,8 @@ registerSet('market',{
   else if(p==='marketQte')cz=mix(24,6.3,clamp(t/marketWindow(),0,1));
   else if(res&&m!=='late'){const r=reduce?1:clamp(t/1.6,0,1);cz=mix(6.3,-3.2,r);cx=mix(0,-4.6,r);burst=r>=1;}
   if(res&&m==='late'){
-   // Stopped across the aisle: four cells still on the bed, six spilled and arcing on the wet paving.
+   // Stopped across the aisle: four cells still on the bed, six spilled and arcing on the wet paving. The arcs stay lit
+   // for the whole beat (the burst's arcs fade at 3.6 s; these do not): the paving is where Rook is lying.
    const b=y(6.3);box(-1.15,b,6.2,1.15,b+2.1,6.5,mat('metal'));box(-1.2,b+2.1,6.1,1.2,b+2.35,6.6,mat('wood',2));
    for(const dx of [-.8,.8])for(const dy of [.35,1.6])box(dx-.22,b+dy,5.95,dx+.22,b+dy+.44,6.2,mat('rubber'));
    for(let i=0;i<3;i++){const o=hash(i,2)*.3;box(-.9+i*.62,b+.5+o,6.6,-.35+i*.62,b+1.05+o,7.6,{kind:'console',hue:2,baseY:-1});}
@@ -147,7 +160,8 @@ registerSet('market',{
   if(p==='marketAisle'||p==='marketKeeper')worldLabel([-3.4,y(12)+1.9,12],'QUILL',6);
   worldLabel([0,y(46)+5.8,46],'THE FILAMENT',3);
   if(p==='marketDanger')worldLabel([.3,y(31.6)+3.2,31.6],'KRANE',0);
-  if(p==='marketQte'){worldLabel([-4.6,y(9.2)+2.85,9.2],'[1]',2);worldLabel([4.68,y(9.9)+3.75,9.9],'[2]',2);}
+  // The cues: the gap on the left, the awning rope up; unlit while Krane tips the cart, live once it rolls.
+  if(p==='marketDanger'||p==='marketQte'){cueLabel([-4.6,y(9.2)+2.85,9.2],'left',1);cueLabel([4.68,y(9.9)+3.75,9.9],'up',2);}
   if(p==='marketResult'&&state.market==='cut')worldLabel([7.2,y(44)+3.95,44.2],'VINE ALLEY',1);
  },
  exit(){return [0,marketY(46)+2.5,46];},
@@ -156,23 +170,25 @@ registerSet('market',{
 registerPhases('market',{
  marketEntry:{kind:'cutscene',title:'05a / THE NIGHT MARKET',duration:8,next:'marketAisle',
   enter:()=>{addClue('The night market runs on reserve cells stamped with Lumen Board serials. The stolen batteries are being sold by the cell.');},
-  caption:()=>'Stalls, awnings, a crowd that does not part. Every stall lamp is a reserve cell with a Lumen Board serial. At the end of the aisle, The Filament\'s sign burns pink through the rain.'},
+  caption:()=>'Stalls, awnings, a crowd that does not part, and every stall lamp a reserve cell with a Lumen Board serial. At the aisle\'s end, The Filament\'s sign burns pink.'},
+ // The quiet beats before the windup carry the description the windup used to: who the big man is, and that he has seen Rook.
  marketAisle:{kind:'quiet',title:'A CART MARKED QUILL',
-  caption:()=>state.tail?'A woman sells cells from a cart marked QUILL. The black car from the road is parked under the arch, empty. Rook can ask where the cells come from, or push on before its driver finds him.':'A woman sells cells from a cart marked QUILL. Behind Rook, someone big is moving through the crowd without buying anything. Rook can ask where the cells come from, or push on.',
+  caption:()=>state.tail?'A woman sells cells from a cart marked QUILL. The black car from the road is parked under the arch, empty, and its driver, Krane, Vale\'s bodyguard, is coming through the crowd. Rook can ask where the cells come from, or push on before Krane finds him.':'A woman sells cells from a cart marked QUILL. Behind Rook, a big man is coming through the crowd without buying anything: Krane, Vale\'s bodyguard. Rook can ask where the cells come from, or push on.',
   buttons:b=>{b('[ASK THE STALL KEEPER]',()=>enter('marketKeeper'));b('[PUSH THROUGH TO THE CLUB]',()=>enter('marketDanger'));}},
  marketKeeper:{kind:'quiet',title:'MARTA QUILL',stinger:()=>['NOTED','hit',1.6],
   enter:()=>{state.keeper=true;addClue('Marta Quill, stall keeper: the cells come from Substation Nine on the canal basin, Thursdays, in a Lumen Board van. The racks in the hall are chained on the left, loose on the right.');},
-  caption:()=>'Marta Quill does not look up from her cells. "Nine, on the basin. Thursdays, Board van. They chain the racks on the left and leave the right loose, if you are thinking of going." Rook is.',
+  caption:()=>'Marta Quill does not look up from her cells. "Nine, on the basin. Thursdays, Board van. They chain the racks on the left and leave the right loose, if you are thinking of going." Rook is, and Krane has seen him.',
   buttons:b=>{b('[PUSH THROUGH TO THE CLUB]',()=>enter('marketDanger'));}},
  marketDanger:{kind:'windup',title:'KRANE',next:'marketQte',
-  caption:()=>'The big man is Krane, Vale\'s bodyguard, and he has seen Rook. He puts his shoulder into a loaded cell-cart and sends it down the aisle. Get ready.'},
- marketQte:{kind:'prompt',title:'THE CART IS COMING',window:marketWindow,next:'marketResult',
-  caption:()=>'The cart is coming down the aisle. Slip into the gap on the left, or go up the awning rope and over the stalls after Krane.',
-  moves:[{label:'[1] SLIP INTO THE STALL',id:'slip',act:()=>{state.market='slip';}},{label:'[2] GO OVER THE STALLS',id:'cut',act:()=>{state.market='cut';}}],
-  miss:()=>{state.market='late';}},
+  caption:()=>'Krane sends a loaded cell-cart down the aisle. Get ready.'},
+ marketQte:{kind:'prompt',title:'THE CART IS COMING',base:2.5,bonus:()=>state.tail,penalty:()=>state.misread,death:'marketDeath',next:'marketResult',
+  caption:()=>'The cart is coming. Slip left, or go up the rope.',
+  cues:[{dir:'left',label:'[1] SLIP INTO THE STALL',id:'slip',act:()=>{state.market='slip';}},{dir:'up',label:'[2] GO OVER THE STALLS',id:'cut',act:()=>{state.market='cut';}}]},
+ marketDeath:{kind:'death',title:'UNDER THE CART',duration:4,dead:'market',bit:2,back:'marketDanger',reset:()=>{state.market='';},
+  stinger:()=>['DOWN','miss',4],
+  caption:()=>'The cart takes Rook at the knee and the cells go over with him. They arc on the wet paving, and the paving is where he is lying. Krane does not look back.'},
  marketResult:{kind:'result',title:'UNDER THE ARCH',duration:4,next:'clubEntry',
   stinger:()=>state.market==='slip'?['CLEAR','hit']:state.market==='cut'?['OVER THE STALLS','hit']:['HIT','miss'],
   enter:()=>{if(state.market==='cut')addClue('Krane entered The Filament by the back door on Vine Alley. The back door is the way out too.');},
-  caption:()=>state.market==='slip'?'Rook goes into the gap. The cart goes past and into the arch pier; cells burst white against the concrete. Krane is gone.':state.market==='cut'?'Rook goes up the rope and over the awnings as the cart passes under him. Krane is ahead, moving fast, and he goes in by a door marked VINE ALLEY behind The Filament.':'The cart takes Rook at the knee. Cells spill and arc on the wet ground. He gets up cut and slow, and Krane is gone.',
-  rewind:{miss:()=>state.market==='late',back:'marketDanger',reset:()=>{state.market='';}}}
+  caption:()=>state.market==='slip'?'Rook goes into the gap. The cart goes past and into the arch pier; cells burst white against the concrete. Krane is gone.':state.market==='cut'?'Rook goes up the rope and over the awnings as the cart passes beneath. Krane, ahead and moving fast, goes in by a door marked VINE ALLEY behind The Filament.':'The cart takes Rook at the knee. Cells spill and arc on the wet ground. He gets up cut and slow, and Krane is gone.'}
 });
