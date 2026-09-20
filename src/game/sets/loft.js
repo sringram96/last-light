@@ -39,7 +39,7 @@ registerSet('loft',{
   box(-4.3,0,3,-2.3,.5,6.2,wood);box(-4.2,.5,3.1,-2.4,.56,6.1,paper);box(-4.1,.56,3.15,-2.5,.72,3.7,paper);box(-4.15,.56,5.4,-2.45,.66,6.05,mat('carpet',3));
   // The bench of lantern parts along the right wall: three glass chimneys, a coil of cable, the toolbox, loose fittings.
   box(1.5,.87,5.3,4.3,.95,6.5,wood);for(const [x,z] of [[1.6,5.4],[4.2,5.4],[1.6,6.4],[4.2,6.4]])box(x-.06,0,z-.06,x+.06,.87,z+.06,metal);box(1.5,.35,5.35,4.3,.42,6.45,wood);
-  for(const x of [1.95,2.7,3.45])box(x-.12,.95,5.6,x+.12,1.4,5.85,mat('glass',1));for(const x of [1.95,2.7,3.45])box(x-.15,1.4,5.57,x+.15,1.45,5.88,metal);
+  for(const x of [1.95,2.7,3.45])box(x-.12,.95,5.6,x+.12,1.26,5.85,mat('glass',1));for(const x of [1.95,2.7,3.45])box(x-.15,1.26,5.57,x+.15,1.3,5.88,metal);
   box(3.7,.95,6.0,4.2,1.12,6.4,mat('cable',0));box(3.75,.95,5.4,4.25,1.25,5.85,metal);box(1.7,.95,6.1,2.2,1.05,6.4,metal);box(2.4,.95,6.15,2.6,1.15,6.35,metal);
   for(const [x,z] of [[2.0,5.5],[3.2,5.6],[2.5,6.3]])box(x-.15,.42,z-.15,x+.15,.7,z+.15,metal);
   // The street beyond the window, four units down: the road, its lamps with their pools, the facades and the far rows.
@@ -60,7 +60,7 @@ registerSet('loft',{
    return state.event<4?a:reduce?b:loftBlend(a,b,smooth(clamp((state.event-4)/3,0,1)));
   }
   if(p==='loftTable')return look(-2.9,1.7,.4,-1.2,1.1,5.2);
-  if(p==='loftNote')return look(-.9,1.5,1.7,-.2,.92,3);
+  if(p==='loftNote')return look(-.75,1.4,2.05,-.2,.92,3);
   if(p==='loftBoard')return look(.9,1.7,3,3.5,1.9,7);
   const a=look(-.2,1.5,4.2,0,7.5,22),b=look(0,1.5,5.6,0,7.5,22);
   return reduce?b:loftBlend(a,b,smooth(clamp((state.event-1.5)/2.5,0,1)));
@@ -70,7 +70,7 @@ registerSet('loft',{
   // Entry: in through the door and along the table to its far end, where he stands for the table beat. The note and the
   // window are Rook's own eyes (the camera stands where he does), the prints are read over his shoulder from the bench.
   const u=p==='loftEntry'&&!reduce?span(5):1;
-  const rook=p==='loftEntry'?{x:mix(-2.7,-1.2,u),z:mix(1.9,4.6,u),pose:u<1?'walk':'watch'}:p==='loftTable'?{x:-1.2,z:4.6,pose:'watch'}:p==='loftNote'?null:p==='loftBoard'?{x:3.5,z:5,pose:'read'}:{x:1.1,z:6.4,pose:'watch'};
+  const rook=p==='loftEntry'?{x:mix(-2.7,-1.1,u),z:mix(1.9,5.2,u),pose:u<1?'walk':'watch'}:p==='loftTable'?{x:-1.1,z:5.2,pose:'watch'}:p==='loftNote'?null:p==='loftBoard'?{x:3.5,z:5,pose:'read'}:{x:1.1,z:6.4,pose:'watch'};
   return{rook,courier:null,others:[]};
  },
  geometry(){
@@ -80,7 +80,7 @@ registerSet('loft',{
   quad([.66+s,1.74,3.4],[.74+s,1.74,3.4],[.74+r,2.02,3.42],[.66+r,2.02,3.42],mat('cable',6),[0,0,-1]);
  },
  labels(p){
-  if(p==='loftEntry')worldLabel([-2,2.4,.22],'BELL',6);
+  if(p==='loftEntry')worldLabel([-2.15,2.05,-.2],'BELL',6);
   if(p==='loftBoard'){worldLabel([2.25,1.35,6.9],'FILAMENT',3);worldLabel([3.15,1.35,6.9],'BOARD VAN',4);worldLabel([4.05,1.35,6.9],'DIVISION',0);}
  },
  exit(){return [0,1.9,7.05];},
