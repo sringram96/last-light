@@ -34,7 +34,7 @@ Narration types in from a copy of the caption. The visible caption is hidden fro
 
 ## Sessions and persistence
 
-`session.js` distinguishes the main menu, story play and scene previews. Previews can run every location but never write the story checkpoint. Opening the menu freezes the phase and its deadline. Starting over requires a confirmation when a checkpoint exists.
+`session.js` distinguishes the main menu, story play, scene previews and the idle tableau (`showIdle()`: the `menu` set and its `menuIdle` phase, shown at boot and after a closed or cold case; the story clock and the camera run while the menu is open, and nothing checkpoints). Previews can run every location but never write the story checkpoint. Opening the menu freezes the phase and its deadline. Starting over requires a confirmation when a checkpoint exists.
 
 `save-store.js` validates known phase names, field types, numeric bounds and clue strings before loading. Saves use a versioned envelope under `last-light/save/v1`. Existing prototype saves from `the-last-light-case-v2` migrate. Settings are stored independently under `last-light/settings/v1` and survive new cases. Case records (endings reached, discoveries made, cases closed) live under `last-light/records/v1`; they are written only when a story session, never a preview, reaches the canal ending, and a new case does not clear them. Storage failures leave a session-only checkpoint and do not prevent play.
 

@@ -25,7 +25,7 @@ npm test         # Save-system, story-route and renderer regression checks
 
 ## Play
 
-- Choose **New Case**, or **Continue Case** to load your saved checkpoint. The game fills the window; **Full Screen** (or `f`) takes the whole display.
+- The menu opens on Rook at a rooftop ledge over the city, a cigarette going, a billboard cycling, neon flickering and a chase in the sky; it plays for as long as you take. Choose **New Case**, or **Continue Case** to load your saved checkpoint. The game fills the window; **Full Screen** (or `f`) takes the whole display.
 - Watch the characters and camera. Quiet choices are buttons under the picture; narration types in and holds until it can be read, and a tap on the picture, Space or Enter shows the next sentence without skipping a beat.
 - **Text under the picture means think; a flash in the picture means move.** At an action beat two direction cues (`<<`, `>>`, `^^`, `vv`) flash on the things Rook can act on. Press that arrow key (or WASD), swipe that way on the picture, or tap the cue, within a window of 1.5 to 3 seconds. A wrong direction or no input is the miss.
 - Three **lamps** per case. Six misses are lethal: the death plays, a lamp goes out, and the night rewinds to the moment. Three are survivable with a worse story, and rewinding them costs a lamp. With no lamp left the case goes cold; restart the chapter or return to the menu.
