@@ -496,7 +496,11 @@ function caseLabels(){
   if(v)worldLabel([v.x,v.y+3.3,v.z],'VALE',3);
   if(f&&(p==='chaseQteA'||p==='chaseEntry'&&state.event>=4))worldLabel([f.x,3.0,f.z],'FREIGHT',2);
   if(p==='chaseQteB')worldLabel([0,6.9,state.distance+29],'BRIDGE UP',2);
-  if(['chaseQteB','chaseFinish'].includes(p))worldLabel([44,-2.2,(p==='chaseFinish'?(state.phaseDistance||state.distance)+26:state.distance+29)+30.5],'SUBSTATION 9',1);
+  // The move markers: brake in Rook's own lane behind the carrier or dive into the clear right lane; the service ramp off the left rail or the rising span.
+  if(p==='chaseQteA'){worldLabel([-2.2,1.7,state.distance+5],'[1]',2);worldLabel([2.6,1.7,state.distance+8],'[2]',2);}
+  if(p==='chaseQteB'){worldLabel([-7.2,2.2,state.distance+14],'[1]',2);worldLabel([3.2,5.2,state.distance+27],'[2]',2);}
+  // The hall's label waits for the finish: during the bridge prompt only the two move markers belong in the picture, and at phone width it clipped at the frame edge.
+  if(p==='chaseFinish')worldLabel([44,-2.2,(state.phaseDistance||state.distance)+26+30.5],'SUBSTATION 9',1);
  }
  if(sceneName==='canal')worldLabel([7.4,3.3,20.2],'CITY MEDIC',2);
  if(sceneName==='office'){worldLabel([-7.4,4.5,7],'CASE BOARD',2);worldLabel([0,4.6,16.2],'NIGHT DIVISION',1);if(state.phase!=='officeEntry')worldLabel([-.4,1.55,8.3],'I. BELL',6);if(state.phase==='officeBoard'){worldLabel([-7.55,2.2,5],'I. BELL',6);worldLabel([-7.55,2.0,6.2],'A. VALE',3);worldLabel([-12.8,3.9,-10.6],'VALE',0);}}
