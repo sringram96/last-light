@@ -181,24 +181,24 @@ function caseBlocking(){
  if(sceneName==='station'){
   const u=p==='stationEntry'&&!reduce?span(7):1;
   rook={x:mix(-1.6,-1.2,u),z:mix(8,17.2,u),pose:u<1?'walk':'read'};
-  if(state.choice==='person')courier={x:1.3,z:mix(9,18,u),pose:u<1?'walk':'stand'};
+  if(state.choice==='person')courier={x:1.3,z:mix(9,18,u),pose:u<1?'walk':'stand',who:'nell'};
  }
  if(sceneName==='pump'){
   const u=p==='pumpEntry'&&!reduce?span(6):1,v=p==='pumpResult'&&!reduce?span(4):p==='pumpTruth'?1:0;
   rook={x:mix(-.6,1.8,v),z:mix(mix(1,11,u),15.7,v),pose:u<1?'walk':v>0?'support':'watch'};
-  others.push({x:mix(4.8,3.25,v),y:1.2*(1-v),z:mix(17.8,16.2,v),pose:'stand',hue:2});
-  if(state.choice==='person')courier={x:1.5,z:14.5,pose:'watch'};
+  others.push({x:mix(4.8,3.25,v),y:1.2*(1-v),z:mix(17.8,16.2,v),pose:['pumpEntry','pumpFind'].includes(p)?'wrench':['pumpDanger','pumpQte'].includes(p)?'reach':'stand',who:'bell'});
+  if(state.choice==='person')courier={x:1.5,z:14.5,pose:'watch',who:'nell'};
  }
  if(sceneName==='roof'){
   const u=p==='roofEntry'&&!reduce?span(8):1;
   rook={x:mix(-8,-1.6,u),z:mix(5,15.8,u),pose:u<1?'walk':'watch'};
-  others.push({x:2.4,z:16.4,pose:'stand',hue:2});
-  if(state.choice==='person')courier={x:1,z:18,pose:'stand'};
+  others.push({x:2.4,z:16.4,pose:p==='roofListen'?'radio':'stand',who:'medic'});
+  if(state.choice==='person')courier={x:1,z:18,pose:'stand',who:'nell'};
  }
  if(sceneName==='canal'){
-  rook={x:2,z:14,pose:'watch'};others.push({x:3.4,z:15.2,pose:'stand',hue:2});
-  if(state.choice==='person')courier={x:4.8,z:16.5,pose:'stand'};
-  if(state.caught)others.push({x:6.2,z:19.2,pose:'stand',hue:3});
+  rook={x:2,z:14,pose:'watch'};others.push({x:3.4,z:15.2,pose:'stand',who:'bell'});
+  if(state.choice==='person')courier={x:4.8,z:16.5,pose:'stand',who:'nell'};
+  if(state.caught)others.push({x:6.2,z:19.2,pose:'handsUp',who:'vale'});
  }
  if(sceneName==='office'){
   // Seated at the desk: the sprite sinks below the floor plane and the desk hides the rest.
@@ -211,9 +211,9 @@ function caseBlocking(){
   if(p==='clubQte'||(p==='clubResult'&&state.club==='duck'))rook={x:.5,z:9,pose:'crouch'};
   if(p==='clubResult'&&state.club==='vault')rook={x:mix(.5,7.4,v),z:mix(9,12.4,v),pose:v<1?'walk':'reach'};
   if(p==='clubResult'&&state.club==='late')rook={x:.5,z:9,pose:'crouch',lean:.3*(1-v)};
-  const vale=p==='clubResult'?{x:mix(9,11,v),z:mix(14,18,v),pose:'walk',hue:3}:{x:9,z:14,pose:'stand',hue:3};
-  const guard=['clubFace','clubQte'].includes(p)?{x:6.5,z:11,pose:'stumble',lean:-.4,hue:0}:{x:6.5,z:11.5,pose:'stand',hue:0};
-  others.push(vale,guard,{x:-5,z:5.5,pose:'stand',hue:4},{x:-2.5,z:10.5,pose:'stand',hue:0},{x:2.6,z:7.5,pose:'stand',hue:4},{x:0,y:.8,z:18.5,pose:'stand',hue:6});
+  const vale=p==='clubResult'?{x:mix(9,11,v),z:mix(14,18,v),pose:'walk',who:'vale'}:{x:9,z:14,pose:'stand',who:'vale'};
+  const guard=['clubFace','clubQte'].includes(p)?{x:6.5,z:11,pose:'throw',who:'krane'}:{x:6.5,z:11.5,pose:'stand',who:'krane'};
+  others.push(vale,guard,{x:-5,z:5.5,pose:'stand',hue:4,who:'patron'},{x:-2.5,z:10.5,pose:'stand',hue:0,who:'patron'},{x:2.6,z:7.5,pose:'stand',hue:4,who:'patron'},{x:0,y:.8,z:18.5,pose:'stage',who:'performer'});
  }
  return{rook,courier,book:null,others};
 }

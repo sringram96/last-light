@@ -14,15 +14,41 @@ test('approved street render remains identical outside the character sprites at 
   const inSprite=key=>{const [x,y]=key.split(',').map(Number);return a.sprites.some(r=>x>=r.x0&&x<=r.x1&&y>=r.y0&&y<=r.y1);};
   let changed=0;
   for(const key of new Set([...was.keys(),...now.keys()]))if(was.get(key)!==now.get(key)){changed++;assert(inSprite(key),`Scene cell ${key} changed outside a character sprite at width ${width}`);}
-  assert.equal(a.sprites.length,2);assert(changed<40,`Too many sprite cells changed: ${changed}`);assert.equal(a.nonASCII,0);
+  // The sprite system redraws every sprite cell (whole-cell anchors, single outline strokes, multi-resolution sheets),
+  // so the budget bounds the sprite footprint rather than the old sampling: 50 and 74 cells with the design sheets.
+  assert.equal(a.sprites.length,2);assert(changed<100,`Too many sprite cells changed: ${changed}`);assert.equal(a.nonASCII,0);
  }
 });
-test('close-up characters keep a single pair of eyes',()=>{
+const eyesInside=(g,width,r)=>{const a=g.audit(),cw=width/a.columns,ch=cw*1.72;return g.frame().filter(d=>d[0]==='o').map(d=>[Math.round(d[1]/cw),Math.round(d[2]/ch)]).filter(([x,y])=>x>=r.x0&&x<=r.x1&&y>=r.y0&&y<=r.y1).length;};
+test('close-up characters keep exactly the eyes their sheet draws',()=>{
  for(const width of [320,732]){
   const g=game({width,reduced:true});g.click('NEW CASE');g.click('SKIP INTRO');g.click('FOLLOW');g.run(3.5);g.phase('qte');
-  const a=g.audit(),cw=width/a.columns,ch=cw*1.72,eyes=g.frame().filter(d=>d[0]==='o').map(d=>[Math.round(d[1]/cw),Math.round(d[2]/ch)]);
-  for(const r of a.sprites){const inside=eyes.filter(([x,y])=>x>=r.x0&&x<=r.x1&&y>=r.y0&&y<=r.y1);assert(inside.length>=1&&inside.length<=2,`Expected one or two eyes per sprite, saw ${inside.length} at width ${width}`);}
+  const a=g.audit();assert.equal(a.sprites.length,2);
+  for(const r of a.sprites){assert(r.eyes>=1&&r.eyes<=2,`${r.who} sheet has ${r.eyes} eye glyphs`);assert.equal(eyesInside(g,width,r),r.eyes,`${r.who} at width ${width}`);}
  }
+});
+test('a character mid-glide keeps a stable column count and never doubles an eye',()=>{
+ const width=732,g=game({width});g.click('STATION','reel-actions');g.run(3);
+ let previous=null;
+ for(let i=0;i<5;i++){
+  g.run(.1);const a=g.audit();assert.equal(a.state.phase,'stationEntry');
+  const rook=a.sprites.find(r=>r.who==='rook'),nell=a.sprites.find(r=>r.who==='nell');assert(rook&&nell);
+  assert(rook.x1<nell.x0||nell.x1<rook.x0,'sprites overlap');
+  // Width is a function of the whole-row height (approved aspect), so a glide never flips it between two values.
+  assert.equal(rook.cols,Math.round(rook.rows*1.72*.41));assert(['full','mid','small'].includes(rook.sheet));
+  if(previous){assert(rook.rows>=previous.rows&&rook.cols>=previous.cols,'a walk toward the camera only grows');assert(rook.rows-previous.rows<=1,'grows in whole-row steps');}
+  assert.equal(eyesInside(g,width,rook),1,`frame ${i}`);assert.equal(eyesInside(g,width,nell),2,`frame ${i}`);
+  previous=rook;
+ }
+});
+test('the sprite loader accepts the design sheet shape and rejects unsafe rows',()=>{
+ const g=game({reduced:true});const sprites=g.root.cinemaSprites;
+ assert(['rook','generic','nell','bell','vale','krane','medic','performer'].every(n=>sprites.characters().includes(n)));
+ const warnings=sprites.load({tester:{full:{stand:['  _  ',' (o) ',' /#\\ ',' | | '],walk:[[' (o) ',' /#\\ ',' / \\ '],[' (o) ',' /#\\ ',' | | ']]},accent:{glyph:'#',hue:2}},broken:{full:{stand:['(ö)']}},headless:{full:{walk:[['|']]}}});
+ assert(sprites.characters().includes('tester')&&!sprites.characters().includes('broken')&&!sprites.characters().includes('headless'));
+ assert(warnings.some(w=>/^broken.*printable ASCII/.test(w))&&warnings.some(w=>/^headless.*stand pose/.test(w))&&!warnings.some(w=>/^tester/.test(w)),warnings.join('; '));
+ g.click('CLUB','reel-actions');g.run(.5);const who=g.audit().sprites.map(r=>r.who);
+ for(const name of ['rook','vale','krane','patron','performer'])assert(who.includes(name),name);assert.equal(g.audit().nonASCII,0);
 });
 test('menus pause action, preferences persist, and previews preserve the story checkpoint',()=>{
  const g=game();g.click('NEW CASE');g.phase('officeEntry');g.click('SKIP INTRO');g.run(1.6);g.phase('brief');g.click('WATCH FIRST');g.run(8.3);g.phase('ready');

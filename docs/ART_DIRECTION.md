@@ -27,7 +27,7 @@ The three files in `reference/` record the approved street study, opening and co
 
 ## Characters
 
-Character sprites are text poses projected into the scene. Body glyphs fill their screen band when a character is close to the camera; facial details (eyes, mouth) are stamped once at the centre of their sprite cell, so a close-up never shows a second pair of eyes. Keep faces to the `o`, `.` and `>` glyphs so this rule keeps working.
+Character sprites are text poses projected into the scene, drawn from three sizes of sheet (`full`, `mid`, `small`) so that a far figure is hand-drawn art rather than a sampled fragment of the close-up art. The figure sits on whole cells and grows in whole-row steps while the camera glides; it never shimmers. Fill glyphs (`# = : - ~`) fill their band when a character is close to the camera; outlines (`/ \ | ( ) _`) are drawn once along their band; facial details (`o`, `.`, `>`) are stamped once, so a close-up never shows a second pair of eyes. Keep faces to those three glyphs, outlines and fills to those sets, and enclose the inside of a head with outline glyphs so the set does not show through it. The width of a figure stays 0.41 of its height in world terms at every distance. Walk cycles advance with distance travelled; a standing character never flickers.
 
 ## Transitions
 

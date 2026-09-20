@@ -4,7 +4,9 @@ The game runs entirely in the browser. `scripts/build.mjs` inserts the new-mater
 
 ## Rendering
 
-The scene builders create 3D surfaces and lights. The camera transforms and projects them; clipped polygons become depth-tested ASCII cells. Surface materials derive glyphs and colors from world coordinates. Characters are projected text poses. Camera movement and actor blocking are tied to story phases.
+The scene builders create 3D surfaces and lights. The camera transforms and projects them; clipped polygons become depth-tested ASCII cells. Surface materials derive glyphs and colors from world coordinates. Camera movement and actor blocking are tied to story phases.
+
+Characters are text sprite sheets (`src/game/sprites.js`, with the design team's sheets inlined from `docs/design/sprites.json` at build time). Each character has `full`, `mid` and `small` poses; `actor()` in `runtime.js` snaps the figure to whole cells, picks the sheet that fits the projected size without squeezing it below 0.7, and draws each sheet cell into its band of screen cells so that fills tile, outlines and faces are drawn once, and enclosed spaces stay opaque. Walk frames advance with distance travelled. A blocking entry names its sheet with `who` and its pose with `pose`; `docs/design/TECH.md` has the rules and the loader API.
 
 ## Story
 

@@ -22,11 +22,11 @@ function pose(){
 }
 function blocking(){
  if(extended())return caseBlocking();
- let rook={x:-3.2,z:3,pose:'watch'},courier={x:.1,z:12,pose:'walk'},book={x:.65,y:1.05,z:11.9,flat:false};
+ let rook={x:-3.2,z:3,pose:'watch'},courier={x:.1,z:12,pose:'walk',who:'nell'},book={x:.65,y:1.05,z:11.9,flat:false};
  if(['follow','danger','qte','result','evidence','deduce','arrival','ending'].includes(state.phase)){
   const u=state.phase==='follow'&&!reduce?span(8):1;
   rook={x:mix(-3.2,-2.2,u),z:mix(3,17.8,u),pose:state.phase==='follow'?'walk':'watch'};
-  courier={x:mix(.1,.6,u),z:mix(12,20,u),pose:state.phase==='follow'?'walk':'stand'};
+  courier={x:mix(.1,.6,u),z:mix(12,20,u),pose:state.phase==='follow'?'walk':'stand',who:'nell'};
   book={x:courier.x+.62,y:1.18,z:courier.z-.16,flat:false};
  }
  if(['danger','qte','result','evidence','deduce'].includes(state.phase)){
@@ -38,11 +38,11 @@ function blocking(){
   const u=state.phase==='result'&&!reduce?span(3.8):1;
   if(state.choice==='person'){
    rook={x:mix(-2.2,-.85,u),z:mix(17.8,19.5,u),pose:u<.8?'reach':'support'};
-   courier={x:.6,z:20,pose:'stand',lean:(1-u)*.5};
+   courier={x:.6,z:20,pose:'stand',lean:(1-u)*.5,who:'nell'};
    book={x:1.48,y:mix(.6,.07,u),z:19.65,flat:u>.65};
   }else{
    rook={x:mix(-2.2,state.choice==='book'?1.1:-.5,u),z:mix(17.8,19.3,u),pose:state.choice==='book'?(u<.75?'reach':'read'):'crouch'};
-   courier={x:mix(.6,-4,u),z:mix(20,29,u),pose:'walk'};
+   courier={x:mix(.6,-4,u),z:mix(20,29,u),pose:'walk',who:'nell'};
    book=state.choice==='book'?{x:mix(1.4,1.55,u),y:mix(.6,1.3,u),z:mix(19.65,18.96,u),flat:false}:{x:1.48,y:.07,z:19.65,flat:true};
   }
  }
@@ -50,43 +50,66 @@ function blocking(){
   const u=state.phase==='arrival'&&!reduce?span(7):1;
   const path=(x,z,endX,endZ)=>u<.45?{x:mix(x,-3.2,u/.45),z:mix(z,25,u/.45)}:{x:mix(-3.2,endX,(u-.45)/.55),z:mix(25,endZ,(u-.45)/.55)};
   rook={...path(rook.x,rook.z,-4.6,36.3),pose:u<1?'walk':'watch'};
-  if(state.choice==='person')courier={...path(.6,20,-5.2,37.2),pose:u<1?'walk':'stand'};
+  if(state.choice==='person')courier={...path(.6,20,-5.2,37.2),pose:u<1?'walk':'stand',who:'nell'};
   else courier=null;
   book=null;
  }
  return{rook,courier,book};
 }
-function actor(a,isRook=false){
+// Walk cycles advance with distance travelled (one frame every SPRITE_STRIDE world units), so a standing character never flickers.
+const SPRITE_STRIDE=.3,walkMeters=new Map();
+function spriteFrame(key,a,frames){
+ if(frames.length<2)return 0;
+ const m=walkMeters.get(key),d=m&&m.scene===sceneName?m.d+Math.hypot(a.x-m.x,a.z-m.z):0;
+ walkMeters.set(key,{x:a.x,z:a.z,d,scene:sceneName});
+ return Math.floor(d/SPRITE_STRIDE)%frames.length;
+}
+// Screen band of sprite row/column i at scale s over n cells. Bands partition the cells when s>=1; when a sheet is
+// squeezed, an empty band collapses onto its centre cell and the priority order below decides what survives there.
+function spriteBand(i,s,n){let a=Math.round(i*s),b=Math.round((i+1)*s);if(b<=a){a=Math.min(n-1,Math.floor((i+.5)*s+1e-6));b=a+1;}return[Math.max(0,a),Math.min(n,b)];}
+// Drawing order inside one sprite: eyes and noses, then mouths, then outlines and props, then fills.
+const spritePriority=g=>g==='o'||g==='>'?0:g==='.'?1:spriteFill(g)?3:2;
+function actor(a,isRook=false,key){
  if(!a)return;
- let rows=isRook?['    ____   ','  _/====\\_ ','   ( o_>   ','   /|~\\    ','  /##~#\\   ',' /|#####|\\ ','  |#####|  ','  /#####\\  ',' /___|___\\ ','    | |    ','   _| |_   ']:['   ___   ',' _/===\\_ ','  (o.o)  ','   /|\\   ','  /###\\  ',' /#####\\ ',' |#####| ','  /###\\  ','   | |   ','   | |   '];
- if(a.pose==='walk'){
-  const odd=Math.floor(state.t*5)%2;
-  rows[rows.length-2]=isRook?(odd?'   /   |   ':'   |   \\   '):(odd?'  /   |  ':'  |   \\  ');
-  rows[rows.length-1]=isRook?(odd?' _/    |_  ':'  _|    \\_ '):(odd?'_/    |_ ':' _|    \\_');
- }
- if(isRook&&['reach','support','read'].includes(a.pose)){rows[4]='  /##~#|__ ';rows[5]=a.pose==='read'?'  |####|=[]':'  |#####| \\';}
- if(!isRook&&a.pose==='stumble'){rows[3]='\\  /|\\  /';rows[4]=' \\/###\\/ ';rows[8]='  /   |  ';}
- if(isRook&&a.pose==='crouch')rows=['    ____   ','  _/====\\_ ','   ( o_>   ','   /|~\\    ','  /####\\__ ',' /######|\\ ','/_/   \\___ '];
- const height=a.pose==='crouch'?1.35:isRook?2.15:2.05,cols=isRook?11:9;
+ const who=a.who||(isRook?'rook':'generic'),sheet=spriteFor(who);if(!sheet)return;
+ const pose=a.pose||'stand',height=spriteHeight(sheet,pose);
  const bottom=cam([a.x,.16+(a.y||0),a.z]),top=cam([a.x+(a.lean||0),height+(a.y||0),a.z]);if(bottom.z<.4)return;
- const ap=project(top),bp=project(bottom),h=bp.y-ap.y,w=h*(ch/cw)*.41;
- if(h<1)return;
- spriteRects.push({x0:Math.floor(Math.min(ap.x,bp.x)-w/2)-1,x1:Math.ceil(Math.max(ap.x,bp.x)+w/2)+1,y0:Math.floor(ap.y)-1,y1:Math.ceil(bp.y)+1});
- const inkFor=g=>(isRook?(g==='~'?2:g==='o'||g==='>'?6:1):(a.hue??6))*20+(isRook?14:11);
- const detail=g=>g==='o'||g==='.'||g==='>';
- for(let y=Math.max(0,Math.floor(ap.y));y<=Math.min(H-1,Math.ceil(bp.y));y++){
-  const u=clamp((y-ap.y)/h,0,.999),row=rows[Math.floor(u*rows.length)],cx=mix(ap.x,bp.x,u),left=cx-w/2;
-  for(let x=Math.floor(left);x<left+w;x++){
-   const col=clamp(Math.floor((x-left)/w*cols),0,cols-1),g=row[col]||' ';if(g===' '||detail(g))continue;
-   pixel(x,y,mix(top.z,bottom.z,u)-.06,g,inkFor(g));
+ const ap=project(top),bp=project(bottom),hf=bp.y-ap.y;if(hf<1)return;
+ // Stable projection: the height is a whole number of rows, the feet sit on a whole cell, and the width follows the
+ // approved cell aspect (0.41 of the height in world terms). A glide therefore grows the sprite in whole-row steps.
+ const h=Math.round(hf),w=Math.max(1,Math.round(h*(ch/cw)*.41)),yb=Math.round(bp.y),yt=yb-h;
+ const pick=spriteSize(sheet,pose,h,w),rows=pick.frames[spriteFrame(key||who,a,pick.frames)];
+ const R=rows.length,C=sheet.sizes[pick.size].cols,sy=h/R,sx=w/C;
+ // A lean shears the sprite: each screen row has its own whole-cell left edge.
+ const lefts=new Int32Array(h);let minLeft=Infinity,maxLeft=-Infinity;
+ for(let j=0;j<h;j++){const l=Math.round(mix(ap.x,bp.x,(j+.5)/h)-w/2);lefts[j]=l;if(l<minLeft)minLeft=l;if(l>maxLeft)maxLeft=l;}
+ let eyes=0;for(const r of rows)for(const g of r)if(g==='o')eyes++;
+ spriteRects.push({x0:minLeft-1,x1:maxLeft+w,y0:yt-1,y1:yb+1,who,sheet:pick.size,rows:h,cols:w,eyes});
+ if(yb<0||yt>=H)return;
+ const hue=a.hue??sheet.hue,faceHue=sheet.faceHue??hue,accent=sheet.accent;
+ const inkFor=g=>(accent&&g===accent.glyph?accent.hue:spriteFace(g)?faceHue:hue)*20+sheet.level;
+ const zAt=ly=>mix(top.z,bottom.z,(ly+.5)/h)-.06,faceZ=Math.min(top.z,bottom.z)-.1;
+ // Each screen cell is written once per sprite, in priority order, so a squeezed sheet keeps its eyes and edges and a
+ // stretched sheet never repeats a face or an outline stroke. Fill glyphs cover their whole band; outlines run once
+ // along it; faces, mouths and props sit once on the band's centre row. Whatever else a band covers becomes an opaque
+ // blank, so the silhouette stays solid and the set never shows through a stretched head.
+ const taken=new Uint8Array(h*w),cells=[],bands=[],holes=spriteHoles(rows);
+ for(let r=0;r<R;r++)for(let c=0;c<C;c++){const g=rows[r][c];if(g!==' ')cells.push({r,c,g,p:spritePriority(g)});else if(holes[r*C+c]){const [r0,r1]=spriteBand(r,sy,h),[c0,c1]=spriteBand(c,sx,w);bands.push(r0,r1,c0,c1);}}
+ cells.sort((m,n)=>m.p-n.p);
+ const put=(lx,ly,g,k,z)=>{if(lx<0||lx>=w||ly<0||ly>=h)return;const i=ly*w+lx;if(taken[i])return;taken[i]=1;pixel(lefts[ly]+lx,yt+ly,z,g,k);};
+ for(const {r,c,g} of cells){
+  const [r0,r1]=spriteBand(r,sy,h),[c0,c1]=spriteBand(c,sx,w),n=r1-r0,m=c1-c0,k=inkFor(g);if(n<1||m<1)continue;
+  bands.push(r0,r1,c0,c1);
+  if(spriteFill(g)){for(let ly=r0;ly<r1;ly++)for(let lx=c0;lx<c1;lx++)put(lx,ly,g,k,zAt(ly));}
+  else if(g==='/'||g==='\\'){
+   for(let i=0;i<n;i++){const lx=n>1?c0+Math.round((g==='/'?1-i/(n-1):i/(n-1))*(m-1)):c0+(g==='/'?m>>1:(m-1)>>1);put(lx,r0+i,g,k,zAt(r0+i));}
+  }else if(g==='|'||g==='('||g===')'){const lx=c0+(g===')'?m>>1:(m-1)>>1);for(let ly=r0;ly<r1;ly++)put(lx,ly,g,k,zAt(ly));}
+  else{
+   const ly=r0+(n>>1),z=spriteFace(g)?faceZ:zAt(ly);
+   if(g==='_')for(let lx=c0;lx<c1;lx++)put(lx,ly,g,k,z);else put(c0+((m-1)>>1),ly,g,k,z);
   }
  }
- // Facial details are stamped once at the centre of their sprite cell, so a close-up never grows a second pair of eyes.
- for(let r=0;r<rows.length;r++)for(let c=0;c<cols;c++){
-  const g=rows[r][c]||' ';if(!detail(g))continue;
-  const u=clamp((r+.5)/rows.length,0,.999),yc=ap.y+u*h,cx=mix(ap.x,bp.x,u),xc=cx-w/2+(c+.5)*w/cols;
-  pixel(Math.floor(xc),Math.floor(yc),Math.min(top.z,bottom.z)-.1,g,inkFor(g));
- }
+ for(let b=0;b<bands.length;b+=4)for(let ly=bands[b];ly<bands[b+1];ly++)for(let lx=bands[b+2];lx<bands[b+3];lx++)put(lx,ly,' ',0,zAt(ly));
 }
 function geometry(){
  if(extended())return caseGeometry();
@@ -122,7 +145,7 @@ function render(){
   const x=hash(i,3)*22-11,z=camera.z+hash(i,7)*37,y=fract(hash(i,11)-state.t*.25)*16,p=cam([x,y,z]);if(p.z<.4||(sceneName==='office'&&z<16.6))continue;
   const q=project(p);pixel(q.x,q.y,p.z,'/',7*20+7);
  }
- actor(cast.courier);actor(cast.rook,true);for(const a of cast.others||[])actor(a);
+ actor(cast.courier,false,'courier');actor(cast.rook,true,'rook');(cast.others||[]).forEach((a,i)=>actor(a,false,'other'+i));
  if(sceneName==='street'){
  worldLabel([-7.95,3.05,5.5],'PRINT',1);worldLabel([0,6.5,38.75],'NORTH STATION',2);worldLabel([-4.9,2.95,38.6],'PUMP 4',2);
  const hotel=cam([7.03,11.2,11.8]);if(hotel.z>2){const p=project(hotel);'HOTEL'.split('').forEach((g,i)=>pixel(p.x,p.y+i,hotel.z-.2,g,2*20+17));}
@@ -321,5 +344,6 @@ const reelBox=root.querySelector('.lc-reel-actions');if(reelBox){reelBox.replace
 new ResizeObserver(resize).observe(canvas);
 if(typeof IntersectionObserver!=='undefined')new IntersectionObserver(es=>{visible=es[0].isIntersecting&&es[0].intersectionRatio>.15;lastTime=0;},{threshold:.15}).observe(canvas);
 requestAnimationFrame(tick);
+root.cinemaSprites={load:data=>{const w=loadSprites(data);render();return w;},characters:()=>Object.keys(spriteSheets),warnings:()=>spriteWarnings.slice()};
 root.cinemaAudit=()=>({state:JSON.parse(JSON.stringify(state)),session:{...session},scene:sceneName,camera:{...camera},columns:W,rows:H,frame,cast:blocking(),nonASCII:chars.filter(g=>g.charCodeAt(0)<32||g.charCodeAt(0)>126).length,card:cardText,route:routeSteps(),board:boardEntries(),reflex:reflexes(),records:saveStore.readRecords(),sprites:spriteRects.map(r=>({...r})),transit:transit?{phase:transit.phase,t:transit.t}:null,fade,objective:objective()});
 })();
