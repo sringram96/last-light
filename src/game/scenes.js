@@ -52,13 +52,13 @@ function roofSet(){
 }
 function chaseSet(){
  floor(-7,-55,7,950,0,'express');
- for(const x of [-7,7]){box(x-.13,0,-55,x+.13,.65,950,mat('barrier'));for(let z=-30;z<940;z+=24){box(x-.07,.65,z-.08,x+.07,6.5,z+.08,mat('metal'));box(x-.6,6.15,z-.3,x+.6,6.5,z+.3,mat('lamp',2));}}
+ for(const x of [-7,7]){box(x-.13,0,-55,x+.13,.65,950,mat('barrier'));if(x>0)chasePostIdx[0]=surfaces.length;for(let z=-30;z<940;z+=24){box(x-.07,.65,z-.08,x+.07,6.5,z+.08,mat('metal'));box(x-.6,6.15,z-.3,x+.6,6.5,z+.3,mat('lamp',2));}if(x>0)chasePostIdx[1]=surfaces.length;}
  cityRow(-40,930,20,-24,22);chaseRowIdx[0]=surfaces.length;cityRow(-40,930,20,15,26);chaseRowIdx[1]=surfaces.length;
  for(let z=36;z<940;z+=80){box(-7,7,z,7,7.3,z+.3,mat('metal'));box(-3.5,5.5,z-.12,3.5,7,z+.15,mat('highway-sign',1));}
  floor(-100,-50,100,1000,-15,'water',1);
 }
 // The right-hand city row is indexed so it can open onto the basin beyond the bridge; a hidden quad sits behind the camera.
-const chaseRowIdx=[0,0],HIDDEN={v:[[0,0,-999],[0,0,-999],[0,0,-999],[0,0,-999]],mat:{kind:'metal'},n:[0,0,1]},chasePos={vale:null,freight:null};
+const chaseRowIdx=[0,0],chasePostIdx=[0,0],HIDDEN={v:[[0,0,-999],[0,0,-999],[0,0,-999],[0,0,-999]],mat:{kind:'metal'},n:[0,0,1]},chasePos={vale:null,freight:null};
 // The freight carrier: in the left lane ahead, drifting toward Rook's lane in the entry's last two seconds, close for the prompt, then passed or lost.
 function chaseFreight(){
  const d=state.distance,p=state.phase,pd=state.phaseDistance||d,e=state.event;
@@ -141,8 +141,9 @@ function tunnelSet(){
  wall(-7.5,1000,-7.5,-60,7,'sewer',5);tunnelIdx.wall=surfaces.length;wall(7.5,-60,7.5,1000,7,'sewer',5);
  quad([-7.5,7,-60],[7.5,7,-60],[7.5,7,1000],[-7.5,7,1000],mat('sewer',5),[0,-1,0]);
  // Two pipe runs on each wall: the old one at head height and an amber conduit under the ceiling.
+ tunnelIdx.pipes=[surfaces.length,0];
  for(const x of [-7.3,7.3]){box(x-.2,5.2,-60,x+.2,5.6,1000,mat('pipe',2));box(x-.15,6.05,-60,x+.15,6.35,1000,mat('pipe',2));}
- tunnelIdx.strips=[surfaces.length,0];
+ tunnelIdx.pipes[1]=surfaces.length;tunnelIdx.strips=[surfaces.length,0];
  for(let z=-40;z<1000;z+=20){box(-1.5,6.7,z,1.5,6.95,z+.6,mat('neon',1));box(-7.45,2.5,z+7,-7.25,3.2,z+8.5,mat('neon',3));box(7.25,2.5,z+13,7.45,3.2,z+14.5,mat('neon',1));}
  tunnelIdx.strips[1]=surfaces.length;
  for(let z=-50;z<1000;z+=45)box(-7.5,0,z,-6,3,z+.4,mat('grate'));
@@ -150,7 +151,7 @@ function tunnelSet(){
  for(let z=-40;z<1000;z+=40)for(const x of [-7.1,7.1]){box(x-.25,4.4,z-.3,x+.25,4.8,z+.3,mat('lamp',2));box(x-.08,4.8,z-.08,x+.08,5.2,z+.08,mat('metal'));lamps.push([x,z]);}
  for(let z=-30;z<1000;z+=60){box(-7.5,6.2,z,7.5,7,z+.8,mat('brick'));for(const x of [-7.5,6.9])box(x,0,z,x+.6,6.2,z+.8,mat('brick'));}
 }
-const tunnelIdx={wall:0,strips:[0,0]};
+const tunnelIdx={wall:0,pipes:[0,0],strips:[0,0]};
 const builders={office:officeSet,station:stationSet,pump:pumpSet,roof:roofSet,club:clubSet,chase:chaseSet,tunnel:tunnelSet,canal:canalSet};
 function setScene(name){
  if(name===sceneName)return false;
@@ -343,7 +344,9 @@ function caseGeometry(){
    // Substation Nine across the basin, where the right-hand row opens.
    substationBuilding(24,gz+32,-15);
    for(let i=chaseRowIdx[0];i<chaseRowIdx[1];i++){const s=cache[i],z=s.v[0][2];surfaces[i]=z>gz-14&&z<gz+84?HIDDEN:s;}
-  }else{surfaces[0]=cache[0];for(let i=chaseRowIdx[0];i<chaseRowIdx[1];i++)surfaces[i]=cache[i];}
+   // The lamp post beside the far-span camera would fill the frame; it steps aside for the pan.
+   for(let i=chasePostIdx[0];i<chasePostIdx[1];i++){const s=cache[i];surfaces[i]=caught&&Math.abs(s.v[0][2]-(bridgeZ+18))<5?HIDDEN:s;}
+  }else{surfaces[0]=cache[0];for(let i=chaseRowIdx[0];i<chaseRowIdx[1];i++)surfaces[i]=cache[i];for(let i=chasePostIdx[0];i<chasePostIdx[1];i++)surfaces[i]=cache[i];}
  }
  if(sceneName==='tunnel'){
   const d=state.distance,p=state.phase,fork=forkZ(),u=p==='tunnelFinish'?span(4):0,vale=tunnelVale();
@@ -365,7 +368,10 @@ function caseGeometry(){
    quad([7.5,-.35,a-2],[95,-.35,a-2],[95,-.35,b+70],[7.5,-.35,b+70],mat('water',1),[0,1,0]);box(7.5,-.6,a-.3,8,0,a,mat('brick'));box(7.5,-.6,b,8,0,b+.3,mat('brick'));
    substationBuilding(30,d+40,0);
    for(let i=tunnelIdx.strips[0];i<tunnelIdx.strips[1];i++){const s=cache.surfaces[i],z=s.v[0][2];surfaces[i]=s.v[0][0]>7&&z>a-2&&z<b?HIDDEN:s;}
-  }else{surfaces[tunnelIdx.wall]=wq;for(let i=tunnelIdx.strips[0];i<tunnelIdx.strips[1];i++)surfaces[i]=cache.surfaces[i];}
+   // The right wall's pipe runs stop at the opening and pick up beyond it.
+   for(let i=tunnelIdx.pipes[0];i<tunnelIdx.pipes[1];i++){const s=cache.surfaces[i];surfaces[i]=s.v[0][0]>7?HIDDEN:s;}
+   for(const [y0,y1,w] of [[5.2,5.6,.2],[6.05,6.35,.15]]){box(7.3-w,y0,-60,7.3+w,y1,a,mat('pipe',2));box(7.3-w,y0,b,7.3+w,y1,1000,mat('pipe',2));}
+  }else{surfaces[tunnelIdx.wall]=wq;for(let i=tunnelIdx.strips[0];i<tunnelIdx.strips[1];i++)surfaces[i]=cache.surfaces[i];for(let i=tunnelIdx.pipes[0];i<tunnelIdx.pipes[1];i++)surfaces[i]=cache.surfaces[i];}
  }
  if(sceneName==='canal')state.dawn=state.phase==='canalEnd'?mix(.5,1,clamp(state.event/8,0,1)):.5*clamp(state.event/7,0,1);
  if(sceneName==='club'){
@@ -434,7 +440,7 @@ function caseLabels(){
   if(v)worldLabel([v.x,v.y+3.3,v.z],'VALE',3);
   if(f&&(p==='chaseQteA'||p==='chaseEntry'&&state.event>=4))worldLabel([f.x,3.0,f.z],'FREIGHT',2);
   if(p==='chaseQteB')worldLabel([0,6.4,state.distance+29],'BRIDGE UP',2);
-  if(['chaseQteB','chaseFinish'].includes(p))worldLabel([44,-2.2,(p==='chaseFinish'?(state.phaseDistance||state.distance)+26:state.distance+29)+31.5],'SUBSTATION 9',1);
+  if(['chaseQteB','chaseFinish'].includes(p))worldLabel([44,-2.2,(p==='chaseFinish'?(state.phaseDistance||state.distance)+26:state.distance+29)+30.5],'SUBSTATION 9',1);
  }
  if(sceneName==='canal')worldLabel([9,3.5,24],'CITY MEDIC',2);
  if(sceneName==='office'){worldLabel([-7.4,4.5,7],'CASE BOARD',2);worldLabel([0,4.6,16.2],'NIGHT DIVISION',1);if(state.phase!=='officeEntry')worldLabel([-.4,1.55,8.3],'I. BELL',6);if(state.phase==='officeBoard'){worldLabel([-7.55,2.2,5],'I. BELL',6);worldLabel([-7.55,2.0,6.2],'A. VALE',3);worldLabel([-12.8,3.9,-10.6],'VALE',0);}}
@@ -445,8 +451,8 @@ function caseLabels(){
  }
  if(sceneName==='tunnel'){
   const vale=tunnelVale();worldLabel([vale.x,3.3,vale.z],'VALE',3);
-  if(state.phase==='tunnelQte'){const f=forkZ();worldLabel([3.4,4.6,f-1],'[1]',2);worldLabel([-3.4,4.6,f-1],'[2]',2);worldLabel([0,6.3,f-.5],'CANAL GATE',1);}
+  if(state.phase==='tunnelQte'){const f=forkZ();worldLabel([3.4,4.6,f-1],'[1]',2);worldLabel([-3.4,4.6,f-1],'[2]',2);worldLabel([0,6.9,f-1.2],'CANAL GATE',1);}
   if(['tunnelQte','tunnelFinish'].includes(state.phase))worldLabel([-4.4,5.2,forkZ()-1],'MAINT',1);
-  if(state.phase==='tunnelFinish')worldLabel([50,12.7,state.distance+39.5],'SUBSTATION 9',1);
+  if(state.phase==='tunnelFinish')worldLabel([50,12.9,state.distance+38.5],'SUBSTATION 9',1);
  }
 }
