@@ -33,7 +33,7 @@ registerSet('room',{
   for(const x of [-2.6,2.6])box(x-.08,3.2,-13,x+.08,3.34,-.2,mat('metal'));
   for(const x of [-4,3.85])box(x,.3,-13,x+.15,.45,-.2,mat('metal'));
   // Doors along the corridor: Vale's, dark, on the left wall by the room; two more further down; a bench and a notice board.
-  box(-4,0,-3.2,-3.95,3.1,-.8,mat('hatch'));box(-4.02,3.1,-3.3,-3.93,3.25,-.7,mat('metal'));box(-3.97,2.2,-2.2,-3.94,2.45,-1.8,mat('paper',6));
+  box(-4,0,-2.7,-3.95,3.1,-.3,mat('hatch'));box(-4.02,3.1,-2.8,-3.93,3.25,-.2,mat('metal'));box(-3.97,2.2,-1.7,-3.94,2.45,-1.3,mat('paper',6));
   box(-4,0,-8.4,-3.95,3.1,-6,mat('hatch'));box(-4.02,3.1,-8.5,-3.93,3.25,-5.9,mat('metal'));
   box(3.95,0,-6.6,4,3.1,-4.2,mat('hatch'));box(3.93,3.1,-6.7,4.02,3.25,-4.1,mat('metal'));box(3.95,0,-11.8,4,3.1,-9.4,mat('hatch'));
   box(3.4,.5,-3.4,3.95,.62,-1.2,mat('wood',2));for(const z of [-3.2,-1.4])box(3.5,0,z-.06,3.9,.5,z+.06,mat('metal'));
@@ -95,7 +95,7 @@ registerSet('room',{
   if(chipHeld())box(-.76,.98,3.84,-.64,1.1,3.96,mat('lamp',2));
   box(-.45,.98,3.82,.05,1,4.17,mat('paper',6));
   const who=roomSitter();
-  if(who==='krane')box(-.7,.1,5.1,-.4,.85,5.4,mat('metal'));
+  if(who==='krane')box(-.78,.05,5.02,-.34,.9,5.48,mat('metal'));
   if(who==='bell'){box(-1.25,.9,5.2,-1.1,1.32,5.46,mat('paper',6));box(-.7,.9,5.2,-.55,1.32,5.46,mat('paper',6));box(-1.25,.9,5.4,-.55,1.36,5.5,mat('paper',6));}
  },
  labels(p){

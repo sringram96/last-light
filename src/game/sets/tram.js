@@ -68,8 +68,8 @@ registerSet('tram',{
  ease(p){return {tramEntry:5,tramRide:5,tramSpotted:.01,tramArrive:5}[p]||1.1;},
  blocking(p){
   const d=state.distance;
-  if(p==='tramArrive'){const u=span(1.5);return{rook:{x:mix(1.5,.55,u),y:3.55,z:d+mix(.4,1.5,u),pose:'reach'},courier:null,others:[]};}
-  return{rook:{x:1.5,y:3.55,z:d+.4,pose:p==='tramSpotted'?'watch':'crouch'},courier:null,others:[]};
+  if(p==='tramArrive'){const u=span(1.5);return{rook:{x:mix(1.5,.55,u),y:3.55,z:d+mix(.7,1.5,u),pose:'reach'},courier:null,others:[]};}
+  return{rook:{x:1.5,y:3.55,z:d+.7,pose:p==='tramSpotted'?'watch':'crouch'},courier:null,others:[]};
  },
  geometry(p){
   const d=state.distance,lit=p==='tramArrive'?tramArch()-20:Infinity;

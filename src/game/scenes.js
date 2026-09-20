@@ -53,9 +53,25 @@ function roofSet(){
 function chaseSet(){
  floor(-7,-55,7,950,0,'express');
  for(const x of [-7,7]){box(x-.13,0,-55,x+.13,.65,950,mat('barrier'));for(let z=-30;z<940;z+=24){box(x-.07,.65,z-.08,x+.07,6.5,z+.08,mat('metal'));box(x-.6,6.15,z-.3,x+.6,6.5,z+.3,mat('lamp',2));}}
- cityRow(-40,930,20,-24,22);cityRow(-40,930,20,15,26);
+ cityRow(-40,930,20,-24,22);chaseRowIdx[0]=surfaces.length;cityRow(-40,930,20,15,26);chaseRowIdx[1]=surfaces.length;
  for(let z=36;z<940;z+=80){box(-7,7,z,7,7.3,z+.3,mat('metal'));box(-3.5,5.5,z-.12,3.5,7,z+.15,mat('highway-sign',1));}
  floor(-100,-50,100,1000,-15,'water',1);
+}
+// The right-hand city row is indexed so it can open onto the basin beyond the bridge; a hidden quad sits behind the camera.
+const chaseRowIdx=[0,0],HIDDEN={v:[[0,0,-999],[0,0,-999],[0,0,-999],[0,0,-999]],mat:{kind:'metal'},n:[0,0,1]},chasePos={vale:null,freight:null};
+// The freight carrier: in the left lane ahead, drifting toward Rook's lane in the entry's last two seconds, close for the prompt, then passed or lost.
+function chaseFreight(){
+ const d=state.distance,p=state.phase,pd=state.phaseDistance||d,e=state.event;
+ if(p==='chaseEntry')return{x:reduce?-2.2:mix(-3,-2.2,smooth(clamp((e-4)/2,0,1))),z:d+13};
+ if(p==='chaseQteA')return{x:-2.2,z:mix(d+13,d+9,reduce?1:span(1.5))};
+ if(p==='chaseBank'){const rel=state.firstMove==='dodge'?9-.45*(d-pd):9+.35*(d-pd);return rel>-30&&rel<70?{x:-2.2,z:d+rel}:null;}
+ return null;
+}
+// Substation Nine across the basin: a long lit building at water level with a cyan strip along its eave.
+function substationBuilding(x,z){
+ const i0=surfaces.length;building(x,z,40,14,9,1,2);
+ for(let i=i0;i<surfaces.length;i++){for(const v of surfaces[i].v)v[1]-=15;surfaces[i].mat={...surfaces[i].mat,baseY:-15};}
+ box(x,-6.1,z-.1,x+40,-5.9,z+.1,mat('neon',1));
 }
 function canalSet(){
  floor(-45,-20,-4,130,-1.6,'water',1);floor(-4,-20,25,110,0,'paving');box(-4.3,-1.8,-20,-3.9,.45,110,mat('brick'));
@@ -113,7 +129,7 @@ function clubSet(){
  for(const x of [-5.6,5.6])box(x-.15,0,15.8,x+.15,6,16.1,mat('metal'));
  for(const [x,z] of [[-6,6],[-3,11],[2,8],[-7,13],[3,13]]){box(x-.7,.9,z-.7,x+.7,1,z+.7,mat('metal'));box(x-.1,0,z-.1,x+.1,.9,z+.1,mat('metal'));box(x-.15,1,z-.15,x+.15,1.3,z+.15,mat('lamp',2));lamps.push([x,z]);}
  box(-11.9,3,2,-11.7,4.2,9,mat('neon',1));box(11.7,3.6,14,11.9,4.4,19,mat('neon',3));
- for(const z of [13.5,16.5])box(11.6,1.5,z,11.8,3.2,z+2.5,mat('screen',1));
+ for(const z of [12,14.5])box(11.6,1.5,z,11.8,3.2,z+2.5,mat('screen',1));
  box(6.5,0,14.6,11.5,1.4,15.4,mat('velvet',3));box(7,0,12.6,10.5,.95,14,mat('wood',2));box(7.1,.95,12.7,10.4,1,13.9,mat('metal'));
  for(const x of [-8,8])for(const z of [1,9])pillar(x,z,6);
  for(const z of [2,9,15])pendant(0,z,4.2);pendant(-5,6.5,4.2);pendant(-5,12.5,4.2);
@@ -154,7 +170,8 @@ function caseShot(){
  const p=state.phase,set=sets[sceneName];
  if(set&&set.shot)return set.shot(p);
  if(sceneName==='station')return p==='stationEntry'?look(-3.5,3.1,10,0,1.5,19):look(-3.5,2.9,13,0,1.1,19);
- if(sceneName==='pump')return ['pumpEntry','pumpFind'].includes(p)?look(-1.5,2.5,3,1.8,1.25,14):p==='pumpTruth'?look(.3,2.7,10.5,3,1.4,16.4):look(-1.7,3.1,8,1.1,1,14);
+ // The pump room stays low; the windup is two one-second cuts, the splitting joint and then the wheel, before the fixed wide prompt.
+ if(sceneName==='pump')return ['pumpEntry','pumpFind'].includes(p)?look(-1.5,2.5,3,1.8,1.25,14):p==='pumpTruth'?look(.3,2.7,10.5,3,1.4,16.4):p==='pumpDanger'?(state.event<1?look(1.8,3.4,12,3,7,17):look(-2.4,2,9.6,-1.25,1.35,11.9)):look(-1.7,3.1,8,1.1,1,14);
  if(sceneName==='roof'){
   if(p==='roofEntry')return look(-7,4.1,4,1,1.2,15);
   if(['roofListen','roofSignal'].includes(p))return look(-3.2,2.8,10.3,.1,1.1,16.6);
@@ -194,9 +211,9 @@ function sceneStart(name){
 }
 function casePose(){
  const set=sets[sceneName];
- const duration=set&&set.ease?set.ease(state.phase):{stationEntry:7,pumpEntry:6,pumpDanger:2,roofEntry:8,canalEntry:7,officeEntry:8,officeFile:5,officeBoard:3,officeWindow:6,clubEntry:8,clubFace:2}[state.phase]||1.5;
+ const duration=set&&set.ease?set.ease(state.phase):{stationEntry:7,stationQuiet:2,stationListen:3,stationReady:3,pumpEntry:6,pumpDanger:.05,roofEntry:8,roofQuiet:4,roofConfession:4,canalEntry:7,canalEnd:10,officeEntry:8,officeFile:5,officeBoard:3,officeWindow:6,clubEntry:8,clubFace:2}[state.phase]||1.5;
  if(moving()){
-  const target=caseShot(),u=reduce?1:span(set&&set.ease?duration:/Entry/.test(state.phase)?5:1.1);
+  const target=caseShot(),u=reduce?1:span(set&&set.ease?duration:/Entry/.test(state.phase)?5:state.phase==='chaseFinish'?2.5:1.1);
   const origin={...transitionFrom,z:transitionFrom.z+state.distance-(state.phaseDistance||state.distance)};
   for(const k of Object.keys(camera))camera[k]=mix(origin[k],target[k],u);
  }else{const target=caseShot(),u=reduce?1:span(duration);for(const k of Object.keys(camera))camera[k]=mix(transitionFrom[k],target[k],u);}
@@ -264,7 +281,7 @@ function caseGeometry(){
   if(!lost)box(bx+.25,by+.75,bz-.08,bx+.6,by+1.2,bz+.07,mat('wood',2));
   else if(p==='pumpResult'){const fy=mix(1.95,-1.2,clamp(state.event/1.5,0,1));if(fy>-1)box(4.95,fy,17.7,5.3,fy+.45,17.85,mat('wood',2));}
   // The ledger open on the walkway between them once the story reaches it dry, and the water dropping as the inlet closes.
-  if(p==='pumpTruth'&&valve)box(1.1,0,15.6,1.7,.12,16,mat('dispatch',6));
+  if(p==='pumpTruth'&&valve)box(2.2,0,15.2,2.8,.2,15.6,mat('dispatch',6));
   const drop=valve?v*.4:0,w0=sceneCache.pump.surfaces[0];
   surfaces[0]=drop>0?{...w0,v:w0.v.map(q=>[q[0],q[1]-drop,q[2]])}:w0;
  }
@@ -273,10 +290,15 @@ function caseGeometry(){
   for(let i=0;i<4;i++)car(-27+fract(i*.27+d*.008)*65,43+i*8,i%2?3:1,3+i*2);
  }
  if(sceneName==='chase'){
-  const d=state.distance,p=state.phase,shift=p==='chaseBank'||p==='chaseQteB'||p==='chaseFinish'?state.firstMove==='dodge'?2.4:-2.2:-2.2;
-  let y=0,x=shift;
+  const d=state.distance,p=state.phase,pd=state.phaseDistance||d,shift=p==='chaseBank'||p==='chaseQteB'||p==='chaseFinish'?state.firstMove==='dodge'?2.4:-2.2:-2.2;
+  let y=0,x=shift,rookZ=d;
   if(p==='chaseBank'&&!reduce)x=mix(-2.2,shift,span(3));
-  if(p==='chaseFinish'&&state.pursuit==='jump'&&state.caught)y=reduce?1.5:Math.sin(clamp((state.event-.5)/4.5,0,1)*Math.PI)*3.2;
+  // The lifting bridge: from the second prompt the far span rises 1.5 units and the gap shows the basin below.
+  const bridgeZ=pd+26,gz=p==='chaseFinish'?bridgeZ:d+29,lifted=['chaseQteB','chaseFinish'].includes(p);
+  const rise=p==='chaseQteB'?1.5*(reduce?1:span(3)):p==='chaseFinish'?1.5:0,deckY=z=>lifted?rise*clamp((z-gz-7)/8,0,1):0;
+  const caught=p==='chaseFinish'&&state.pursuit==='jump'&&state.caught;
+  if(p==='chaseFinish'&&!caught&&state.pursuit!=='ramp')rookZ=Math.min(d,bridgeZ-5);
+  if(caught){rookZ=Math.min(d,bridgeZ+36);y=(reduce?0:Math.sin(clamp((state.event-.5)/4.5,0,1)*Math.PI)*3.2)+deckY(rookZ);}
   if(p==='chaseFinish'&&state.pursuit==='ramp'){
    x=mix(shift,-10.2,span(4));y=-clamp((d-state.phaseDistance-29)/50,0,1)*7.5;
    const a=state.phaseDistance+16,b=a+64;
