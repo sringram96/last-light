@@ -16,12 +16,17 @@ function stationSet(){
  floor(-13,-15,13,46,0);wall(-13,46,-13,-15,12);wall(13,-15,13,46,12);wall(13,46,-13,46,12);
  // A high ribbed roof; broad spaces between columns keep the actors readable.
  for(let z=-8;z<45;z+=9){pillar(-8,z);pillar(8,z);box(-13,10,z-.12,13,10.3,z+.12,mat('metal'));pendant(0,z,7.8);}
- quad([-13,12,-15],[13,12,-15],[13,12,46],[-13,12,46],mat('ceiling'),[0,-1,0]);
+ // Glass panes between the ribs instead of a flat ceiling: the rain ticks against them.
+ const ribs=[-15,-8,1,10,19,28,37,46];for(let i=0;i+1<ribs.length;i++)quad([-13,11.6,ribs[i]],[13,11.6,ribs[i]],[13,11.6,ribs[i+1]],[-13,11.6,ribs[i+1]],mat('glass',0),[0,-1,0]);
  for(const x of [-6.5,6.5])for(const z of [9,23,35])bench(x,z);
  for(const x of [-10,10]){box(x-1.2,0,28,x+1.2,2.2,33,mat('wood',2));box(x-1.4,3,27.8,x+1.4,3.35,33.2,mat('awning',2));}
- box(-2.5,0,43.6,2.5,4.5,44,mat('hatch'));box(-3,4.7,43.4,3,5.8,43.9,mat('sign'));
+ // Two luggage carts by the kiosks.
+ for(const [x,z] of [[-8.4,26],[8.6,25]]){box(x-.6,.35,z-.9,x+.6,.45,z+.9,mat('metal'));box(x-.55,.45,z-.8,x+.55,.95,z+.1,mat('wood',2));box(x-.4,.45,z+.2,x+.4,1.1,z+.8,mat('wood',2));box(x-.55,.45,z+.85,x+.55,1.25,z+.92,mat('metal'));for(const [dx,dz] of [[-.5,-.7],[.5,-.7],[-.5,.7],[.5,.7]])box(x+dx-.08,.1,z+dz-.15,x+dx+.08,.4,z+dz+.15,mat('rubber'));}
+ box(-2.5,0,43.6,2.5,4.5,44,mat('hatch'));box(-4,4.7,43.4,4,5.8,43.9,mat('sign'));
  box(-2.3,0,18.7,2.3,1.15,20.4,mat('wood',2));box(-1.9,1.15,19,1.9,1.24,20.2,mat('dispatch',6));
- box(-.8,1.24,19.5,.8,1.7,20,mat('console',1));
+ box(-.8,1.24,19.5,.8,1.7,20,mat('console',1));box(.15,1.24,19.12,.65,1.26,19.48,mat('paper',6));box(-.22,1.49,19.45,.22,1.51,19.47,mat('paper',6));
+ // The departures board over the desk.
+ box(-2,4.2,20.9,2,5.2,21.1,mat('screen',1));for(const x of [-1.75,1.75])box(x-.05,5.2,20.95,x+.05,10,21.05,mat('metal'));
  for(const x of [-10,10])box(x-.9,3,15,x+.9,6,15.2,mat('poster',2));
 }
 function pumpSet(){
@@ -38,15 +43,27 @@ function pumpSet(){
 }
 function roofSet(){
  floor(-16,-14,16,26,0,'roof');for(const x of [-16,16])box(x-.15,0,-14,x+.15,1.15,26,mat('brick'));
- box(-16,0,25.8,16,1.25,26.2,mat('brick'));box(-12,0,-4,-7,4.2,3,mat('brick'));box(-10.7,0,3.01,-8.4,3,3.2,mat('hatch'));
+ box(-16,0,25.8,16,1.25,26.2,mat('brick'));box(-12,0,-4,-7,4.2,3,mat('brick'));box(-10.7,0,3.01,-8.4,3,3.2,mat('hatch'));box(-10.8,0,3.2,-8.3,3.1,3.3,mat('grate'));
  box(7,0,7,11,1.8,12,mat('vent'));box(9,0,-3,12,2,-.5,mat('vent'));
  for(const x of [-2,2])box(x-.1,0,17,x+.1,3,17.2,mat('metal'));
  box(-2,2.3,17,2,2.6,17.3,mat('metal'));box(-2.1,0,16.7,2.1,1.2,18,mat('wood',2));box(-.6,1.2,17,.6,1.8,17.5,mat('console',1));
  box(-5,0,20,-4.85,10,20.2,mat('metal'));for(let y=5;y<10;y+=1.4)box(-7,y,20,-2.8,y+.06,20.1,mat('metal'));
+ // Roof furniture: the water tank on its cradle, a skylight, three aerial rods and a hoarding on the north parapet.
+ ellipsoid(-9,3,20,2,2.2,2,mat('tank',1));for(const [dx,dz] of [[-1.2,-1.2],[1.2,-1.2],[-1.2,1.2],[1.2,1.2]])box(-9+dx-.1,0,20+dz-.1,-9+dx+.1,1.4,20+dz+.1,mat('metal'));
+ box(2,0,-8,6,.6,-4,mat('glass',0));
+ for(const [x,z] of [[12,-8],[14,2],[-14,-10]]){box(x-.05,0,z-.05,x+.05,5,z+.05,mat('metal'));box(x-.5,4.6,z-.03,x+.5,4.66,z+.03,mat('metal'));}
+ box(10,1.25,25.75,16,4.5,25.95,mat('sign'));box(10,4.5,25.7,16,4.65,26,mat('neon',1));
  const cityStart=surfaces.length;
- for(const x of [-29,22])cityRow(-15,100,16,x,12);cityRow(39,115,19,-15,19);cityRow(46,125,19,1,23);
+ for(const x of [-29,22]){cityRow(-15,44,16,x,12);cityRow(60,100,16,x,12);}cityRow(60,115,19,-15,19);cityRow(62,125,19,1,23);
  cityRow(25,130,20,48,28);cityRow(50,145,22,70,20);
  for(let i=cityStart;i<surfaces.length;i++){for(const v of surfaces[i].v)v[1]-=20;surfaces[i].mat={...surfaces[i].mat,baseY:-20};}
+ // The westward view below the north parapet: the elevated road with its lamps, the tram viaduct beside it, the market's glow under the road and the club's sign.
+ quad([-60,-12,50],[30,-12,50],[30,-12,56],[-60,-12,56],mat('road',7),[0,1,0]);for(const z of [49.8,55.9])box(-60,-12,z,30,-11.4,z+.3,mat('barrier'));
+ for(let x=-54;x<=24;x+=12){box(x-.06,-12,55.4,x+.06,-7.5,55.6,mat('metal'));box(x-.35,-7.6,55.2,x+.35,-7.2,55.8,mat('lamp',2));lamps.push([x,55.5]);}
+ quad([-60,-13,42],[30,-13,42],[30,-13,46],[-60,-13,46],mat('road',7),[0,1,0]);for(const z of [41.8,45.9])box(-60,-13,z,30,-12.5,z+.3,mat('barrier'));
+ quad([-40,-14.5,44],[-22,-14.5,44],[-22,-14.5,58],[-40,-14.5,58],mat('paving',0),[0,1,0]);
+ for(const x of [-34,-31.3,-28.7,-26])for(const z of [47,53]){box(x-.25,-14.2,z-.25,x+.25,-13.8,z+.25,mat('lamp',2));lamps.push([x,z]);}
+ box(-33,-8.5,58,-27,-7.5,58.3,mat('neon',3));for(const x of [-33,-27])box(x-.08,-14.5,58.1,x+.08,-8.5,58.25,mat('metal'));
  // Far traffic travels through actual 3D space behind the parapet.
  pendant(-12,13,5.5);
 }
@@ -177,7 +194,13 @@ function blendShot(a,b,t){const o={};let ay=a.yaw;if(b.yaw-ay>Math.PI)ay+=Math.P
 function caseShot(){
  const p=state.phase,set=sets[sceneName];
  if(set&&set.shot)return set.shot(p);
- if(sceneName==='station')return p==='stationEntry'?look(-3.5,3.1,10,0,1.5,19):look(-3.5,2.9,13,0,1.1,19);
+ if(sceneName==='station'){
+  // The crane settles behind Rook; the listen pushes in beside him onto the reels, then tilts to the floor where the knocking is; ready pans right to the hatch.
+  if(p==='stationEntry')return look(-3.5,3.1,10,0,1.5,19);
+  if(p==='stationListen'){const a=look(1.6,1.75,16.6,-.1,1.4,19.6);return state.event<3||reduce?a:blendShot(a,look(1.6,1.75,16.6,.4,.2,21),smooth(clamp((state.event-3)/5,0,1)));}
+  if(p==='stationReady')return look(1.6,1.9,16.6,2.5,1.5,43);
+  return look(-3.5,2.9,13,.9,1.1,19);
+ }
  // The pump room stays low; the windup is two one-second cuts, the splitting joint and then the wheel, before the fixed wide prompt.
  if(sceneName==='pump')return ['pumpEntry','pumpFind'].includes(p)?look(-1.5,2.5,3,1.8,1.25,14):p==='pumpTruth'?look(.3,2.7,10.5,3,1.4,16.4):p==='pumpDanger'?(state.event<1?look(1.8,3.4,12,3,7,17):look(-2.4,2,9.6,-1.25,1.35,11.9)):look(-1.7,3.1,8,1.1,1,14);
  if(sceneName==='roof'){
@@ -226,7 +249,7 @@ function caseShot(){
 function sceneStart(name){
  const d=state.distance;
  if(sets[name]&&sets[name].start)return sets[name].start();
- return {office:look(-3.2,2.1,1.5,-1.8,1.2,9),station:look(5,10,-4,0,0,24),pump:look(-4.5,1.8,-7,2,1.5,18),roof:look(-12,6,-5,1.3,1.5,15),club:state.market==='cut'?look(11,2,20.5,2,1.4,8):look(-9,2.2,-3,2,1.5,12),chase:look(-7,9,d-15,0,1,d+16),tunnel:look(-5,3,d-12,0,1,d+18)}[name]||look(8,2.3,7,3,1,15);
+ return {office:look(-3.2,2.1,1.5,-1.8,1.2,9),station:look(4,7.5,-2,0,1,22),pump:look(-4.5,1.8,-7,2,1.5,18),roof:look(-12,6,-5,1.3,1.5,15),club:state.market==='cut'?look(11,2,20.5,2,1.4,8):look(-9,2.2,-3,2,1.5,12),chase:look(-7,9,d-15,0,1,d+16),tunnel:look(-5,3,d-12,0,1,d+18)}[name]||look(8,2.3,7,3,1,15);
 }
 function casePose(){
  const set=sets[sceneName];
@@ -244,7 +267,7 @@ function caseBlocking(){
  if(sceneName==='station'){
   const u=p==='stationEntry'&&!reduce?span(7):1;
   rook={x:mix(-1.6,-1.2,u),z:mix(8,17.2,u),pose:u<1?'walk':'read'};
-  if(state.choice==='person')courier={x:1.3,z:mix(9,18,u),pose:u<1?'walk':'stand',who:'nell'};
+  if(state.choice==='person')courier=['stationListen','stationReady'].includes(p)?{x:2.4,z:21,pose:'watch',who:'nell'}:{x:1.3,z:mix(9,18,u),pose:u<1?'walk':'stand',who:'nell'};
  }
  if(sceneName==='pump'){
   const u=p==='pumpEntry'&&!reduce?span(6):1,v=p==='pumpResult'&&!reduce?span(4):p==='pumpTruth'?1:0;
@@ -285,6 +308,11 @@ function caseBlocking(){
 function caseGeometry(){
  surfaces.length=staticCount;
  const set=sets[sceneName];if(set){if(set.geometry)set.geometry(state.phase);return caseBlocking();}
+ if(sceneName==='station'){
+  // The tape reels on the console face turn: eight wedges, alternately steel and paper, spun with the clock.
+  const spin=state.t*(state.phase==='stationListen'?3:1.2);
+  for(const cx of [-.4,.4])for(let i=0;i<8;i++){const a=i*Math.PI/4+spin,b=a+Math.PI/4,c=q=>[cx+Math.cos(q)*.18,1.47+Math.sin(q)*.18,19.46],e=q=>[cx+Math.cos(q)*.06,1.47+Math.sin(q)*.06,19.46];quad(c(a),c(b),e(b),e(a),i%2?mat('metal'):mat('dispatch',6),[0,0,-1]);}
+ }
  if(sceneName==='pump'){
   const spin=state.phase==='pumpResult'&&state.rescue==='valve'?span(4)*Math.PI:0;
   const x=-1.25,z=11.88,y=1.35;
@@ -432,7 +460,7 @@ function tunnelVale(){
 }
 function caseLabels(){
  const set=sets[sceneName];if(set){if(set.labels)set.labels(state.phase);return;}
- if(sceneName==='station'){worldLabel([0,5.25,43.2],'PUMP ROOM 4',2);worldLabel([0,2.2,19.1],'MAINTENANCE',2);if(state.phase==='stationQuiet')worldLabel([.4,1.7,19.3],'ORDER 7731',6);}
+ if(sceneName==='station'){worldLabel([0,6.3,43.2],'PUMP ROOM 4',2);worldLabel([0,2.2,19.1],'MAINTENANCE',2);if(state.phase==='stationQuiet')worldLabel([.4,1.7,19.3],'ORDER 7731',6);}
  if(sceneName==='pump'){worldLabel([-2.1,1.6,12.2],'INLET',2);if(!['pumpResult','pumpTruth'].includes(state.phase))worldLabel([4.8,3.9,17.7],'BELL',2);if(state.phase==='pumpQte'){worldLabel([-1.25,2.15,11.8],'[1]',2);worldLabel([4.8,4.5,17.7],'[2]',2);}}
  if(sceneName==='roof')worldLabel([0,3.2,17],'NORTH / RADIO',2);
  if(sceneName==='chase'){
