@@ -17,7 +17,7 @@ registerSet('loft',{
   // Outside the door: the grate landing and the top of the iron stair going down to the street.
   box(-4.5,-.1,-1.4,-2,0,0,mat('grate'));for(let i=0;i<6;i++)box(-4.4,-.7*(i+1),-1.4-.45*(i+1),-3,-.7*(i+1)+.08,-1.4-.45*i,metal);
   // The spare lantern on its hook beside the door, on the landing side, unlit: the first thing the camera sees.
-  box(-2.2,1.6,-.22,-2.1,1.72,-.05,metal);box(-2.35,1.56,-.4,-1.95,1.63,-.06,metal);box(-2.3,1.1,-.38,-2.0,1.56,-.08,mat('glass',2));box(-2.25,1.02,-.36,-2.05,1.1,-.1,metal);
+  box(-2.2,1.44,-.2,-2.1,1.56,-.05,metal);box(-2.33,1.4,-.36,-1.97,1.46,-.06,metal);box(-2.28,1.0,-.34,-2.02,1.4,-.08,mat('glass',2));box(-2.24,.92,-.32,-2.06,1.0,-.1,metal);
   // Back wall with the window: frame, sill and two mullions, no glass; the street shows through it.
   box(-4.5,0,6.95,-1.5,3.2,7.05,brick);box(1.5,0,6.95,4.5,3.2,7.05,brick);box(-1.5,0,6.95,1.5,.9,7.05,brick);box(-1.5,3,6.95,1.5,3.2,7.05,brick);
   box(-1.62,.8,6.88,1.62,.92,7.12,metal);box(-1.62,2.98,6.88,1.62,3.1,7.12,metal);box(-1.62,.9,6.9,-1.5,3,7.1,metal);box(1.5,.9,6.9,1.62,3,7.1,metal);
@@ -60,7 +60,7 @@ registerSet('loft',{
    return state.event<4?a:reduce?b:loftBlend(a,b,smooth(clamp((state.event-4)/3,0,1)));
   }
   if(p==='loftTable')return look(-2.9,1.7,.4,-1.2,1.1,5.2);
-  if(p==='loftNote')return look(-.75,1.4,2.05,-.2,.92,3);
+  if(p==='loftNote')return look(-.75,1.4,2.05,-.2,1.08,3);
   if(p==='loftBoard')return look(.9,1.7,3,3.5,1.9,7);
   const a=look(-.2,1.5,4.2,0,7.5,22),b=look(0,1.5,5.6,0,7.5,22);
   return reduce?b:loftBlend(a,b,smooth(clamp((state.event-1.5)/2.5,0,1)));
@@ -80,7 +80,7 @@ registerSet('loft',{
   quad([.66+s,1.74,3.4],[.74+s,1.74,3.4],[.74+r,2.02,3.42],[.66+r,2.02,3.42],mat('cable',6),[0,0,-1]);
  },
  labels(p){
-  if(p==='loftEntry')worldLabel([-2.15,2.05,-.2],'BELL',6);
+  if(p==='loftEntry')worldLabel([-2.15,1.9,-.2],'BELL',6);
   if(p==='loftBoard'){worldLabel([2.25,1.35,6.9],'FILAMENT',3);worldLabel([3.15,1.35,6.9],'BOARD VAN',4);worldLabel([4.05,1.35,6.9],'DIVISION',0);}
  },
  exit(){return [0,1.9,7.05];},

@@ -20,13 +20,13 @@ function tramPost(x,z,lit){
 function tramMarket(A){
  const g=TRAM_GROUND;
  box(-40,9,A-4,40,10.2,A+16,mat('metal'));
- for(const z of [A-3,A+11])for(const x of [-21,-5,5,27.5])box(x-.7,g,z,x+.7,9,z+2.4,mat('column'));
+ for(const z of [A-3,A+11])for(const x of [-24,-5,5,27.5])box(x-.7,g,z,x+.7,9,z+2.4,mat('column'));
  for(const x of [-14,-10,-6,-2,2,6,10,14]){box(x-.3,8.35,A-1.2,x+.3,8.8,A-.6,mat('lamp',2));lamps.push([x,A-.9]);}
- floor(-10,A-4,-4.2,A+18,g+.02,'paving',0);
- for(let i=0;i<5;i++){const z=A-1+i*3.4,x0=-9.4+(i%2)*.8;box(x0,g,z,x0+2.4,g+2.2,z+2.4,{...mat('kiosk',1),baseY:g});box(x0-.2,g+2.3,z-.1,x0+3.4,g+2.55,z+2.5,mat('awning',i%2?2:3));}
- quad([-6.83,g+3.4,A-2],[-6.77,g+3.4,A-2],[-6.77,g+3.43,A+16],[-6.83,g+3.43,A+16],mat('cable'),[0,-1,0]);
- for(let z=A;z<A+16;z+=4){box(-7,g+2.9,z-.2,-6.6,g+3.4,z+.2,mat('lamp',2));lamps.push([-6.8,z]);}
- box(-11,g+5,A+44,-5,g+6,A+44.4,mat('neon',3));
+ floor(-14,A-4,-7,A+18,g+.02,'paving',0);
+ for(let i=0;i<5;i++){const z=A-1+i*3.4,x0=-13.2+(i%2)*.6;box(x0,g,z,x0+2.4,g+2.2,z+2.4,{...mat('kiosk',1),baseY:g});box(x0-.2,g+2.3,z-.1,x0+3.4,g+2.55,z+2.5,mat('awning',i%2?2:3));}
+ quad([-9.43,g+3.4,A-2],[-9.37,g+3.4,A-2],[-9.37,g+3.43,A+16],[-9.43,g+3.43,A+16],mat('cable'),[0,-1,0]);
+ for(let z=A;z<A+16;z+=4){box(-9.6,g+2.9,z-.2,-9.2,g+3.4,z+.2,mat('lamp',2));lamps.push([-9.4,z]);}
+ box(-14,g+5,A+44,-8,g+6,A+44.4,mat('neon',3));
  const from=surfaces.length;for(let i=0;i<6;i++){const z=A+16+i*20;building(-30,z,7,15,32+hash(i,1)*16,i%2?4:1,i*11+5);building(33,z+8,6,15,34+hash(i,2)*14,i%2?1:4,i*13+9);}tramSunk(from);
 }
 const tramMix=(a,b,u)=>({x:mix(a.x,b.x,u),y:mix(a.y,b.y,u),z:mix(a.z,b.z,u),yaw:mix(a.yaw,b.yaw,u),pitch:mix(a.pitch,b.pitch,u)});
@@ -50,8 +50,9 @@ registerSet('tram',{
   box(2.9,5.4,18.2,5.3,5.6,21.2,mat('grate'));box(2.9,8.4,18.2,5.3,8.6,21.2,mat('metal'));
   for(const x of [2.95,5.25])for(const z of [18.25,21.15])box(x-.05,5.4,z-.05,x+.05,8.4,z+.05,mat('metal'));
   for(const z of [18.1,21.3])box(5.45,5.4,z-.06,5.57,30,z+.06,mat('metal'));
-  // The dark district: windowless tenements with one lit window in ten, and the far rows fogged behind them.
-  for(let z=-40,i=0;z<z1;z+=20,i++)for(const x of [-18,18]){const h=10+hash(i,x)*6;box(x,g,z,x+8,g+h,z+12,mat('brick',0));if(hash(i,x,5)>.9){const f=x<0?x+8:x;box(f-.06,g+h-4,z+5,f+.06,g+h-3,z+5.9,mat('lamp',2));}}
+  // The dark district: windowless tenements with one lit window in ten (set back on the left, where the market will
+  // stand under the arch), and the far rows fogged behind them.
+  for(let z=-40,i=0;z<z1;z+=20,i++)for(const x of [-22,18]){const h=10+hash(i,x)*6;box(x,g,z,x+8,g+h,z+12,mat('brick',0));if(hash(i,x,5)>.9){const f=x<0?x+8:x;box(f-.06,g+h-4,z+5,f+.06,g+h-3,z+5.9,mat('lamp',2));}}
   const far=surfaces.length;cityRow(-40,z1,20,-44,10);cityRow(-40,z1,20,40,12);tramSunk(far);
  },
  // High and behind, dropping: the lift's descent continued.
@@ -61,13 +62,13 @@ registerSet('tram',{
   if(p==='tramRide'||p==='tramWatch')return back;
   // Hold on the road for two seconds, then turn forward as the district comes up.
   if(p==='tramSpotted')return tramMix(back,look(.6,4.3,d-4,1.35,2,d+70),smooth(clamp((state.event-2)/4,0,1)));
-  if(p==='tramArrive')return look(1,4.2,d-3,-6,-2,d+22);
+  if(p==='tramArrive')return look(.3,5,d-3,-8,-1.5,d+21);
   return look(.6,4.3,d-4,1.35,3.6,d+40);
  },
  ease(p){return {tramEntry:5,tramRide:5,tramSpotted:.01,tramArrive:5}[p]||1.1;},
  blocking(p){
   const d=state.distance;
-  if(p==='tramArrive'){const u=span(1.5);return{rook:{x:mix(1.5,1.35,u),y:3.55,z:d+mix(.4,1.4,u),pose:'reach'},courier:null,others:[]};}
+  if(p==='tramArrive'){const u=span(1.5);return{rook:{x:mix(1.5,.55,u),y:3.55,z:d+mix(.4,1.5,u),pose:'reach'},courier:null,others:[]};}
   return{rook:{x:1.5,y:3.55,z:d+.4,pose:p==='tramSpotted'?'watch':'crouch'},courier:null,others:[]};
  },
  geometry(p){
@@ -89,7 +90,7 @@ registerSet('tram',{
  },
  labels(p){
   if(p==='tramSpotted'&&state.tail)worldLabel([11,1.15,state.distance-14],'PLATE 41',0);
-  if(p==='tramArrive')worldLabel([0,8.3,tramArch()-4.3],'MARKET ARCH',2);
+  if(p==='tramArrive')worldLabel([-5,8.3,tramArch()-4.3],'MARKET ARCH',2);
  },
  exit(){return [1.35,3.6,camera.z+12];},
  preview(){Object.assign(state,{pursuit:'chasing',distance:20,phaseDistance:20});return 'tramEntry';}
