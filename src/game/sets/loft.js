@@ -13,11 +13,11 @@ registerSet('loft',{
   floor(-4.5,0,4.5,7,0,'plank',2);wall(-4.5,7,-4.5,0,3.2,'brick',2);wall(4.5,0,4.5,7,3.2,'brick',2);
   quad([-4.5,3.2,0],[4.5,3.2,0],[4.5,3.2,7],[-4.5,3.2,7],mat('ceiling'),[0,-1,0]);box(-4.5,3.0,3.4,4.5,3.2,3.6,metal);
   box(-4.5,0,-.05,-3.6,3.2,.05,brick);box(-2.4,0,-.05,4.5,3.2,.05,brick);box(-3.6,2.9,-.05,-2.4,3.2,.05,brick);
-  box(-3.62,0,.05,-3.54,2.9,1.25,mat('door',2));
+  box(-3.62,0,.05,-3.54,2.9,1.25,wood);
   // Outside the door: the grate landing and the top of the iron stair going down to the street.
   box(-4.5,-.1,-1.4,-2,0,0,mat('grate'));for(let i=0;i<6;i++)box(-4.4,-.7*(i+1),-1.4-.45*(i+1),-3,-.7*(i+1)+.08,-1.4-.45*i,metal);
-  // The spare lantern on its hook beside the door, unlit.
-  box(-2.05,1.9,.05,-1.95,2.02,.22,metal);box(-2.2,1.86,.06,-1.8,1.93,.4,metal);box(-2.15,1.38,.08,-1.85,1.86,.38,mat('glass',2));box(-2.1,1.3,.1,-1.9,1.38,.36,metal);
+  // The spare lantern on its hook beside the door, on the landing side, unlit: the first thing the camera sees.
+  box(-2.2,1.6,-.22,-2.1,1.72,-.05,metal);box(-2.35,1.56,-.4,-1.95,1.63,-.06,metal);box(-2.3,1.1,-.38,-2.0,1.56,-.08,mat('glass',2));box(-2.25,1.02,-.36,-2.05,1.1,-.1,metal);
   // Back wall with the window: frame, sill and two mullions, no glass; the street shows through it.
   box(-4.5,0,6.95,-1.5,3.2,7.05,brick);box(1.5,0,6.95,4.5,3.2,7.05,brick);box(-1.5,0,6.95,1.5,.9,7.05,brick);box(-1.5,3,6.95,1.5,3.2,7.05,brick);
   box(-1.62,.8,6.88,1.62,.92,7.12,metal);box(-1.62,2.98,6.88,1.62,3.1,7.12,metal);box(-1.62,.9,6.9,-1.5,3,7.1,metal);box(1.5,.9,6.9,1.62,3,7.1,metal);
@@ -26,10 +26,12 @@ registerSet('loft',{
   box(-4.4,1.2,6.93,-1.8,2.8,6.96,{kind:'map',hue:6,seed:3,cross:[-3.6,-2.3,1.7,2.3]});box(-2.3,2.2,6.9,-1.9,2.45,6.94,paper);
   // The photographs right of the window: the club's neon, the Board van, the man in the division coat.
   for(const [x0,x1] of [[1.9,2.6],[2.8,3.5],[3.7,4.4]])box(x0,1.7,6.92,x1,2.2,6.95,paper);
-  box(2.1,1.97,6.9,2.4,2.03,6.92,mat('neon',3));box(2.95,1.8,6.9,3.35,1.95,6.92,mat('car',4));box(3.96,1.76,6.9,4.14,2.1,6.92,metal);box(3.92,2.1,6.9,4.18,2.15,6.92,metal);
+  box(2.1,1.97,6.9,2.4,2.03,6.92,mat('neon',3));box(2.95,1.8,6.9,3.35,1.95,6.92,mat('car',4));box(3.96,1.76,6.9,4.14,2.08,6.92,mat('rubber'));box(3.92,2.08,6.9,4.18,2.14,6.92,mat('rubber'));
   // The table under the lamp: plank top on iron legs, the note under the lamp key, the kettle on its ring, a tin mug.
   box(-1.2,.82,2.4,1.2,.9,3.8,wood);for(const [x,z] of [[-1.1,2.5],[1.1,2.5],[-1.1,3.7],[1.1,3.7]])box(x-.05,0,z-.05,x+.05,.82,z+.05,metal);
-  box(-.35,.9,2.88,-.05,.92,3.13,paper);box(-.26,.92,2.97,-.14,.96,3.03,metal);
+  box(-.37,.9,2.87,-.03,.92,3.13,paper);box(-.26,.92,2.97,-.14,.96,3.03,metal);
+  // Bell's stool, pushed back from the table's near corner.
+  box(-1.9,.42,1.9,-1.5,.47,2.3,wood);for(const [x,z] of [[-1.85,1.95],[-1.55,1.95],[-1.85,2.25],[-1.55,2.25]])box(x-.03,0,z-.03,x+.03,.42,z+.03,metal);
   box(.47,.9,3.17,.93,.93,3.63,metal);box(.525,.93,3.225,.875,1.28,3.575,metal);box(.875,1.1,3.36,1.02,1.16,3.44,metal);box(.62,1.28,3.38,.78,1.34,3.42,metal);
   box(-.95,.9,3.35,-.75,1.08,3.55,metal);
   pendant(0,3.1,2.4);
