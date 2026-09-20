@@ -67,11 +67,11 @@ function chaseFreight(){
  if(p==='chaseBank'){const rel=state.firstMove==='dodge'?9-.45*(d-pd):9+.35*(d-pd);return rel>-30&&rel<70?{x:-2.2,z:d+rel}:null;}
  return null;
 }
-// Substation Nine across the basin: a long lit building at water level with a cyan strip along its eave.
-function substationBuilding(x,z){
- const i0=surfaces.length;building(x,z,40,14,9,1,2);
- for(let i=i0;i<surfaces.length;i++){for(const v of surfaces[i].v)v[1]-=15;surfaces[i].mat={...surfaces[i].mat,baseY:-15};}
- box(x,-6.1,z-.1,x+40,-5.9,z+.1,mat('neon',1));
+// Substation Nine across the basin: a long lit building on the far shore (base is the shore's height) with a cyan strip along its eave.
+function substationBuilding(x,z,base){
+ const i0=surfaces.length;building(x,z,40,14,12,1,2);
+ if(base)for(let i=i0;i<surfaces.length;i++){for(const v of surfaces[i].v)v[1]+=base;surfaces[i].mat={...surfaces[i].mat,baseY:base};}
+ box(x,base+11.9,z-.1,x+40,base+12.1,z+.1,mat('neon',1));
 }
 function canalSet(){
  floor(-45,-20,-4,130,-1.6,'water',1);floor(-4,-20,25,110,0,'paving');box(-4.3,-1.8,-20,-3.9,.45,110,mat('brick'));
@@ -138,12 +138,19 @@ let clubWallIdx=0;
 function tunnelSet(){
  // The Undercity: a storm drain running under the elevated road, lit by emergency neon.
  floor(-6,-60,6,1000,0,'drain');floor(-7.5,-60,-6,1000,-.35,'water',1);floor(6,-60,7.5,1000,-.35,'water',1);
- wall(-7.5,1000,-7.5,-60,7,'sewer',5);wall(7.5,-60,7.5,1000,7,'sewer',5);
+ wall(-7.5,1000,-7.5,-60,7,'sewer',5);tunnelIdx.wall=surfaces.length;wall(7.5,-60,7.5,1000,7,'sewer',5);
  quad([-7.5,7,-60],[7.5,7,-60],[7.5,7,1000],[-7.5,7,1000],mat('sewer',5),[0,-1,0]);
- for(const x of [-7.3,7.3])box(x-.2,5.2,-60,x+.2,5.6,1000,mat('pipe',2));
+ // Two pipe runs on each wall: the old one at head height and an amber conduit under the ceiling.
+ for(const x of [-7.3,7.3]){box(x-.2,5.2,-60,x+.2,5.6,1000,mat('pipe',2));box(x-.15,6.05,-60,x+.15,6.35,1000,mat('pipe',2));}
+ tunnelIdx.strips=[surfaces.length,0];
  for(let z=-40;z<1000;z+=20){box(-1.5,6.7,z,1.5,6.95,z+.6,mat('neon',1));box(-7.45,2.5,z+7,-7.25,3.2,z+8.5,mat('neon',3));box(7.25,2.5,z+13,7.45,3.2,z+14.5,mat('neon',1));}
+ tunnelIdx.strips[1]=surfaces.length;
  for(let z=-50;z<1000;z+=45)box(-7.5,0,z,-6,3,z+.4,mat('grate'));
+ // Service cage lights every forty units, amber pools alternating with the neon, and a brick arch every sixty.
+ for(let z=-40;z<1000;z+=40)for(const x of [-7.1,7.1]){box(x-.25,4.4,z-.3,x+.25,4.8,z+.3,mat('lamp',2));box(x-.08,4.8,z-.08,x+.08,5.2,z+.08,mat('metal'));lamps.push([x,z]);}
+ for(let z=-30;z<1000;z+=60){box(-7.5,6.2,z,7.5,7,z+.8,mat('brick'));for(const x of [-7.5,6.9])box(x,0,z,x+.6,6.2,z+.8,mat('brick'));}
 }
+const tunnelIdx={wall:0,strips:[0,0]};
 const builders={office:officeSet,station:stationSet,pump:pumpSet,roof:roofSet,club:clubSet,chase:chaseSet,tunnel:tunnelSet,canal:canalSet};
 function setScene(name){
  if(name===sceneName)return false;
@@ -165,7 +172,7 @@ function sceneFor(p){const d=phaseDef(p);if(d)return d.set;for(const name of ['o
 const moving=()=>sceneName==='chase'||sceneName==='tunnel'||!!sets[sceneName]?.moving;
 const look=(x,y,z,tx,ty,tz)=>({x,y,z,yaw:Math.atan2(tx-x,tz-z),pitch:Math.atan2(ty-y,Math.hypot(tx-x,tz-z))});
 // A shot part-way between two others: the second half of a beat that pans or tilts after its first move has settled.
-function blendShot(a,b,t){const o={};for(const k of Object.keys(a))o[k]=mix(a[k],b[k],t);return o;}
+function blendShot(a,b,t){const o={};let ay=a.yaw;if(b.yaw-ay>Math.PI)ay+=Math.PI*2;else if(ay-b.yaw>Math.PI)ay-=Math.PI*2;for(const k of Object.keys(a))o[k]=mix(k==='yaw'?ay:a[k],b[k],t);return o;}
 function caseShot(){
  const p=state.phase,set=sets[sceneName];
  if(set&&set.shot)return set.shot(p);
@@ -184,8 +191,8 @@ function caseShot(){
   if(p==='chaseFinish'&&state.pursuit!=='ramp'){
    // Caught: from the far span, three seconds on Vale's stopped car, then the pan across the water to the lit hall. Otherwise from the near deck toward it.
    const bz=(state.phaseDistance||d)+26;
-   if(state.pursuit==='jump'&&state.caught){const a=look(-3,5,bz+18,1.6,1,bz+38);return state.event<3||reduce?a:blendShot(a,look(-3,5,bz+18,44,-8,bz+39),smooth(clamp((state.event-3)/3,0,1)));}
-   return look(-.6,3.3,bz-12,20,-4,bz+50);
+   if(state.pursuit==='jump'&&state.caught){const a=look(4,5,bz+18,1.6,1,bz+38);return state.event<3||reduce?a:blendShot(a,look(4,5,bz+18,44,-8,bz+39),smooth(clamp((state.event-3)/3,0,1)));}
+   return look(4,3.3,bz-12,22,-4,bz+50);
   }
   return look(-.6,p==='chaseEntry'?5:3.3,d-11,.3,1.2,d+13);
  }
@@ -330,8 +337,8 @@ function caseGeometry(){
    floor(-7,gz+15,7,950,rise,'express');
    box(-7,-1,gz-1,7,0,gz,mat('brick'));box(-7,-1,gz+15,7,rise+.01,gz+16,mat('brick'));
    // Substation Nine across the basin, where the right-hand row opens.
-   substationBuilding(24,gz+32);
-   for(let i=chaseRowIdx[0];i<chaseRowIdx[1];i++){const s=cache[i],z=s.v[0][2];surfaces[i]=z>gz+16&&z<gz+84?HIDDEN:s;}
+   substationBuilding(24,gz+32,-15);
+   for(let i=chaseRowIdx[0];i<chaseRowIdx[1];i++){const s=cache[i],z=s.v[0][2];surfaces[i]=z>gz-14&&z<gz+84?HIDDEN:s;}
   }else{surfaces[0]=cache[0];for(let i=chaseRowIdx[0];i<chaseRowIdx[1];i++)surfaces[i]=cache[i];}
  }
  if(sceneName==='tunnel'){
@@ -339,11 +346,22 @@ function caseGeometry(){
   const rookX=p==='tunnelFinish'?mix(-1.8,state.tunnel==='left'?-3.6:state.caught?1:-1.8,u):-1.8;
   car(rookX,d,1,0);box(rookX-.45,2.07,d-.2,rookX+.45,2.15,d+.2,mat('lamp',2));
   car(vale.x,vale.z,3,0);
+  const cache=sceneCache.tunnel;lamps.length=cache.lamps.length;
   if(['tunnelQte','tunnelFinish'].includes(p)){
    // The drain forks around a brick pier; a service gate closes the left branch when the shortcut fails.
    box(-1,0,fork,1,7,fork+30,mat('brick'));box(-2.6,5.4,fork-.4,2.6,6.4,fork,mat('highway-sign',1));
    if(p==='tunnelFinish'&&state.tunnel==='left'&&!state.caught)box(-7.5,0,fork+24,-1,6.8,fork+24.6,mat('grate'));
+   // With the bridge operator's tip the maintenance channel shows a lit cage light in its mouth.
+   if(state.radio){box(-5.3,4.3,fork+5.7,-4.7,4.7,fork+6.3,mat('lamp',2));lamps.push([-5,fork+6]);}
   }
+  // The finish: the right wall opens onto the basin, with Substation Nine lit end to end on the far shore.
+  const wq=cache.surfaces[tunnelIdx.wall],a=d+6,b=d+40;
+  if(p==='tunnelFinish'){
+   surfaces[tunnelIdx.wall]={...wq,v:[[7.5,0,-60],[7.5,0,a],[7.5,7,a],[7.5,7,-60]]};quad([7.5,0,b],[7.5,0,1000],[7.5,7,1000],[7.5,7,b],mat('sewer',5),[-1,0,0]);
+   quad([7.5,-.35,a-2],[95,-.35,a-2],[95,-.35,b+70],[7.5,-.35,b+70],mat('water',1),[0,1,0]);box(7.5,-.6,a-.3,8,0,a,mat('brick'));box(7.5,-.6,b,8,0,b+.3,mat('brick'));
+   substationBuilding(30,d+40,0);
+   for(let i=tunnelIdx.strips[0];i<tunnelIdx.strips[1];i++){const s=cache.surfaces[i],z=s.v[0][2];surfaces[i]=s.v[0][0]>7&&z>a-2&&z<b?HIDDEN:s;}
+  }else{surfaces[tunnelIdx.wall]=wq;for(let i=tunnelIdx.strips[0];i<tunnelIdx.strips[1];i++)surfaces[i]=cache.surfaces[i];}
  }
  if(sceneName==='canal')state.dawn=state.phase==='canalEnd'?mix(.5,1,clamp(state.event/8,0,1)):.5*clamp(state.event/7,0,1);
  if(sceneName==='club'){
@@ -412,7 +430,7 @@ function caseLabels(){
   if(v)worldLabel([v.x,v.y+3.3,v.z],'VALE',3);
   if(f&&(p==='chaseQteA'||p==='chaseEntry'&&state.event>=4))worldLabel([f.x,3.0,f.z],'FREIGHT',2);
   if(p==='chaseQteB')worldLabel([0,6.4,state.distance+29],'BRIDGE UP',2);
-  if(['chaseQteB','chaseFinish'].includes(p))worldLabel([44,-5.2,(p==='chaseFinish'?(state.phaseDistance||state.distance)+26:state.distance+29)+31.5],'SUBSTATION 9',1);
+  if(['chaseQteB','chaseFinish'].includes(p))worldLabel([44,-2.2,(p==='chaseFinish'?(state.phaseDistance||state.distance)+26:state.distance+29)+31.5],'SUBSTATION 9',1);
  }
  if(sceneName==='canal')worldLabel([9,3.5,24],'CITY MEDIC',2);
  if(sceneName==='office'){worldLabel([-7.4,4.5,7],'CASE BOARD',2);worldLabel([0,4.6,16.2],'NIGHT DIVISION',1);if(state.phase!=='officeEntry')worldLabel([-.4,1.55,8.3],'I. BELL',6);if(state.phase==='officeBoard'){worldLabel([-7.55,2.2,5],'I. BELL',6);worldLabel([-7.55,2.0,6.2],'A. VALE',3);worldLabel([-12.8,3.9,-10.6],'VALE',0);}}

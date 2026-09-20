@@ -140,7 +140,7 @@ registerSet('substation',{
   tipBox(RACK.x0,0,RACK.z0,RACK.x1,RACK.h,RACK.z1,cells(5),a);
   for(const dx of [0,2])for(const dz of [.3,5.7])tipBox(RACK.x0+dx-.18,0,RACK.z0+dz-.25,RACK.x0+dx+.18,.3,RACK.z0+dz+.25,mat('rubber'),a);
   // Bus bars from the breaker post to the right wall and along it; the wall strips go red when the hall goes dark.
-  box(1.15,2.2,35.55,1.25,6,35.65,mat('cable'));box(1.1,5.85,35.45,14.9,6.1,35.75,dark?mat('metal'):mat('pipe',2));box(14.6,5.85,-10,14.9,6.1,50,dark?mat('metal'):mat('pipe',2));
+  box(1.15,2.2,35.55,1.25,5,35.65,mat('cable'));box(1.1,4.85,35.45,14.9,5.1,35.75,dark?mat('metal'):mat('pipe',2));box(14.6,4.85,-10,14.9,5.1,50,dark?mat('metal'):mat('pipe',2));
   if(dark){
    for(const x of [-15,15])box(x-.08,10.9,-10,x+.08,11.3,50,mat('neon',3));
    for(const x of [-1.9,2.4])box(x-.04,.02,-1,x+.04,.2,49,mat('neon',3));
@@ -153,7 +153,7 @@ registerSet('substation',{
   if(burnt&&flat){const s=1-clamp((state.event-.6)/3.5,0,1)*.85;box(-.45-.2*s,2,37.1-.2*s,-.45+.2*s,2+.4*s,37.1+.2*s,mat('tail',3));}
   if(held&&Math.min(1,span(4)*3)>=1)box(.55,1.15,35.95,.58,1.6,36.3,mat('paper',6));
   // Arcs where the cells split: on the fallen rack and across the wet floor at its near end.
-  if(burnt&&flat){box(-2.2,1.9,37,-1.4,2.3,38.2,mat('arc',6));box(-2.2,1.9,40,-1.4,2.3,41.1,mat('arc',6));box(.9,1.9,36.3,2.1,2.3,36.8,mat('arc',6));box(-1.9,.02,35.4,-1.1,.3,35.9,mat('arc',6));}
+  if(burnt&&flat){box(-2.1,1.9,37.1,-1.5,2.25,37.9,mat('arc',6));box(-2.1,1.9,40.1,-1.5,2.25,40.9,mat('arc',6));box(1.1,1.9,36.35,1.9,2.25,36.75,mat('arc',6));box(-1.8,.02,35.5,-1.2,.25,35.85,mat('arc',6));}
   // The van on the dock, backed up to the door; it pulls away after the breaker or the miss and is gone by the dawn.
   const leaving=state.hall!=='dive'&&state.hall!=='';
   if(!(p==='subDawn'&&leaving))car(0,p==='subResult'&&leaving?mix(56,63,span(5)):56,4,-1.2,true,{freight:true});
