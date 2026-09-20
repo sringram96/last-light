@@ -55,9 +55,9 @@ registerSet('market',{
   for(let z=0;z<=40;z+=4){const c=y(z)+3.6;quad([-9,c,z],[9,c,z],[9,c+.03,z+.03],[-9,c+.03,z+.03],mat('cable'),[0,-1,0]);
    if(z%8===0)for(const x of [-2.9,2.9]){box(x-.17,c-.5,z-.17,x+.17,c,z+.17,mat('console',2));box(x-.15,c-.65,z-.15,x+.15,c-.5,z+.15,mat('lamp',2));lamps.push([x,z]);}}
   // The gap under [1]: the one gap on the left with a lamp over it, hung from a bar between the two stall roofs.
-  {const g=y(9.2);box(-5.4,g+3.65,8.3,-5.2,g+3.75,10.1,mat('metal'));box(-5.5,g+3.2,9,-5.1,g+3.65,9.4,mat('console',2));box(-5.52,g+2.95,8.98,-5.08,g+3.2,9.42,mat('lamp',2));lamps.push([-5.3,9.2]);}
+  {const g=y(9.2);box(-5.4,g+4,8.3,-5.2,g+4.1,10.1,mat('metal'));box(-5.5,g+3.55,9,-5.1,g+4,9.4,mat('console',2));box(-5.52,g+3.3,8.98,-5.08,g+3.55,9.42,mat('lamp',2));lamps.push([-5.3,9.2]);}
   // The awning rope under [2]: from a cleat at the aisle's edge up to the front edge of the right awnings' ledge.
-  {const r=y(9.1)+.9;quad([3.85,r,9.1],[5.6,3.3,9.9],[5.82,3.3,9.98],[4.07,r,9.18],mat('metal'),[0,0,-1]);quad([4.07,r,9.18],[5.82,3.3,9.98],[5.6,3.3,9.9],[3.85,r,9.1],mat('metal'),[0,0,1]);box(3.72,r-.25,8.98,4.0,r+.02,9.26,mat('metal'));box(5.5,3.28,9.78,5.72,3.7,10.0,mat('metal'));}
+  {const r=y(9.1)+.9;quad([3.85,r,9.1],[5.6,3.3,9.9],[5.86,3.3,9.98],[4.11,r,9.18],mat('pipe',2),[0,0,-1]);quad([4.11,r,9.18],[5.86,3.3,9.98],[5.6,3.3,9.9],[3.85,r,9.1],mat('pipe',2),[0,0,1]);box(3.72,r-.25,8.98,4.0,r+.02,9.26,mat('metal'));box(5.5,3.28,9.78,5.72,3.7,10.0,mat('metal'));}
   // Marta's cart: a wood bed on rubber wheels, eight cells in a rack, a paper plate (QUILL is the label above it).
   {const b=y(12);for(const dx of [-.45,.45])for(const dz of [-.65,.65])box(-3.6+dx-.1,b,12+dz-.2,-3.6+dx+.1,b+.4,12+dz+.2,mat('rubber'));
    box(-4.2,b+.35,11.1,-3,b+.9,12.9,mat('wood',2));for(let i=0;i<4;i++)for(let j=0;j<2;j++)box(-4.1+i*.28,b+.9,11.3+j*.8,-3.88+i*.28,b+1.42,11.9+j*.8,mat('console',2));
@@ -85,7 +85,7 @@ registerSet('market',{
   if(p==='marketAisle')return look(-1.4,y(15.5)+1.9,15.5,-1,1.9,2);
   if(p==='marketKeeper')return look(-.6,y(11)+1.9,11,-3.6,y(13.4)+1.4,13.4);
   if(p==='marketDanger')return look(1.6,y(21)+1.7,21,0,y(30)+1.3,30);
-  if(p==='marketResult'&&m==='cut'){const s=reduce?1:smooth(clamp((t-1.2)/2.8,0,1)),cz=mix(6,28,s),hold=look(.6,y(4)+2.4,4,4.2,y(9.5)+2,9.5);return marketBlend(hold,look(-.6,y(cz)+3.8,cz,6.4,y(cz+12)+3,cz+12),reduce?1:smooth(clamp((t-.9)/.8,0,1)));}
+  if(p==='marketResult'&&m==='cut'){const s=reduce?1:smooth(clamp((t-1.2)/2.8,0,1)),cz=mix(6,28,s),hold=look(.6,y(4)+2.4,4,4.2,y(9.5)+2,9.5);return marketBlend(hold,look(-1.4,y(cz)+3.8,cz,6.4,y(cz+12)+3,cz+12),reduce?1:smooth(clamp((t-.9)/.8,0,1)));}
   if(p==='marketResult'&&m==='slip'){const s=reduce?1:smooth(clamp((t-.9)/2,0,1));return marketBlend(qte,look(.4,y(0)+2.8,0,-5.2,.8,-4.6),s);}
   if(p==='marketResult'){const s=reduce?0:smooth(clamp((t-4)/2,0,1));return marketBlend(qte,look(-.4,y(3)+2.2,3,0,y(46)+4.5,46),s);}
   return qte;
@@ -130,12 +130,14 @@ registerSet('market',{
    for(const dx of [-.8,.8])for(const dy of [.35,1.6])box(dx-.22,b+dy,5.95,dx+.22,b+dy+.44,6.2,mat('rubber'));
    for(let i=0;i<3;i++){const o=hash(i,2)*.3;box(-.9+i*.62,b+.5+o,6.6,-.35+i*.62,b+1.05+o,7.6,{kind:'console',hue:2,baseY:-1});}
    for(const [sx,sz,spark] of [[-1.7,3.1,1],[-.5,4.4,1],[.8,3.4,1],[1.3,5.1,0],[-1.1,5.4,0],[.2,2.4,1]]){const g=y(sz);box(sx,g,sz,sx+.5,g+.4,sz+.9,{kind:'console',hue:2,baseY:-1});if(spark)box(sx+.15,g+.4,sz+.35,sx+.33,g+.68,sz+.53,mat('arc',6));}
-  }else marketCart(cx,cz,y(cz),!burst);
+  }else if(!burst)marketCart(cx,cz,y(cz));
   if(burst){
+   box(-5.5,0,-3.95,-3.5,2.3,-3.65,mat('metal'));box(-5.55,2.3,-4,-3.45,2.55,-3.6,mat('wood',2));
+   for(const wx of [-5.15,-3.85])for(const wy of [.3,1.7])box(wx-.22,wy,-3.65,wx+.22,wy+.44,-3.4,mat('rubber'));
    // Cells burst white against the left pier and arc on the ground for a moment.
-   for(let i=0;i<10;i++){const sx=-6.5+hash(i,1)*4,sz=-3.8+hash(i,2)*3.2;box(sx,-.02,sz,sx+.36,.28,sz+.36,mat('lamp',2));}
-   lamps.push([-4.8,-2.6]);
-   if(reduce||t<3.4)for(let i=0;i<5;i++){const sx=-6.6+hash(i,4)*3,sz=-4+hash(i,7)*2,sy=.1+hash(i,3)*.9;box(sx,sy,sz,sx+.28,sy+.4,sz+.28,mat('arc',6));}
+   for(let i=0;i<14;i++){const sx=-6.8+hash(i,1)*4.6,sz=-3.5+hash(i,2)*3;box(sx,-.02,sz,sx+.36,.28,sz+.36,mat('lamp',2));}
+   lamps.push([-4.6,-2.2]);
+   if(reduce||t<3.4)for(const [sx,sz,sy] of [[-6.2,-3.3,.2],[-5.3,-2.6,.9],[-4.4,-3.2,1.6],[-3.6,-2.2,.3],[-4.9,-1.4,.15],[-3.1,-3.1,.8]])box(sx,sy,sz,sx+.26,sy+.38,sz+.26,mat('arc',6));
   }
   if(state.tail)car(-8.3,-7.5,0,-.02,false,{dark:true});
  },
