@@ -25,7 +25,7 @@ function menuUI(){
   button('[START NEW CASE]',startNewCase);button('[KEEP CURRENT CASE]',()=>{session.confirmNew=false;ui();});return;
  }
  const saved=savedCase(),records=saveStore.readRecords();
- el.caption.textContent='A missing lamplighter. A city running on stolen power. Follow Detective Rook through the rain, react when the picture turns, and choose what the case becomes.'+(records.endings.length?' Endings on record: '+records.endings.length+' of 5.':' Five endings are waiting.');
+ el.caption.textContent='A missing lamplighter. A city running on stolen power. Follow Detective Rook through the rain, react when the picture turns, and choose what the case becomes.'+(records.endings.length?' Endings on record: '+records.endings.length+' of 6.':' Six endings are waiting.');
  if(session.mode==='story'&&state.phase!=='brief')button('[RESUME]',resumeSession);
  else if(saved)button('[CONTINUE CASE]',continueCase);
  button('[NEW CASE]',requestNewCase);

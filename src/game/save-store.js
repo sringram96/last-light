@@ -2,8 +2,10 @@
 function createSaveStore(storage, validPhases) {
  const SAVE='last-light/save/v1', SETTINGS='last-light/settings/v1', RECORDS='last-light/records/v1', LEGACY='the-last-light-case-v2';
  const phases=new Set(validPhases);
- const booleans=['watched','wrong','decoded','radio','twist','caught','endingSeen'];
- const enums={choice:['','person','book','missed'],rescue:['','valve','pull','late'],pursuit:['','chasing','stay','ramp','jump','late'],firstMove:['','dodge','brake','late'],club:['','duck','vault','late'],tunnel:['','right','left','late']};
+ const booleans=['watched','wrong','decoded','radio','twist','caught','endingSeen','note','loftSeen','misread','tail','keeper','slip'];
+ const enums={choice:['','person','book','missed'],rescue:['','valve','pull','late'],pursuit:['','chasing','stay','ramp','jump','late'],firstMove:['','dodge','brake','late'],club:['','duck','vault','late'],tunnel:['','right','left','late'],market:['','slip','cut','late'],hall:['','dive','breaker','late']};
+ const legacyPhases={ending:'arrival'};
+ const legacyEndings={'arrest-ledger':'board','arrest-word':'word'};
  const numbers={t:[0,86400],distance:[0,950],phaseDistance:[0,950],gap:[0,2],rewinds:[0,3]};
  let memory=null,settingsMemory=null,recordsMemory=null,durable=true;
  const copy=v=>v===null?null:JSON.parse(JSON.stringify(v));
@@ -11,6 +13,7 @@ function createSaveStore(storage, validPhases) {
  function put(key,value){try{if(!storage)throw new Error('Storage unavailable');storage.setItem(key,JSON.stringify(value));return true;}catch(e){durable=false;return false;}}
  function parse(value){try{return JSON.parse(value);}catch(e){return null;}}
  function clean(raw){
+  if(raw&&typeof raw==='object'&&legacyPhases[raw.phase])raw={...raw,phase:legacyPhases[raw.phase]};
   if(!raw||typeof raw!=='object'||!phases.has(raw.phase)||!Array.isArray(raw.clues)||raw.clues.length>100||raw.clues.some(s=>typeof s!=='string'||s.length>1000))return null;
   const result={phase:raw.phase,clues:[...new Set(raw.clues)],event:0,paused:false};
   for(const key of booleans){if(raw[key]!==undefined&&typeof raw[key]!=='boolean')return null;result[key]=raw[key]??false;}
@@ -44,7 +47,7 @@ function createSaveStore(storage, validPhases) {
  function readRecords(){
   if(!recordsMemory){
    const raw=parse(get(RECORDS));
-   const endings=raw?.version===1?ids(raw.endings):null,discoveries=raw?.version===1?ids(raw.discoveries):null;
+   const endings=raw?.version===1?ids((raw.endings||[]).map(id=>legacyEndings[id]||id)):null,discoveries=raw?.version===1?ids(raw.discoveries):null;
    recordsMemory=endings&&discoveries?{endings,discoveries,cases:Number.isInteger(raw.cases)&&raw.cases>=0?raw.cases:0}:{endings:[],discoveries:[],cases:0};
   }
   return copy(recordsMemory);

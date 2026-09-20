@@ -27,7 +27,7 @@ The three files in `reference/` record the approved street study, opening and co
 
 ## Characters
 
-Character sprites are text poses projected into the scene. Body glyphs fill their screen band when a character is close to the camera; facial details (eyes, mouth) are stamped once at the centre of their sprite cell, so a close-up never shows a second pair of eyes. Keep faces to the `o`, `.` and `>` glyphs so this rule keeps working.
+Character sprites are text poses projected into the scene, drawn from three sizes of sheet (`full`, `mid`, `small`) so that a far figure is hand-drawn art rather than a sampled fragment of the close-up art. The figure sits on whole cells and grows in whole-row steps while the camera glides; it never shimmers. Fill glyphs (`# = : - ~`) fill their band when a character is close to the camera; outlines (`/ \ | ( ) _`) are drawn once along their band; facial details (`o`, `.`, `>`) are stamped once, so a close-up never shows a second pair of eyes. Keep faces to those three glyphs, outlines and fills to those sets, and enclose the inside of a head with outline glyphs so the set does not show through it. The width of a figure stays 0.41 of its height in world terms at every distance. Walk cycles advance with distance travelled; a standing character never flickers.
 
 ## Transitions
 
@@ -35,4 +35,6 @@ A scene change is never a hard cut. The leaving set plays an exit beat of about 
 
 ## Sets
 
-Each set has its own camera language: the street tracks, the concourse cranes, the pump room stays low, the roof sweeps, the office pushes in slowly and then sits low over the desk, the club dollies past the bar and cranes over the booth, the elevated road and the undercity chase from behind, from the side and head-on. Interiors are lit by the same lamp pools as the street. Neon is the only surface allowed to flicker.
+Each set has its own camera language: the street tracks, the concourse cranes, the pump room stays low, the roof sweeps, the office pushes in slowly and then sits low over the desk, the club dollies past the bar and cranes over the booth, the elevated road and the undercity chase from behind, from the side and head-on. The loft sits at Bell's table height, the tram looks out of its own window and along the span, the market pushes through a narrow aisle, Substation Nine looks down from the gantry and then out across the basin as dawn comes up, and the interview room holds one low shot across the table. Interiors are lit by the same lamp pools as the street. Neon is the only surface allowed to flicker. Dawn is the only palette change: a single sky quad whose level rises with the checkpoint's `dawn` value.
+
+`docs/design/LOCATIONS.md` is the style sheet for new sets: palette meanings, the five density rules, the camera grammar per act, and every set's geometry, shots, blocking and exit. A new set is judged against it at 1024 and at 375 pixels wide before it joins the case.
