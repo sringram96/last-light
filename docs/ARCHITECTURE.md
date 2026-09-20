@@ -12,7 +12,11 @@ Characters are text sprite sheets (`src/game/sprites.js`, with the design team's
 
 `case.js` owns the case phases and branch decisions. `runtime.js` retains the approved opening and calls the case code for later locations. A phase starts with `enter()`, updates the visible choices, and records a checkpoint. Timed movement and quick-time prompts advance through the animation loop. Quiet choices wait for the player.
 
-Nine sets exist: office, street, station, pump room, roof, club, elevated road, undercity and canal. The office is a prologue cutscene that leads into the street. Pursuing Vale goes through the club before the road, and the lower ramp at the bridge leads into the undercity, whose fork decides the arrest. Each set is built once and cached; the road and the undercity move with the pursuit distance.
+Newer sets live in `src/game/sets/`, one file each, and register themselves through `registry.js`: `registerSet()` takes the set's chapter card, objective, geometry, camera shots, blocking, labels, exit point and preview, and `registerPhases()` takes its beats as data (kind, duration, caption, buttons, moves, clues, rewind entry and successor). `case.js`, `scenes.js`, `presentation.js` and `runtime.js` consult the registries first and fall back to the hand-written sets. The build concatenates the set files after `scenes.js` and before `case.js`.
+
+Fourteen sets exist: office, street, loft, station, pump room, roof, tram, market, club, elevated road, undercity, substation, interview room and canal. The office is a prologue cutscene that leads into the street. The street deduction can detour through Bell's loft. From the roof, pursuing Vale goes by the tram, the market and the club to the road; the lower ramp at the bridge leads into the undercity, whose fork decides whether Vale is caught. Both chases end at Substation Nine, then the interview room and the canal. Staying with Bell goes by the tram and the station straight to the interview room. Each set is built once and cached; the road, the undercity and the tram move with the pursuit distance.
+
+The derived helpers in `registry.js` (`ledgerHeld`, `manifestHeld`, `chipHeld`, `proofHeld`, `kranePinned`, `pursuing`) read only checkpoint fields, so a phase never stores a conclusion it can compute.
 
 ## Transitions and rewinds
 
@@ -30,9 +34,9 @@ Narration types in from a copy of the caption. The visible caption is hidden fro
 
 `session.js` distinguishes the main menu, story play and scene previews. Previews can run every location but never write the story checkpoint. Opening the menu freezes the phase and its deadline. Starting over requires a confirmation when a checkpoint exists.
 
-`save-store.js` validates known phase names, field types, numeric bounds and clue strings before loading. Saves use a versioned envelope under `last-light/save/v1`. Existing prototype saves from `the-last-light-case-v2` migrate. Settings are stored independently under `last-light/settings/v1` and survive new cases. Case records (endings reached, discoveries made, cases closed) live under `last-light/records/v1`; they are written only when a story session, never a preview, reaches the ending, and a new case does not clear them. Storage failures leave a session-only checkpoint and do not prevent play.
+`save-store.js` validates known phase names, field types, numeric bounds and clue strings before loading. Saves use a versioned envelope under `last-light/save/v1`. Existing prototype saves from `the-last-light-case-v2` migrate. Settings are stored independently under `last-light/settings/v1` and survive new cases. Case records (endings reached, discoveries made, cases closed) live under `last-light/records/v1`; they are written only when a story session, never a preview, reaches the canal ending, and a new case does not clear them. Storage failures leave a session-only checkpoint and do not prevent play.
 
-Endings, discoveries, the route and the reflex score are all derived from existing checkpoint fields, so the checkpoint schema did not change.
+Endings, discoveries, the route and the reflex score are all derived from checkpoint fields. Fields added for the longer case (`note`, `loftSeen`, `misread`, `tail`, `keeper`, `market`, `hall`, `slip`) are validated like the originals; a checkpoint saved at the removed `ending` phase resumes at `arrival`, and the record ids `arrest-ledger` and `arrest-word` read back as `board` and `word`.
 
 Checkpoints restart their current story beat. They do not promise frame-exact mid-animation restoration. Changes to save structure must include an explicit migration or graceful rejection.
 
@@ -42,4 +46,4 @@ The native Node test runner checks persistence, preview isolation, menu pause be
 
 ## Next separation
 
-Move dialogue and branch definitions into a case-data format while keeping camera choreography and physical blocking in code. Do this incrementally with the current case as the compatibility check. A new framework is not required to reach the next playable milestone.
+The newer sets already keep their beats as registry data and their camera and blocking in code. Move the original street, station, pump room, roof, club, road, undercity and canal beats into the same registry incrementally, with the current case as the compatibility check. A new framework is not required to reach the next playable milestone.

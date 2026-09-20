@@ -30,7 +30,7 @@ npm test         # Save-system, story-route and renderer regression checks
 - **GET READY** warns that a reaction is coming. During quick-time events, click an action, press **1** or **2**, or use the arrow keys (left/up for the first move, right/down for the second).
 - The header keeps a **REFLEX** tally of prompts answered in time. The closing report names the ending, the reflex score and a grade.
 - **Case File** shows the route taken, the persons of interest and the evidence gathered.
-- **Case Records** on the menu lists endings found (of five) and discoveries (of eleven). Records survive new cases.
+- **Case Records** on the menu lists endings found (of six) and discoveries (of twenty). Records survive new cases.
 - After a landed move, the status line shows your reaction time. After a missed one, choose **Rewind the Moment** (three per case) to replay the beat, or **Carry On** with the consequence.
 - The header shows the current objective and rewinds left.
 - Scene changes play an exit beat: the camera glides toward the way out while a connecting line types in, the picture dissolves, and the next set fades up already in motion. Reduced motion cuts directly.
@@ -42,24 +42,33 @@ Reduced-motion settings use stable shots, shortened travel, untimed prompts and 
 
 ## Current playable case
 
-0. **Night Division:** a skippable prologue cutscene in Rook's office: the desk, the case board, and the Bell file.
-1. **Station Road:** tail a courier and choose whom or what to save.
-2. **Concourse:** inspect a maintenance tape or follow the knocking immediately.
-3. **Pump Room 4:** rescue Bell; your response changes the evidence recovered.
-4. **Rooftop:** listen to radio traffic and optionally uncover Nell's confession.
-5. **The Filament:** a neon club where Vale's bodyguard throws a bottle. Duck, or vault the bar and pocket a chip that ties the batteries to Vale's tables.
-6. **Elevated Road:** the pursuit, with a lane change and a lifting bridge.
-7. **The Undercity:** taking the lower ramp drops into the storm drains, where a fork decides the arrest.
-8. **Canal:** an ending reflecting the evidence, witnesses and pursuit outcome.
+A missing lamplighter, a city running on stolen reserve power, and one night to find who signed for it. Fourteen sets, eight reaction prompts across the routes (seven on any one pursuit), three deductions, six endings and twenty discoveries. The full beat sheet is in [docs/design/BEATS.md](docs/design/BEATS.md); the cast is in [docs/design/CHARACTERS.md](docs/design/CHARACTERS.md).
 
-Missed action prompts continue the story. The prototype has a complete short case; it is the foundation for a larger game, not a store-ready release.
+0. **Night Division:** a skippable prologue in Rook's office: the desk, the case board with the Lumen Board memo, and the Bell file.
+1. **Station Road:** tail the courier, choose whom or what to save, then deduce where Bell is: the station, his loft over the depot, or the hotel.
+2. **Bell's Loft:** a detour over the depot where Bell's note and his own case board explain the order, at the cost of a wrong reading.
+3. **Concourse:** inspect the maintenance tape for order 7731 or follow the knocking immediately.
+4. **Pump Room 4:** rescue Bell; how you respond changes the evidence recovered.
+5. **Rooftop:** listen to the radio, hear Nell's confession, then pursue Vale or stay with Bell.
+6. **The Last Tram:** a quiet ride across the lift bridge that decides whether Vale's man is tailing you.
+7. **Night Market:** a slip through the stalls and a keeper who saw the red car, ending in a shove and a knife.
+8. **The Filament:** the neon club where Vale's bodyguard throws a bottle. Duck, or vault the bar for the chip that ties the batteries to Vale's tables.
+9. **Elevated Road:** the pursuit, with a lane change and a lifting bridge.
+10. **The Undercity:** the lower ramp drops into the storm drains, where a fork decides the arrest.
+11. **Substation Nine:** the loading dock where the Board's countersignature hangs on a rack, a breaker to throw, and dawn coming up across the basin.
+12. **Interview Room:** name who signed above Vale, with whoever the night left in the chair.
+13. **Canal:** an ending derived from the evidence, the witnesses, the pursuit and the name on the warrant.
+
+Missed action prompts continue the story with their own consequence, and three rewinds per case let the player replay a missed beat. Staying with Bell on the roof skips the pursuit and reaches the interview room by the tram and the station. The case is complete and replayable; it is the foundation for a larger game, not a store-ready release.
 
 ## Project layout
 
 | Path | Responsibility |
 | --- | --- |
 | `src/engine/` | Approved ASCII projection, rasterizer and materials |
-| `src/game/scenes.js` | Physical sets, characters, vehicles and camera direction |
+| `src/game/scenes.js` | The original sets, vehicles, transition lines and camera direction |
+| `src/game/registry.js` | Set and phase registries plus the derived story helpers |
+| `src/game/sets/` | One file per newer set: geometry, camera, blocking and its beats |
 | `src/game/case.js` | Case dialogue, choices and branching events |
 | `src/game/session.js` | Start menu, resume, settings and preview isolation |
 | `src/game/save-store.js` | Validated, versioned checkpoints, settings, case records and legacy migration |
@@ -70,6 +79,7 @@ Missed action prompts continue the story. The prototype has a complete short cas
 | `reference/` | Immutable approved visual references |
 | `tests/` | Focused game and persistence checks |
 | `docs/` | Art direction, architecture and development milestones |
+| `docs/design/` | The studio design pack: brief, beat sheet, cast bible, locations, sprite sheets and decisions |
 
 The dependency-free build currently assembles the existing game into one private runtime scope. This preserves the approved renderer while systems are separated incrementally. Generated `dist/` files are not source files.
 

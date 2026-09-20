@@ -55,7 +55,7 @@ Palette hues, as the renderer numbers them: 0 slate-blue, 1 cyan, 2 amber, 3 red
 - **Role.** Night Division, the office next door to Rook's. Runs the battery sales for the Board's people.
 - **Age and look.** Fifty. Tall, narrow and upright, a peaked Division cap, a long double-breasted greatcoat buttoned to the throat, gloves, and the badge worn high on the chest and polished. He looks like the Division's poster and he knows it.
 - **Wants.** The sales invisible until the Board moves him uptown. No paper with his name on it.
-- **Hides.** That he works for Coyle. That The Filament launders the lots as casino chips. That he locked Bell in and left the flood to finish the job.
+- **Hides.** That he works for Ashe. That The Filament launders the lots as casino chips. That he locked Bell in and left the flood to finish the job.
 - **Change.** Seeded in the prologue as a signature on the concourse order and an empty chair in the office; then the man in the back booth who sees Rook; then red tail lights; then hands up at the canal or gone into the towers. He never raises his voice.
 - **Hue.** 3 red (existing). The badge `*` is white (6).
 - **Appears in.** 00 Night Division (his empty desk, his stamp on the board); 05 The Filament; 06 Elevated Road and 07 The Undercity (his red car); 08 Canal (if caught); Substation Nine.
@@ -111,22 +111,22 @@ Palette hues, as the renderer numbers them: 0 slate-blue, 1 cyan, 2 amber, 3 red
 - **Role.** The stage performer at The Filament. A possible informant.
 - **Age and look.** Twenty-nine. A plume, hair up, a white sequined gown to the floor; she never steps off the stage while Vale is in the room.
 - **Wants.** Out of The Filament with her contract, which the club holds against her.
-- **Hides.** She can see the back booth from the stage every night: who sits, who pays, who leaves by the door marked NO EXIT. She has seen the grey woman with the umbrella there once. She will say so only to someone who stays for the second set.
+- **Hides.** She can see the back booth from the stage every night: who sits, who pays, who leaves by the door marked NO EXIT. She has seen the grey man with the umbrella there once. She will say so only to someone who stays for the second set.
 - **Change.** From set dressing to an informant, if Rook spends a quiet beat listening instead of moving on the booth. Her tip is the optional door to Substation Nine.
 - **Hue.** 6 white (the existing stage figure). The plume `^` is amber (2), lit by the spot.
 - **Appears in.** 05 The Filament; the Night Market, optionally, off stage and hooded.
 - **Lines.**
   - "I sing to the back booth. Everybody does."
-  - "The grey woman came once. Nobody at that table laughed after."
+  - "The grey man came once. Nobody at that table laughed after."
   - "Not the stage door. Stay for the second set. I will be looking at you."
 
-### Director Maren Coyle, Lumen Board
+### Commissioner Halden Ashe, Lumen Board
 
 - **Role.** Lumen Board, Director of Reserves and Allocation. The figure above Vale.
-- **Age and look.** Fifty-eight. Tall and thin under an umbrella that never closes, a grey pencil coat to the shin, the Board's lumen pin lit on her lapel. The only dry person in Halvard.
+- **Age and look.** Fifty-eight. Tall and thin under an umbrella that never closes, a grey pencil coat to the shin, the Board's lumen pin lit on his lapel. The only dry person in Halvard.
 - **Wants.** The low districts written off as unmetered loss in the quarterly, and the reserve lots sold before the audit.
-- **Hides.** That Vale's sales were her allocation policy: the batteries were never meant to come back to the station route. The Board did not lose the dark streets. It sold them.
-- **Change.** Seeded early (a Board memo on the office case board, a Board stamp on the concourse order, Delphine's "grey woman"), revealed at Substation Nine. She does not run and she is not arrested tonight. The ending says so, and that is the hook for the next case.
+- **Hides.** That Vale's sales were his allocation policy: the batteries were never meant to come back to the station route. The Board did not lose the dark streets. It sold them.
+- **Change.** Seeded early (a Board memo on the office case board, a Board stamp on the concourse order, Delphine's "grey man"), revealed at Substation Nine. He does not run and he is not arrested tonight. The ending says so, and that is the hook for the next case.
 - **Hue.** 7 grey. The lumen pin `&` is cyan (1).
 - **Appears in.** Substation Nine. In 05 The Filament only as Delphine's memory.
 - **Lines.**
@@ -177,7 +177,7 @@ One object per character, keyed `rook`, `nell`, `bell`, `vale`, `krane`, `medic`
 | Krane | 0 slate-blue | `!` | 1 cyan | the bottle, throw pose only |
 | Ines Okafor | 5 green | `+` | 6 white | the medic's cross (cap and chest) |
 | Delphine Arlo | 6 white | `^` | 2 amber | the plume |
-| Maren Coyle | 7 grey | `&` | 1 cyan | the lumen pin |
+| Halden Ashe | 7 grey | `&` | 1 cyan | the lumen pin |
 | Extras | 0 / 4 / 7 by placement | none | | |
 
 ### Silhouette cues at a glance
@@ -191,7 +191,7 @@ One object per character, keyed `rook`, `nell`, `bell`, `vale`, `krane`, `medic`
 | Krane | no hat, square boxed head, full-width shoulders, short jacket, wide stance | boxed head `\|o.o\|` over a full-width body |
 | Okafor | helmet-cap with `+`, boxy banded vest with sleeve bands, kit bag | `/+\` cap, `\|=+=\|` band |
 | Arlo | plume, fitted bodice, gown flaring to the floor, no legs | `^^^` and a flared hem |
-| Coyle | umbrella across the top three rows, narrow coat, shaft down the right side, pin | canopy `/===\`, shaft on the right, single leg line |
+| Ashe | umbrella across the top three rows, narrow coat, shaft down the right side, pin | canopy `/===\`, shaft on the right, single leg line |
 | Extra | bare head, plain coat, nothing carried | a head and a column |
 
 ### Which pose goes where
@@ -206,7 +206,7 @@ The existing blocking in `scenes.js` maps onto these sheets without new logic; t
 - **06 Elevated Road, 07 The Undercity.** Cars only.
 - **08 Canal.** Bell `stand`; Okafor `stand`; Nell `stand`; Vale `handsUp` if caught (replaces the hue-3 `stand` at `x: 6.2, z: 19.2`); Krane `stand` behind him.
 - **Night Market (planned).** Krane `walk` and `stand` half-hidden between stalls; Nell `walk`; crowd `extra` at all three sizes; Arlo `stand`, hooded, optional.
-- **Substation Nine (planned).** Coyle `stand` under the umbrella, `read` when she signs, `walk` to her car; Vale `stand` then `handsUp`; buyers `extra`; Krane `stand`.
+- **Substation Nine (planned).** Ashe `stand` under the umbrella, `read` when he signs, `walk` to his car; Vale `stand` then `handsUp`; buyers `extra`; Krane `stand`.
 
 ### Reading the sheets
 
@@ -1781,7 +1781,7 @@ const performer = {
 };
 ```
 
-### Director Maren Coyle, Lumen Board (`ashe`)
+### Commissioner Halden Ashe, Lumen Board (`ashe`)
 
 Sheet:
 
@@ -1823,7 +1823,7 @@ small walk 1  small walk 2
 Arrays:
 
 ```js
-const coyle = {
+const ashe = {
   hue: 7,
   level: 14,
   height: 2.15,
@@ -2152,14 +2152,14 @@ The sheets were built and checked with a Node script that loads every sprite, as
 1. **Rook's approved art is kept.** His `watch`, `walk`, `reach`, `read` and `crouch` rows are the ones the engine draws today, transcribed. `stand` (arms down along the coat) and `support` (arm over the other person's shoulder) are new variants of the same figure, and `stumble` is new. `watch` stays the pose of the first frame.
 2. **The bridge operator has no sprite.** She is voice only, as briefed. If a later set ever shows the bridge control box, she gets a cameo built from the extra with hue 1; nothing here depends on it.
 3. **Bell is ten rows and 1.95 units tall.** Everyone else is 11 rows at 2.05 to 2.15. His shortness is part of his silhouette, so `actor()` needs the height to come from the sprite table rather than the `isRook` branch.
-4. **Accent hues avoid clashes inside a set.** Vale's badge is white, not amber, because Arlo's amber plume shares the club with him and the club's neon is red. Coyle's pin is cyan, not amber, so it does not read as a lamp. Krane's bottle is cyan because glass is hue 1 in the material list, and it exists only in the throw pose so the accent never sits on him otherwise.
+4. **Accent hues avoid clashes inside a set.** Vale's badge is white, not amber, because Arlo's amber plume shares the club with him and the club's neon is red. Ashe's pin is cyan, not amber, so it does not read as a lamp. Krane's bottle is cyan because glass is hue 1 in the material list, and it exists only in the throw pose so the accent never sits on him otherwise.
 5. **Nell's pole is in her left hand (column 0) and the lantern in her right.** The pole gives her a full-height vertical that reads at every size and stays out of the way of her reaching arm. The physical lantern box the street set draws beside the courier (`p.x - .7 .. p.x - .43`) should move to her right side (`p.x + .43 .. p.x + .7`) or be dropped in favour of the sprite's `@`; if it stays, it stays as the light source that pools on the floor.
 6. **Nell's limp lives in the walk frames.** Her right leg never swings, so the `lean` parameter is free for the stumble and the watch beat ("keeps weight off one leg") is visible before the caption says it.
 7. **Arlo has no legs.** The gown hem sways between walk frames. She walks rarely and never in a prompt.
-8. **Coyle's umbrella is part of her sprite.** It takes the top three rows, so under a 2.15 height her body is drawn a little shorter than Vale's; that is acceptable because she is never in a prompt and always framed from a distance or a low angle. Her `stumble` and `crouch` keep the umbrella up; she does not drop it.
+8. **Ashe's umbrella is part of his sprite.** It takes the top three rows, so under a 2.15 height his body is drawn a little shorter than Vale's; that is acceptable because he is never in a prompt and always framed from a distance or a low angle. His `stumble` and `crouch` keep the umbrella up; he does not drop it.
 9. **The book prop keeps `[` `]`.** Rook's existing read pose already uses them; every `read` pose here does the same and no other pose may.
 10. **Reduced sizes cover `stand` and `walk` only.** Every other pose happens near the camera; the engine's sampling of the full sprite is adequate there, and hand-drawing 7 by 7 crouches would not be seen.
 11. **One extra sprite, no variants.** Crowd variety comes from hue, placement, seating offset and the two walk frames. If the Night Market needs more, the first variant to add is a hooded one built from Nell's hood without the pole.
-12. **Names invented here:** Ines Okafor (medic), Heddy Lasko (bridge operator), Delphine Arlo (singer), Maren Coyle (Lumen Board). Rook's first name is deliberately not given. Krane has no first name on the record.
+12. **Names invented here:** Ines Okafor (medic), Heddy Lasko (bridge operator), Delphine Arlo (singer), Halden Ashe (Lumen Board; the beat sheet's H. ASHE, reconciled in DECISIONS.md). Rook's first name is deliberately not given. Krane has no first name on the record.
 13. **Faces stay in the character's hue** for everyone but Rook, as today. If the team wants white faces for all named characters, it is a one-line change in `inkFor`, and no sprite here would need to change.
 14. **`sprites.json` matches the loader in progress.** Beyond the required shape (`full`, `mid`, `small`, `accent`) each entry carries `hue`, `level`, `faceHue` (Rook), `height` and `heights`, which is what `loadSprites()` in `src/game/sprites.js` reads, and the extras publish as `generic`, the name it falls back to. Two things for that loader when it takes these sheets: its fill-priority list (`spriteFill`) should include the accent glyphs `Y`, `!` and `^` so they survive a squeeze the way `@`, `+` and `&` already do; and its walk frames start on the opposite leg from these, which does not matter. Nothing in `src/` was modified by this document.
