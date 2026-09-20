@@ -43,7 +43,7 @@ registerSet('market',{
    const base=y(z+1.2),near=z===2,inner=side*(near?3.4:z===6&&side<0?5:4.1),outer=side*(near?5.8:6.5);
    const x0=Math.min(inner,outer),x1=Math.max(inner,outer),hue=((z/4)|0)%2?2:3;
    box(x0,base,z,x1,base+2.2,z+2.4,((z/4)|0)%2?{kind:'kiosk',hue:1,baseY:base+.85}:mat('wood',2));
-   const ax0=side<0?x0:inner-1.4,ax1=side<0?inner+1.4:x1,az1=side>0&&z>=10&&z<38?z+3.9:z+2.5;
+   const over=near?0:1.4,ax0=side<0?x0:inner-over,ax1=side<0?inner+over:x1,az1=side>0&&z>=10&&z<38?z+3.9:z+2.5;
    box(ax0,base+2.3,z-.1,ax1,base+2.55,az1,mat('awning',hue));
    if(((z/4)|0)%3===0)box(x0+.3,base+2.55,z+.6,x1-.3,base+3.1,z+1.8,mat('poster',2));
    if(z===14&&side<0)box(inner-.02,base+.8,z+.2,inner+.02,base+1,z+2.2,mat('neon',1));
@@ -85,7 +85,7 @@ registerSet('market',{
   if(p==='marketAisle')return look(-1.4,y(15.5)+1.9,15.5,-1,1.9,2);
   if(p==='marketKeeper')return look(-.6,y(11)+1.9,11,-3.6,y(13.4)+1.4,13.4);
   if(p==='marketDanger')return look(1.6,y(21)+1.7,21,0,y(30)+1.3,30);
-  if(p==='marketResult'&&m==='cut'){const s=reduce?1:smooth(clamp((t-1.2)/2.8,0,1)),cz=mix(6,28,s),hold=look(.6,y(4)+2.4,4,4.2,y(9.5)+2,9.5);return marketBlend(hold,look(-1.4,y(cz)+3.8,cz,6.4,y(cz+12)+3,cz+12),reduce?1:smooth(clamp((t-.9)/.8,0,1)));}
+  if(p==='marketResult'&&m==='cut'){const s=reduce?1:smooth(clamp((t-1.2)/2.8,0,1)),cz=mix(6,28,s),hold=look(1.4,y(3.5)+1.9,3.5,5.2,2.8,9.8);return marketBlend(hold,look(.2,y(cz)+3.8,cz,6.4,y(cz+12)+3,cz+12),reduce?1:smooth(clamp((t-.9)/.8,0,1)));}
   if(p==='marketResult'&&m==='slip'){const s=reduce?1:smooth(clamp((t-.9)/2,0,1));return marketBlend(qte,look(.4,y(0)+2.8,0,-5.2,.8,-4.6),s);}
   if(p==='marketResult'){const s=reduce?0:smooth(clamp((t-4)/2,0,1));return marketBlend(qte,look(-.4,y(3)+2.2,3,0,y(46)+4.5,46),s);}
   return qte;
@@ -132,7 +132,7 @@ registerSet('market',{
    for(const [sx,sz,spark] of [[-1.7,3.1,1],[-.5,4.4,1],[.8,3.4,1],[1.3,5.1,0],[-1.1,5.4,0],[.2,2.4,1]]){const g=y(sz);box(sx,g,sz,sx+.5,g+.4,sz+.9,{kind:'console',hue:2,baseY:-1});if(spark)box(sx+.15,g+.4,sz+.35,sx+.33,g+.68,sz+.53,mat('arc',6));}
   }else if(!burst)marketCart(cx,cz,y(cz));
   if(burst){
-   box(-5.5,0,-3.95,-3.5,2.3,-3.65,mat('metal'));box(-5.55,2.3,-4,-3.45,2.55,-3.6,mat('wood',2));
+   box(-5.5,0,-3.95,-3.5,2.3,-3.65,mat('wood',2));box(-5.55,2.3,-4,-3.45,2.55,-3.6,mat('metal'));
    for(const wx of [-5.15,-3.85])for(const wy of [.3,1.7])box(wx-.22,wy,-3.65,wx+.22,wy+.44,-3.4,mat('rubber'));
    // Cells burst white against the left pier and arc on the ground for a moment.
    for(let i=0;i<14;i++){const sx=-6.8+hash(i,1)*4.6,sz=-3.5+hash(i,2)*3;box(sx,-.02,sz,sx+.36,.28,sz+.36,mat('lamp',2));}

@@ -92,13 +92,17 @@ function substationBuilding(x,z,base){
 }
 function canalSet(){
  floor(-45,-20,-4,130,-1.6,'water',1);floor(-4,-20,25,110,0,'paving');box(-4.3,-1.8,-20,-3.9,.45,110,mat('brick'));
- for(let z=-6;z<100;z+=12){box(-3.4,0,z-.1,-3.2,4.7,z+.1,mat('metal'));box(-3.7,4.2,z-.3,-2.9,4.7,z+.3,mat('lamp',2));lamps.push([-3.3,z]);}
+ canalLampIdx.length=0;
+ for(let z=-6;z<100;z+=12){box(-3.4,0,z-.1,-3.2,4.7,z+.1,mat('metal'));canalLampIdx.push([surfaces.length,z]);box(-3.7,4.2,z-.3,-2.9,4.7,z+.3,mat('lamp',2));lamps.push([-3.3,z]);}
  cityRow(-10,125,15,14,12);cityRow(28,140,17,-39,17);
  box(-45,6,49,25,6.6,54,mat('brick'));for(const x of [-30,-15,0,15])box(x-1,-2,49,x+1,6,54,mat('brick'));
  for(const z of [17,38]){box(-12,-1.4,z,-7,-.2,z+8,mat('wood',2));box(-11.5,-.2,z+2,-7.5,1.6,z+6,mat('tram',1));}
- bench(3,18);box(7,0,24,11,2.8,30,mat('tram',6));
+ // A barge moored near the camera with a lit cabin lamp, and the medic's van drawn up close to the group.
+ box(-9.8,-1.4,6,-4.8,-.2,12,mat('wood',2));box(-9.2,-.2,7.5,-5.4,1.5,10.5,{kind:'tram',hue:1,baseY:-1.5});box(-7.6,1.5,8.7,-7,1.9,9.3,mat('lamp',2));lamps.push([-7.3,9]);
+ bench(3,18);box(5.4,0,20.5,9.4,2.8,26.5,mat('tram',6));
  quad([-70,0,58],[70,0,58],[70,40,58],[-70,40,58],mat('dawn',4),[0,0,-1]);
 }
+const canalLampIdx=[];
 function officeSet(){
  // Night Division: a small office, one lamp, a case board, and a window onto the city below.
  floor(-8,-6,8,16,0,'plank',2);wall(-8,16,-8,-6,5,'brick',2);wall(8,-6,8,16,5,'brick',2);
@@ -205,7 +209,10 @@ function caseShot(){
  if(sceneName==='pump')return ['pumpEntry','pumpFind'].includes(p)?look(-1.5,2.5,3,1.8,1.25,14):p==='pumpTruth'?look(.3,2.7,10.5,3,1.4,16.4):p==='pumpDanger'?(state.event<1?look(1.8,3.4,12,3,7,17):look(-2.4,2,9.6,-1.25,1.35,11.9)):look(-1.7,3.1,8,1.1,1,14);
  if(sceneName==='roof'){
   if(p==='roofEntry')return look(-7,4.1,4,1,1.2,15);
+  // The one fast move of Act 1: a crane over the north parapet to the road, the tram and the market far below.
+  if(p==='roofQuiet')return look(-2.4,3.4,20.5,-22,-12,52);
   if(['roofListen','roofSignal'].includes(p))return look(-3.2,2.8,10.3,.1,1.1,16.6);
+  if(p==='roofConfession')return look(-1.6,2,13.5,2,1.4,17.2);
   return look(-5.5,4.8,8,1.5,1.5,18);
  }
  if(sceneName==='chase'){
@@ -244,6 +251,8 @@ function caseShot(){
   }
   return look(-.5,2.4,d-10,0,1,d+14);
  }
+ // The canal ends on a ten-second crane back and up that stops: the near lamp post left, the bridge and the sky in the top half.
+ if(sceneName==='canal'&&p==='canalEnd')return look(-6,5.5,-2,2,1.2,20);
  return look(-1.2,3.1,5,3,1.5,15);
 }
 function sceneStart(name){
@@ -278,14 +287,17 @@ function caseBlocking(){
  if(sceneName==='roof'){
   const u=p==='roofEntry'&&!reduce?span(8):1;
   rook={x:mix(-6,-1.6,u),z:mix(5.5,15.8,u),pose:u<1?'walk':'watch'};
+  // The quiet beat: Rook walks to the north parapet to look west, and comes back to the radio for the listen.
+  if(p==='roofQuiet'){const q=reduce?1:span(4);rook={x:mix(-1.6,-1.5,q),z:mix(15.8,24.5,q),pose:q<1?'walk':'watch'};}
+  if(p==='roofListen'){const q=reduce?1:span(2.5);rook={x:mix(-1.5,-1.6,q),z:mix(24.5,15.8,q),pose:q<1?'walk':'watch'};}
   others.push({x:2.4,z:16.4,pose:p==='roofListen'?'radio':'stand',who:'medic'},{x:3.4,z:16.6,pose:'sit',who:'bell'});
   if(state.choice==='person')courier={x:1,z:18,pose:'stand',who:'nell'};
  }
  if(sceneName==='canal'){
-  rook={x:2,z:14,pose:'watch'};others.push({x:3.4,z:15.2,pose:'stand',who:'bell'},{x:7.6,z:22,pose:'stand',who:'medic'});
+  rook={x:2,z:14,pose:'watch'};others.push({x:3.4,z:15.2,pose:'stand',who:'bell'},{x:4.6,z:22,pose:'stand',who:'medic'});
   if(state.choice==='person')courier={x:4.8,z:16.5,pose:'stand',who:'nell'};
-  if(state.caught)others.push({x:6.2,z:19.2,pose:'handsUp',who:'vale'});
-  if(state.caught&&kranePinned())others.push({x:7.4,z:20.4,pose:'stand',who:'krane'});
+  if(state.caught)others.push({x:6.2,z:19,pose:'handsUp',who:'vale'});
+  if(state.caught&&kranePinned())others.push({x:7.6,z:19.6,pose:'stand',who:'krane'});
  }
  if(sceneName==='office'){
   // Seated at the desk: the sprite sinks below the floor plane and the desk hides the rest.
@@ -333,8 +345,15 @@ function caseGeometry(){
   surfaces[0]=drop>0?{...w0,v:w0.v.map(q=>[q[0],q[1]-drop,q[2]])}:w0;
  }
  if(sceneName==='roof'){
-  const d=reduce?4:state.t*3;
-  for(let i=0;i<4;i++)car(-27+fract(i*.27+d*.008)*65,43+i*8,i%2?3:1,3+i*2);
+  const d=reduce?4:state.t*3,p=state.phase,e=state.event;
+  for(let i=0;i<4;i++)car(-27+fract(i*.27+d*.008)*65,30+i*6,i%2?3:1,7+i*2);
+  lamps.length=sceneCache.roof.lamps.length;
+  // Below the parapet: Vale's red car heads west along the elevated road while the last tram crosses the viaduct beside it.
+  if(p==='roofQuiet')car(mix(4,-40,reduce?1:clamp(e/8,0,1)),53,3,-12);
+  const tx=p==='roofQuiet'?mix(12,-48,reduce?1:clamp(e/12,0,1)):12;
+  box(tx-3,-12.55,43,tx+3,-9.7,45.5,{kind:'tram',hue:1,baseY:-13});box(tx-3.1,-9.7,42.9,tx+3.1,-9.45,45.6,mat('metal'));
+  // Nell's lantern at her feet by the parapet.
+  if(['roofSignal','roofConfession'].includes(p)&&state.choice==='person'){box(1.5,.15,17.7,1.8,.5,18,mat('lamp',2));lamps.push([1.65,17.85]);}
  }
  if(sceneName==='chase'){
   const d=state.distance,p=state.phase,pd=state.phaseDistance||d,shift=p==='chaseBank'||p==='chaseQteB'||p==='chaseFinish'?state.firstMove==='dodge'?2.4:-2.2:-2.2;
@@ -401,7 +420,13 @@ function caseGeometry(){
    for(const [y0,y1,w] of [[5.2,5.6,.2],[6.05,6.35,.15]]){box(7.3-w,y0,-60,7.3+w,y1,a,mat('pipe',2));box(7.3-w,y0,b,7.3+w,y1,1000,mat('pipe',2));}
   }else{surfaces[tunnelIdx.wall]=wq;for(let i=tunnelIdx.strips[0];i<tunnelIdx.strips[1];i++)surfaces[i]=cache.surfaces[i];for(let i=tunnelIdx.pipes[0];i<tunnelIdx.pipes[1];i++)surfaces[i]=cache.surfaces[i];}
  }
- if(sceneName==='canal')state.dawn=state.phase==='canalEnd'?mix(.5,1,clamp(state.event/8,0,1)):.5*clamp(state.event/7,0,1);
+ if(sceneName==='canal'){
+  state.dawn=state.phase==='canalEnd'?mix(.5,1,clamp(state.event/10,0,1)):.5*clamp(state.event/7,0,1);
+  // Over the last six seconds of the crane the lamps go out one after another from far to near: each lamp box turns to metal and leaves the pool list.
+  const cache=sceneCache.canal,n=canalLampIdx.length;lamps.length=0;
+  canalLampIdx.forEach(([idx,z],k)=>{const out=state.phase==='canalEnd'&&state.event>4+(n-1-k)*6/n;for(let j=0;j<5;j++)surfaces[idx+j]=out?{...cache.surfaces[idx+j],mat:mat('metal')}:cache.surfaces[idx+j];if(!out)lamps.push([-3.3,z]);});
+  lamps.push([-7.3,9]);
+ }
  if(sceneName==='club'){
   // The bottle crosses the room during the prompt and bursts on the neon if it is not answered.
   const p=state.phase;
@@ -462,7 +487,7 @@ function caseLabels(){
  const set=sets[sceneName];if(set){if(set.labels)set.labels(state.phase);return;}
  if(sceneName==='station'){worldLabel([0,6.3,43.2],'PUMP ROOM 4',2);worldLabel([0,2.2,19.1],'MAINTENANCE',2);if(state.phase==='stationQuiet')worldLabel([.4,1.7,19.3],'ORDER 7731',6);}
  if(sceneName==='pump'){worldLabel([-2.1,1.6,12.2],'INLET',2);if(!['pumpResult','pumpTruth'].includes(state.phase))worldLabel([4.8,3.9,17.7],'BELL',2);if(state.phase==='pumpQte'){worldLabel([-1.25,2.15,11.8],'[1]',2);worldLabel([4.8,4.5,17.7],'[2]',2);}}
- if(sceneName==='roof')worldLabel([0,3.2,17],'NORTH / RADIO',2);
+ if(sceneName==='roof'){worldLabel([0,3.2,17],'RADIO',2);if(state.phase==='roofQuiet')worldLabel([-30,-6.9,58],'THE FILAMENT',3);}
  if(sceneName==='chase'){
   const p=state.phase,v=chasePos.vale,f=chasePos.freight;
   if(v)worldLabel([v.x,v.y+3.3,v.z],'VALE',3);
@@ -470,7 +495,7 @@ function caseLabels(){
   if(p==='chaseQteB')worldLabel([0,6.4,state.distance+29],'BRIDGE UP',2);
   if(['chaseQteB','chaseFinish'].includes(p))worldLabel([44,-2.2,(p==='chaseFinish'?(state.phaseDistance||state.distance)+26:state.distance+29)+30.5],'SUBSTATION 9',1);
  }
- if(sceneName==='canal')worldLabel([9,3.5,24],'CITY MEDIC',2);
+ if(sceneName==='canal')worldLabel([7.4,3.3,20.2],'CITY MEDIC',2);
  if(sceneName==='office'){worldLabel([-7.4,4.5,7],'CASE BOARD',2);worldLabel([0,4.6,16.2],'NIGHT DIVISION',1);if(state.phase!=='officeEntry')worldLabel([-.4,1.55,8.3],'I. BELL',6);if(state.phase==='officeBoard'){worldLabel([-7.55,2.2,5],'I. BELL',6);worldLabel([-7.55,2.0,6.2],'A. VALE',3);worldLabel([-12.8,3.9,-10.6],'VALE',0);}}
  if(sceneName==='club'){
   worldLabel([0,5.5,16],'THE FILAMENT',3);worldLabel([11.6,5.3,16.5],'NO EXIT',3);
