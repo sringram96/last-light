@@ -253,6 +253,8 @@ small stand  small walk 1  small walk 2
 [ | | ]  [/  | ]  [ |  \]
 ```
 
+The menu now draws on a dense grid (140 rows), where Rook uses the `portrait` sheet in `sprites.json`: 72 rows of 50, the same figure with a hat band and buckle, a stitched brim, the coat's weave, pocket flaps, a watch chain (`%`, amber), the belt buckle `[==]`, rain marks on the hat and shoulders, and a three-frame `smoke` cycle (ember `*` rose, `@` amber on the brightest draw, `+` rose with the hand lowered). It is drawn only where the projected figure is 51 rows or more, so the hero sheet below still serves the 70-row grid and phones.
+
 Hero sheet, the menu close-up (36 rows of 25; `smoke` is the two-frame cycle, `stand` the fallback with both hands in the pockets):
 
 ```text

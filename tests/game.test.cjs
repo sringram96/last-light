@@ -289,16 +289,32 @@ test('timed misses, pausing and declining pursuit still reach coherent outcomes'
 });
 // The stage: the picture fills its area by the vertical field-of-view rule and the approved frame is reproduced exactly.
 test('the picture fills the stage by the vertical field-of-view rule and keeps the approved frame',()=>{
- const ref=game({width:756}).audit(),fill=game({width:1408,innerWidth:1440,innerHeight:900,stage:{width:1408,height:780}}),a=fill.audit();
+ // The boot picture is the menu, which has its own grid density; the story grid is measured on the street through the reel.
+ const street=g=>{g.click('STREET','reel-actions');return g;};
+ const ref=street(game({width:756})).audit(),fill=street(game({width:1408,innerWidth:1440,innerHeight:900,stage:{width:1408,height:780}})),a=fill.audit();
  assert.deepEqual([ref.grid.W,ref.grid.H],[180,70]);
  assert.deepEqual([a.grid.W,a.grid.H],[217,70]);assert.equal(a.grid.fx,ref.grid.fx);assert.equal(a.grid.fy,ref.grid.fy);assert.equal(a.grid.cw,780/(70*1.72));assert.equal(a.layout,'stacked');
  assert.equal(fill.canvas.style.width,217*a.grid.cw+'px');assert.equal(fill.canvas.style.height,70*a.grid.ch+'px');
  // The added columns frame the same picture: every sprite keeps its rows and moves by half the added width.
  for(const r of ref.sprites){const s=a.sprites.find(x=>x.who===r.who);assert(s,r.who);assert.equal(s.rows,r.rows);assert.equal(s.y0,r.y0);assert(Math.abs(s.x0-r.x0-18.5)<=.5,`${r.who} shifted by ${s.x0-r.x0}`);}
  fill.layout(3440,1200);assert.equal(fill.audit().grid.W,240,'an ultrawide is capped and pillarboxed');
- const side=game({width:523,innerWidth:812,innerHeight:375,stage:{width:532,height:351}}).audit();assert.equal(side.layout,'side');assert.deepEqual([side.grid.W,side.grid.H],[124,48]);
- const phone=game({width:375,innerWidth:375,innerHeight:812,stage:{width:375,height:599}}).audit(),phoneRef=game({width:375}).audit();
+ const side=street(game({width:523,innerWidth:812,innerHeight:375,stage:{width:532,height:351}})).audit();assert.equal(side.layout,'side');assert.deepEqual([side.grid.W,side.grid.H],[124,48]);
+ const phone=street(game({width:375,innerWidth:375,innerHeight:812,stage:{width:375,height:599}})).audit(),phoneRef=street(game({width:375})).audit();
  assert.deepEqual([phone.grid.W,phone.grid.H],[89,70]);assert.equal(phone.grid.fx,phoneRef.grid.fx);assert.equal(phone.grid.cw,phoneRef.grid.cw);assert.equal(phoneRef.grid.H,60);
+});
+// The menu tableau asks for a denser grid (density 2): twice the rows in the same stage height at the same field of view,
+// Rook from his portrait sheet; a story set returns to the 70-row grid, and the harness without a stage keeps the fixed rule.
+test('the menu set draws on its dense grid and a story set returns to 70 rows',()=>{
+ const g=game({width:1408,innerWidth:1440,innerHeight:900,stage:{width:1408,height:780}}),ref=game({width:756}).audit();
+ let a=g.audit();assert.equal(a.scene,'menu');assert.deepEqual([a.grid.W,a.grid.H,a.grid.density],[434,140,2]);
+ assert.equal(a.grid.fx,2*ref.grid.fx);assert.equal(a.grid.fy,2*ref.grid.fy);assert.equal(a.grid.cw,780/(140*1.72));assert.equal(g.canvas.style.height,140*a.grid.ch+'px');
+ assert.deepEqual([ref.grid.W,ref.grid.H,ref.grid.density],[180,70,1],'no stage: the fixed rule, whatever the set asks');
+ g.run(1);a=g.audit();const rook=a.sprites.find(r=>r.who==='rook');assert(rook&&rook.sheet==='portrait'&&rook.eyes===1,JSON.stringify(a.sprites));assert.equal(a.nonASCII,0);
+ g.click('NEW CASE');a=g.audit();assert.equal(a.scene,'office');assert.deepEqual([a.grid.W,a.grid.H,a.grid.density],[217,70,1]);assert.equal(a.grid.fx,ref.grid.fx);
+ g.elements['.lc-menu'].click();g.click('RESUME');assert.deepEqual([g.audit().grid.W,g.audit().grid.H],[217,70],'the menu over a story set keeps the story grid');
+ const phone=game({width:375,innerWidth:375,innerHeight:812,stage:{width:375,height:599}}).audit();assert.deepEqual([phone.grid.W,phone.grid.H,phone.grid.density],[178,140,2]);
+ // The portrait tier is a close-up for the menu alone: a story shot never picks it.
+ const s=game({width:732});s.click('STATION','reel-actions');s.run(3);for(const r of s.audit().sprites)assert(['full','mid','small'].includes(r.sheet),r.sheet);
 });
 test('a cutscene holds until its caption is read; a tap paces the chunks and never ends the beat early',()=>{
  const g=game();g.click('NEW CASE');g.next();g.phase('officeFile');
