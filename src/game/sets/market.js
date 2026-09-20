@@ -56,8 +56,8 @@ registerSet('market',{
    if(z%8===0)for(const x of [-2.9,2.9]){box(x-.17,c-.5,z-.17,x+.17,c,z+.17,mat('console',2));box(x-.15,c-.65,z-.15,x+.15,c-.5,z+.15,mat('lamp',2));lamps.push([x,z]);}}
   // The gap under [1]: the one gap on the left with a lamp over it, hung from a bar between the two stall roofs.
   {const g=y(9.2);box(-5.4,g+4,8.3,-5.2,g+4.1,10.1,mat('metal'));box(-5.5,g+3.55,9,-5.1,g+4,9.4,mat('console',2));box(-5.52,g+3.3,8.98,-5.08,g+3.55,9.42,mat('lamp',2));lamps.push([-5.3,9.2]);}
-  // The awning rope under [2]: from a cleat at the aisle's edge up to the front edge of the right awnings' ledge.
-  {const r=y(9.1)+.9;quad([3.85,r,9.1],[5.6,3.3,9.9],[5.95,3.3,10.02],[4.2,r,9.22],mat('pipe',2),[0,0,-1]);quad([4.2,r,9.22],[5.95,3.3,10.02],[5.6,3.3,9.9],[3.85,r,9.1],mat('pipe',2),[0,0,1]);box(3.72,r-.25,8.98,4.0,r+.02,9.26,mat('metal'));box(5.5,3.28,9.78,5.72,3.7,10.0,mat('metal'));}
+  // The awning rope under [2]: hangs from a hook on the front edge of the right awnings' ledge, knotted at the foot.
+  {const r=y(9.9)+.8;quad([4.5,r,9.86],[4.85,r,9.86],[4.85,3.3,9.86],[4.5,3.3,9.86],mat('pipe',2),[0,0,-1]);quad([4.85,r,9.9],[4.5,r,9.9],[4.5,3.3,9.9],[4.85,3.3,9.9],mat('pipe',2),[0,0,1]);box(4.42,r-.3,9.78,4.93,r,9.98,mat('metal'));box(4.55,3.28,9.72,4.8,3.7,9.98,mat('metal'));}
   // Marta's cart: a wood bed on rubber wheels, eight cells in a rack, a paper plate (QUILL is the label above it).
   {const b=y(12);for(const dx of [-.45,.45])for(const dz of [-.65,.65])box(-3.6+dx-.1,b,12+dz-.2,-3.6+dx+.1,b+.4,12+dz+.2,mat('rubber'));
    box(-4.2,b+.35,11.1,-3,b+.9,12.9,mat('wood',2));for(let i=0;i<4;i++)for(let j=0;j<2;j++)box(-4.1+i*.28,b+.9,11.3+j*.8,-3.88+i*.28,b+1.42,11.9+j*.8,mat('console',2));
@@ -85,7 +85,7 @@ registerSet('market',{
   if(p==='marketAisle')return look(-1.4,y(15.5)+1.9,15.5,-1,1.9,2);
   if(p==='marketKeeper')return look(-.6,y(11)+1.9,11,-3.6,y(13.4)+1.4,13.4);
   if(p==='marketDanger')return look(1.6,y(21)+1.7,21,0,y(30)+1.3,30);
-  if(p==='marketResult'&&m==='cut'){const s=reduce?1:smooth(clamp((t-1.2)/2.8,0,1)),cz=mix(6,28,s),hold=look(1.4,y(3.5)+1.9,3.5,5.2,2.8,9.8);return marketBlend(hold,look(.2,y(cz)+4.6,cz,6.4,y(cz+12)+2.4,cz+12),reduce?1:smooth(clamp((t-.9)/.8,0,1)));}
+  if(p==='marketResult'&&m==='cut'){const s=reduce?1:smooth(clamp((t-1.2)/2.8,0,1)),cz=mix(6,28,s),hold=look(1.2,y(3.5)+1.9,3.5,4.9,2.8,9.9);return marketBlend(hold,look(.2,y(cz)+4.6,cz,6.4,y(cz+12)+2.4,cz+12),reduce?1:smooth(clamp((t-.9)/.8,0,1)));}
   if(p==='marketResult'&&m==='slip'){const s=reduce?1:smooth(clamp((t-.9)/2,0,1));return marketBlend(qte,look(.4,y(0)+2.8,0,-5.2,.8,-4.6),s);}
   if(p==='marketResult'){const s=reduce?0:smooth(clamp((t-4)/2,0,1));return marketBlend(qte,look(-.4,y(3)+2.2,3,0,y(46)+4.5,46),s);}
   return qte;
@@ -99,7 +99,7 @@ registerSet('market',{
   else if(p==='marketAisle')rook={x:-1.6,y:y(8),z:8,pose:'watch'};
   else if(p==='marketKeeper')rook={x:-2.4,y:y(10.4),z:10.4,pose:'watch'};
   else if(res&&m==='slip'){const d=reduce?1:clamp(t/.9,0,1),z=mix(4.8,9.2,d);rook={x:mix(-1.5,-5.3,d),y:y(z),z,pose:d<1?'walk':'crouch'};}
-  else if(res&&m==='cut'){if(!reduce&&t<1.2)rook={x:3.7,y:y(9.2),z:9.2,pose:'reach'};else{const s=reduce?1:smooth(clamp((t-1.2)/2.8,0,1)),z=mix(10,36,s);rook={x:mix(4.4,5.3,Math.min(1,s*3)),y:y(z)+2.55,z,pose:'walk'};}}
+  else if(res&&m==='cut'){if(!reduce&&t<1.2)rook={x:4.1,y:y(9.4),z:9.4,pose:'reach'};else{const s=reduce?1:smooth(clamp((t-1.2)/2.8,0,1)),z=mix(10,36,s);rook={x:mix(4.4,5.3,Math.min(1,s*3)),y:y(z)+2.55,z,pose:'walk'};}}
   else if(res)rook={x:-.7,y:y(4.2)-.3,z:4.2,pose:'stumble',lean:-.5};
   else rook={x:-1.5,y:y(4.8),z:4.8,pose:'watch',lean:.1};
   others.push({x:-3.6,y:y(13.4),z:13.4,pose:p==='marketKeeper'?'read':'stand',who:'nell',hue:6});
@@ -147,7 +147,7 @@ registerSet('market',{
   if(p==='marketAisle'||p==='marketKeeper')worldLabel([-3.4,y(12)+1.9,12],'QUILL',6);
   worldLabel([0,y(46)+5.8,46],'THE FILAMENT',3);
   if(p==='marketDanger')worldLabel([.3,y(31.6)+3.2,31.6],'KRANE',0);
-  if(p==='marketQte'){worldLabel([-4.6,y(9.2)+2.85,9.2],'[1]',2);worldLabel([4.9,y(9.5)+3.7,9.5],'[2]',2);}
+  if(p==='marketQte'){worldLabel([-4.6,y(9.2)+2.85,9.2],'[1]',2);worldLabel([4.68,y(9.9)+3.75,9.9],'[2]',2);}
   if(p==='marketResult'&&state.market==='cut')worldLabel([7.2,y(44)+3.95,44.2],'VINE ALLEY',1);
  },
  exit(){return [0,marketY(46)+2.5,46];},
