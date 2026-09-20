@@ -63,8 +63,8 @@ function roofSet(){
  quad([-60,-12,50],[30,-12,50],[30,-12,56],[-60,-12,56],mat('road',7),[0,1,0]);for(const z of [49.8,55.9])box(-60,-12,z,30,-11.4,z+.3,mat('barrier'));
  for(let x=-54;x<=24;x+=12){box(x-.06,-12,55.4,x+.06,-7.5,55.6,mat('metal'));box(x-.35,-7.6,55.2,x+.35,-7.2,55.8,mat('lamp',2));lamps.push([x,55.5]);}
  quad([-60,-13,42],[30,-13,42],[30,-13,46],[-60,-13,46],mat('road',7),[0,1,0]);for(const z of [41.8,45.9])box(-60,-13,z,30,-12.5,z+.3,mat('barrier'));
- quad([-40,-14.5,44],[-22,-14.5,44],[-22,-14.5,58],[-40,-14.5,58],mat('paving',0),[0,1,0]);
- for(const x of [-34,-31.3,-28.7,-26])for(const z of [47,53]){box(x-.25,-14.2,z-.25,x+.25,-13.8,z+.25,mat('lamp',2));lamps.push([x,z]);}
+ quad([-40,-12.01,56],[-22,-12.01,56],[-22,-12.01,62],[-40,-12.01,62],mat('paving',0),[0,1,0]);
+ for(const x of [-34,-31.3,-28.7,-26])for(const z of [57.5,60.5]){box(x-.25,-11.8,z-.25,x+.25,-11.4,z+.25,mat('lamp',2));lamps.push([x,z]);}
  box(-33,-8.5,58,-27,-7.5,58.3,mat('neon',3));for(const x of [-33,-27])box(x-.08,-14.5,58.1,x+.08,-8.5,58.25,mat('metal'));
  // Far traffic travels through actual 3D space behind the parapet.
  pendant(-12,13,5.5);
@@ -212,7 +212,7 @@ function caseShot(){
  if(sceneName==='roof'){
   if(p==='roofEntry')return look(-7,4.1,4,1,1.2,15);
   // The one fast move of Act 1: a crane over the north parapet to the road, the tram and the market far below.
-  if(p==='roofQuiet')return look(-2.4,3.8,20,-22,-12,52);
+  if(p==='roofQuiet')return look(-2.4,4.6,19.5,-22,-9,52);
   if(['roofListen','roofSignal'].includes(p))return look(-3.2,2.8,10.3,.1,1.1,16.6);
   if(p==='roofConfession')return look(-1.6,2,13.5,2,1.4,17.2);
   return look(-5.5,4.8,8,1.5,1.5,18);
@@ -325,7 +325,7 @@ function caseGeometry(){
  if(sceneName==='station'){
   // The tape reels on the console face turn: eight wedges, alternately steel and paper, spun with the clock.
   const spin=state.t*(state.phase==='stationListen'?3:1.2);
-  for(const cx of [-.42,.42])for(let i=0;i<8;i++){const a=i*Math.PI/4+spin,b=a+Math.PI/4,c=q=>[cx+Math.cos(q)*.27,2.02+Math.sin(q)*.27,19.52],e=q=>[cx+Math.cos(q)*.07,2.02+Math.sin(q)*.07,19.52];quad(c(a),c(b),e(b),e(a),i%2?mat('rubber'):mat('dispatch',6),[0,0,-1]);}
+  for(const cx of [-.45,.45])for(let i=0;i<8;i++){const a=i*Math.PI/4+spin,b=a+Math.PI/4,c=q=>[cx+Math.cos(q)*.31,2.06+Math.sin(q)*.31,19.52],e=q=>[cx+Math.cos(q)*.08,2.06+Math.sin(q)*.08,19.52];quad(c(a),c(b),e(b),e(a),i%2?mat('rubber'):mat('dispatch',6),[0,0,-1]);}
  }
  if(sceneName==='pump'){
   const spin=state.phase==='pumpResult'&&state.rescue==='valve'?span(4)*Math.PI:0;
