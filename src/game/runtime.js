@@ -455,7 +455,8 @@ function tick(now){
  // A live beat caps the step at 50 ms so a hitch hands the player at most that much of the window.
  if(!root.isConnected)return;const dt=lastTime?Math.min(isQte()&&!state.untimed?.05:.1,Math.max(0,(now-lastTime)/1000)):0;lastTime=now;
  if(session.menu&&visible&&!document.hidden){
-  if(state.phase==='brief'&&!reduce)state.t+=dt;
+  if((state.phase==='brief'||state.phase==='menuIdle')&&!reduce)state.t+=dt;
+  if(state.phase==='menuIdle'){state.event+=dt;pose();}
   presentTick(dt);
   if(now-lastFrame>66){render();lastFrame=now;}
  }else if(!state.paused&&visible&&!document.hidden){
@@ -484,7 +485,7 @@ function tick(now){
  }
  requestAnimationFrame(tick);
 }
-ui();pose();resize();
+ui();pose();resize();showIdle();
 const reelBox=root.querySelector('.lc-reel-actions');if(reelBox){reelBox.replaceChildren();for(const [name,label] of [['office','OFFICE'],['street','STREET'],['loft','LOFT'],['station','STATION'],['pump','FLOOD'],['roof','ROOFTOP'],['tram','TRAM'],['market','MARKET'],['club','CLUB'],['chase','CHASE'],['tunnel','UNDERCITY'],['substation','SUBSTATION'],['room','INTERVIEW'],['canal','DAWN']]){const b=document.createElement('button');b.type='button';b.className='cursor-interaction';b.textContent='['+label+']';b.addEventListener('click',()=>{reel(name);const d=root.querySelector('.lc-reel');if(d)d.open=false;});reelBox.appendChild(b);}}
 // Observe the stage and the picture area, never the canvas: once the canvas has an explicit width a canvas observer stops firing for container changes.
 const stageObserver=new ResizeObserver(layout);stageObserver.observe(root);if(chrome.picture)stageObserver.observe(chrome.picture);

@@ -1,10 +1,10 @@
 // Character sprite sheets and their loader.
-// A character has up to three resolutions (full, mid, small), each holding text poses. actor() in runtime.js
+// A character has up to four resolutions (hero, full, mid, small), each holding text poses. actor() in runtime.js
 // picks the sheet that fits the projected size and draws it in whole screen cells, so glyphs never tile or shimmer.
 // docs/design/sprites.json (same shape as the defaults below) is inlined by the build and loaded over the defaults.
-const SPRITE_SIZES=['full','mid','small'];
+const SPRITE_SIZES=['hero','full','mid','small']; // hero: a close-up sheet for the menu tableau; most characters have none
 const SPRITE_MIN_SCALE=.7; // a sheet is never squeezed below this in either axis; a smaller sheet is stretched instead
-const SPRITE_ALIAS={watch:'stand'}; // poses that may borrow another pose at sizes where they are not drawn
+const SPRITE_ALIAS={watch:'stand',smoke:'stand'}; // poses that may borrow another pose at sizes where they are not drawn
 const spriteFace=g=>g==='o'||g==='.'||g==='>';
 const spriteOutline=g=>g==='/'||g==='\\'||g==='|'||g==='('||g===')'||g==='_';
 const spriteFill=g=>'#=:-~%@+xX*&'.includes(g);

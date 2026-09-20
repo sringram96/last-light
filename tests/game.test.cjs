@@ -8,7 +8,8 @@ test('approved street render remains identical outside the character sprites at 
  const html=fs.readFileSync(path.join(__dirname,'../reference/approved-complete-case.html'),'utf8');
  const original=html.match(/<script>([\s\S]*?)<\/script>/)[1];
  for(const width of [320,732]){
-  const before=game({width,script:original}),after=game({width}),a=after.audit(),cw=width/a.columns,ch=cw*1.72;
+  // The boot picture is the menu tableau now; the approved street is reached through the scene reel, whose first frame is the old boot frame.
+  const before=game({width,script:original}),after=game({width});after.click('STREET','reel-actions');const a=after.audit(),cw=width/a.columns,ch=cw*1.72;
   const cell=d=>Math.round(d[1]/cw)+','+Math.round(d[2]/ch),map=f=>new Map(f.map(d=>[cell(d),d[0]+d[3]]));
   const was=map(before.frame()),now=map(after.frame());
   const inSprite=key=>{const [x,y]=key.split(',').map(Number);return a.sprites.some(r=>x>=r.x0&&x<=r.x1&&y>=r.y0&&y<=r.y1);};

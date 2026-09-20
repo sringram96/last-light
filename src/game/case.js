@@ -59,7 +59,7 @@ function restartChapter(){
  clearCard();enter(entry,true);chapterCard();
 }
 // Leaving a cold case for the menu clears the checkpoint (no case to continue); the records keep the cold count.
-function abandonCase(){saveStore.clear();reset();openMenu();}
+function abandonCase(){saveStore.clear();showIdle();}
 function caseEnter(phase){
  if(phase==='chaseEntry'||phase==='tramEntry'){state.distance=20;state.phaseDistance=20;}
  const name=sceneFor(phase);
@@ -264,7 +264,7 @@ function caseUI(){
   const evidence=(ledgerHeld()?'Evidence: signed ledger recovered. ':manifestHeld()?'Evidence: the Substation Nine manifest. ':state.rescue==='valve'&&state.club==='late'?'Evidence: the signed ledger, lost to Krane at The Filament. ':'Evidence: Bell\'s testimony; ledger lost. ')+(chipHeld()?'The Filament chip ties the batteries to Vale\'s tables. ':'');
   const nell=state.twist?'Nell\'s forged order is part of the case.':state.choice==='person'?'Nell remains a trusted witness.':state.choice==='missed'?'The courier is missing since Station Road. Rook has two names on his desk now.':state.note?'Nell\'s note is in the file; she has not been found.':'Rook worked without Nell.';
   el.outcome.hidden=false;el.outcome.textContent=caseReport()+' '+ending.summary+' '+evidence+nell;
-  button('[RETURN TO MENU]',openMenu);break;}
+  button('[RETURN TO MENU]',showIdle);break;}
  }
 }
 // What Rook is doing right now, for the header.

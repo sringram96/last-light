@@ -14,6 +14,11 @@ function continueCase(){
  const prefs={mono:state.mono,untimed:state.untimed};reset();Object.assign(state,s,prefs,{paused:false,event:0});
  const name=sceneFor(s.phase);setScene(name);Object.assign(camera,name==='street'?shotFor():sceneStart(name));enter(s.phase,true);chapterCard();
 }
+// The idle tableau behind the title: shown at boot, after a closed case and after a cold one. It is not a checkpoint.
+function showIdle(){
+ session.mode='idle';session.menu=true;session.confirmNew=false;state.paused=false;reset();
+ setScene('menu');Object.assign(camera,sceneStart('menu'));state.phase='menuIdle';state.event=0;lastTime=0;ui();render();
+}
 function startNewCase(){
  saveStore.clear();session.mode='story';session.menu=false;session.confirmNew=false;reset();enter('officeEntry',true);
 }
