@@ -171,9 +171,10 @@ function geometry(){
  return a;
 }
 let spriteRects=[];
-function render(){
+function render(){const t0=clockMs();renderInner();renderMs=Math.max(clockMs()-t0,renderMs*.85);}
+function renderInner(){
  // A scene change between grid densities (the menu and a story set) re-sizes first; resize() renders once it has the grid.
- if((sets[sceneName]?.density||1)!==densityFor){resize();return;}
+ if(wantedDensity()!==densityFor){resize();return;}
  if(!W||!H)return;frame++;zbuf.fill(Infinity);chars.fill(' ');ink.fill(0);spriteRects=[];labelRects=[];
  sy=Math.sin(camera.yaw);cy=Math.cos(camera.yaw);sp=Math.sin(camera.pitch);cp=Math.cos(camera.pitch);
  const cast=geometry();
@@ -210,13 +211,10 @@ function render(){
  }
  const colors=state.mono?gray:palettes;
  ctx.fillStyle='#03070b';ctx.fillRect(0,0,canvas.width/dpr,canvas.height/dpr);ctx.font=(cw/.6)+'px "Liberation Mono",Consolas,monospace';ctx.textBaseline='top';
- if(density>1){
-  // The dense grid draws each run of equal ink as one string (runs of up to 24 cells, so a font whose advance is not
-  // exactly 0.6 em drifts by less than a tenth of a cell). Story sets keep the cell-by-cell draw the reference test reads.
-  let current=-1;for(let y=0;y<H;y++)for(let x=0;x<W;){const i=y*W+x,g=chars[i];if(g===' '){x++;continue;}const k=ink[i];let run=g,n=1;while(n<24&&x+n<W&&ink[i+n]===k&&chars[i+n]!==' '){run+=chars[i+n];n++;}if(k!==current){current=k;ctx.fillStyle=colors[k];}ctx.fillText(run,x*cw,y*ch);x+=n;}
- }else{
- let current=-1;for(let y=0;y<H;y++)for(let x=0;x<W;x++){const i=y*W+x,g=chars[i];if(g===' ')continue;if(ink[i]!==current){current=ink[i];ctx.fillStyle=colors[current];}ctx.fillText(g,x*cw,y*ch);}
- }
+ // Every run of equal ink is drawn as one string, which is where a frame's time goes: a grid of six thousand cells is a
+ // few hundred draws instead of six thousand. Runs stop at 24 cells, so a font whose advance is not exactly 0.6 em drifts
+ // by under a tenth of a cell, and at a colour change, so the picture is glyph for glyph what the cell-by-cell draw made.
+ let current=-1;for(let y=0;y<H;y++)for(let x=0;x<W;){const i=y*W+x,g=chars[i];if(g===' '){x++;continue;}const k=ink[i];let run=g,n=1;while(n<24&&x+n<W&&ink[i+n]===k&&chars[i+n]!==' '){run+=chars[i+n];n++;}if(k!==current){current=k;ctx.fillStyle=colors[k];}ctx.fillText(run,x*cw,y*ch);x+=n;}
  timer();
 }
 function qteDuration(){return caseDuration();}
@@ -362,6 +360,28 @@ const FILL_FX=180/(2*Math.tan(78*Math.PI/360)),FILL_FY=FILL_FX/1.72;
 // unchanged). `density` is the factor in effect; `densityFor` the factor resize() last answered, so render() can re-size when
 // the scene changes. Only the fill rule reads it: without a stage (the harness) the original rule stands at density 1.
 let density=1,densityFor=1;
+// What a frame costs here, and what this device can afford. A set asks for a density; a device that cannot draw it in the
+// budget has it lowered once and keeps the lower one, so a phone is never asked to draw the menu's dense grid twice.
+const hasClock=typeof performance!=='undefined'&&!!performance.now;
+const clockMs=()=>hasClock?performance.now():Date.now();
+let renderMs=0,densityCeil=Infinity,overBudget=0;
+// What a frame may cost before the picture is eased. A story beat is played, so it is held to a smooth thirty; the menu
+// only drifts, so it is allowed a cinematic twenty-five and keeps its dense grid wherever the machine can draw it.
+const budgetMs=()=>session.menu?40:24;
+const wantedDensity=()=>Math.min(sets[sceneName]?.density||1,densityCeil);
+// The gap between drawn frames: about twice what the last frame cost, so the loop spends under half its time drawing.
+// Cheap frames run at 30 a second; expensive ones back off instead of saturating the thread, so a prompt's keypress and
+// tap are still handled at once on a slow device.
+const frameGap=()=>Math.max(33,Math.min(120,renderMs*1.7));
+// A frame over budget on a dense grid drops the density a step and re-sizes; the picture keeps its framing and its field
+// of view, and the cost falls with the cell count.
+function easeDensity(){
+ if(!hasClock||density<=1)return false;
+ // Three slow frames running, not one: a single hitch (a collection, a restored tab) never costs the picture its density.
+ if(renderMs<=budgetMs()){overBudget=0;return false;}
+ if(++overBudget<3)return false;
+ overBudget=0;densityCeil=density>1.5?1.5:1;resize();return true;
+}
 function stageArea(){
  if(typeof window.innerHeight!=='number'||typeof window.innerWidth!=='number')return null;
  const picture=root.querySelector('.lc-picture');if(!picture)return null;
@@ -371,7 +391,7 @@ function stageArea(){
  return width>0&&height>0?{width,height}:null;
 }
 function resize(){
- const area=stageArea(),wanted=sets[sceneName]?.density||1;densityFor=wanted;density=1;
+ const area=stageArea(),wanted=wantedDensity();densityFor=wanted;density=1;
  if(!area){
   const width=canvas.clientWidth;if(width<=0)return;
   // Exact approved density, proportions, field of view, and font sizing.
@@ -495,7 +515,7 @@ function tick(now){
   if((state.phase==='brief'||state.phase==='menuIdle')&&!reduce)state.t+=dt;
   if(state.phase==='menuIdle'){state.event+=dt;pose();}
   presentTick(dt);
-  if(now-lastFrame>66){render();lastFrame=now;}
+  if(now-lastFrame>frameGap()){render();lastFrame=now;easeDensity();}
  }else if(!state.paused&&visible&&!document.hidden){
   if(!reduce)state.t+=dt;
   presentTick(dt);
@@ -517,7 +537,7 @@ function tick(now){
    else if(state.phase==='qte'&&!state.untimed&&state.event>=qteDuration())promptMiss();
    else if(state.phase==='result'&&state.event>=holdFor(4)&&!canRewind())enter('evidence');
   }
-  if(now-lastFrame>66){if(!reduce)render();else timer();lastFrame=now;}
+  if(now-lastFrame>frameGap()){if(!reduce)render();else timer();lastFrame=now;easeDensity();}
  }
  requestAnimationFrame(tick);
 }

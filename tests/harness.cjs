@@ -12,7 +12,7 @@ function game({width=320,reduced=false,storage=memoryStorage(),script,innerWidth
  // Every listener registered for an event runs, in order, so the runtime's separate keydown and pointer listeners coexist.
  const listen=function(k,f){const l=this.listeners[k]||(this.listeners[k]=Object.assign(e=>{for(const g of l.fns.slice())g(e);},{fns:[]}));l.fns.push(f);};
  const element=()=>({style:{},attrs:{},listeners:{},children:[],disabled:false,hidden:false,textContent:'',setAttribute(k,v){this.attrs[k]=v},getAttribute(k){return this.attrs[k]},addEventListener:listen,replaceChildren(){this.children=[]},appendChild(e){this.children.push(e)},click(){if(!this.disabled)this.listeners.click?.({timeStamp:clock})},focus(){},contains(){return true}});
- const context={font:'',fillStyle:'',setTransform(){},fillRect(){draws=[]},fillText(g,x,y){draws.push([g,x,y,this.fillStyle,this.font])}};
+ const context={font:'',fillStyle:'',setTransform(){},fillRect(){draws=[]},fillText(g,x,y){const w=parseFloat(this.font)*.6;for(let i=0;i<g.length;i++)draws.push([g[i],x+i*w,y,this.fillStyle,this.font])}};
  // The canvas reports a client rectangle at the origin, so pointer coordinates are CSS pixels of the picture (dpr 1).
  const canvas={...element(),clientWidth:width,width,height:0,getContext:()=>context,getBoundingClientRect(){return{left:0,top:0,width:this.clientWidth,height:this.height};}};
  const names=['actions','caption','phase','timer','pause','timing','mono','journal','clues','outcome','chapter','reel-actions','reel','menu','card','said','route','board','records','records-box','score','sound','picture','card-slot','file','full','drawer','more'];
