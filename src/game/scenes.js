@@ -123,6 +123,8 @@ function officeSet(){
  floor(-4.5,4.5,4.5,12.5,.01,'carpet',3);
  box(1.5,1.14,8.6,2.2,1.3,9.2,mat('metal'));box(1.78,1.3,8.85,1.92,2.05,8.95,mat('metal'));box(1.5,2.05,8.55,2.2,2.3,9.25,mat('lamp',2));lamps.push([1.85,8.9]);
  box(-1.5,1.14,7.5,.6,1.22,8.9,mat('paper',6));box(-.5,1.14,9,.6,1.8,9.5,mat('screen',1));box(-2.3,1.14,9.1,-1.7,1.5,9.5,mat('metal'));
+ // The dispatch log, open on the desk's left behind Bell's lantern.
+ box(-2.4,1.14,8,-1.7,1.24,8.9,mat('dispatch',6));
  box(-.6,0,10.3,.6,.55,11.1,mat('wood',2));box(-.6,.55,11,.6,1.9,11.2,mat('wood',2));
  box(-7.95,1.4,2.5,-7.7,4.3,10.5,mat('board',2));
  for(const z of [1,2.6,4.2])box(6.9,0,z,8,3.2,z+1.4,mat('metal'));
@@ -226,12 +228,22 @@ function cueLabel(p,dir,index,lit=true){
  const T=caseDuration(),e=state.event,on=frame===cueFirstFrame||fract(e*(e<T*2/3?4:8))<.5;
  worldLabel(p,glyph,1,{dir,draw:on});
 }
+// An examine marker in the scene: the spot's number in brackets at its world point, dim amber until the spot has been
+// examined and dim cyan after, steady in every mode, drawn ahead of every sprite and recorded as a tap target like a cue.
+// These and the cues are the only interface drawn in the picture.
+function spotLabel(p,index,seen,id){worldLabel(p,'['+index+']',seen?1:2,{spot:id,level:seen?8:12,front:true});}
+function investigateLabels(){
+ const d=phaseDef(picturePhase());if(!d||d.kind!=='investigate')return;
+ d.spots.forEach((s,i)=>{if(s.after&&!(state[d.field]&s.after))return;spotLabel(s.at(),i+1,!!(state[d.field]&s.bit),s.id);});
+}
 const moving=()=>sceneName==='chase'||sceneName==='tunnel'||!!sets[sceneName]?.moving;
 const look=(x,y,z,tx,ty,tz)=>({x,y,z,yaw:Math.atan2(tx-x,tz-z),pitch:Math.atan2(ty-y,Math.hypot(tx-x,tz-z))});
 // A shot part-way between two others: the second half of a beat that pans or tilts after its first move has settled.
 function blendShot(a,b,t){const o={};let ay=a.yaw;if(b.yaw-ay>Math.PI)ay+=Math.PI*2;else if(ay-b.yaw>Math.PI)ay-=Math.PI*2;for(const k of Object.keys(a))o[k]=mix(k==='yaw'?ay:a[k],b[k],t);return o;}
 function caseShot(){
- const p=picturePhase(),set=sets[sceneName];
+ const p=picturePhase(),set=sets[sceneName],d=phaseDef(p);
+ // An investigate beat looks through the selected spot's camera while one is selected, else through its own.
+ if(d&&d.kind==='investigate'){const s=investigateSpot();if(s&&s.shot)return s.shot();if(d.shot)return d.shot();}
  if(set&&set.shot)return set.shot(p);
  if(sceneName==='station'){
   // The crane settles behind Rook; the listen pushes in beside him onto the reels, then tilts to the floor where the knocking is; ready pans right to the hatch.
@@ -264,11 +276,8 @@ function caseShot(){
   return look(-.6,p==='chaseEntry'?5:3.3,d-11,.3,1.2,d+13);
  }
  if(sceneName==='office'){
-  // A slow push-in from the door, a low shot across the desk, then the window and the city.
+  // A slow push-in from the door; the desk beat's spot cameras are registered with the beat in case.js.
   if(p==='officeEntry')return look(-1.6,1.7,4.4,-1.8,1.3,9.2);
-  if(p==='officeFile')return look(2.3,1.45,6.4,-1.6,1.2,8.8);
-  // The board beat: three seconds on the two photographs, then a glance out through the open door across the corridor to Vale's dark door.
-  if(p==='officeBoard'){const a=look(-2.4,1.8,3.6,-7.9,2.7,5.8);return state.event<3||reduce?a:blendShot(a,look(-6.6,1.6,-6.6,-14,1.5,-10.5),smooth(clamp((state.event-3)/2,0,1)));}
   return look(-2.2,2.2,6,0,2.4,16);
  }
  if(sceneName==='club'){
@@ -301,14 +310,15 @@ function sceneStart(name){
  return {office:look(-3.2,2.1,1.5,-1.8,1.2,9),station:look(4,7.5,-2,0,1,22),pump:look(-4.5,1.8,-7,2,1.5,18),roof:look(-12,6,-5,1.3,1.5,15),club:state.market==='cut'?look(11,2,20.5,2,1.4,8):look(-9,2.2,-3,2,1.5,12),chase:look(-7,9,d-15,0,1,d+16),tunnel:look(-5,3,d-12,0,1,d+18)}[name]||look(8,2.3,7,3,1,15);
 }
 function casePose(){
- const set=sets[sceneName];
- const duration=set&&set.ease?set.ease(state.phase):{stationEntry:7,stationQuiet:2,stationListen:3,stationReady:3,pumpEntry:6,pumpDanger:.05,roofEntry:8,roofQuiet:4,roofConfession:4,canalEntry:7,canalEnd:10,officeEntry:8,officeFile:5,officeBoard:3,officeWindow:6,clubEntry:8,clubFace:2}[state.phase]||1.5;
+ const set=sets[sceneName],spot=investigateSpot();
+ // A selected spot eases the camera over its own time (its clock restarts on selection); the beat's spot-less shot takes 1.5 s.
+ const duration=spot?spot.ease||3:set&&set.ease?set.ease(state.phase):{stationEntry:7,stationQuiet:2,stationListen:3,stationReady:3,pumpEntry:6,pumpDanger:.05,roofEntry:8,roofQuiet:4,roofConfession:4,canalEntry:7,canalEnd:10,officeEntry:6,clubEntry:8,clubFace:2}[state.phase]||1.5;
  if(moving()){
   const target=caseShot(),u=reduce?1:span(set&&set.ease?duration:/Entry/.test(state.phase)?5:state.phase==='chaseFinish'?2.5:1.1);
   const origin={...transitionFrom,z:transitionFrom.z+state.distance-(state.phaseDistance||state.distance)};
   for(const k of Object.keys(camera))camera[k]=mix(origin[k],target[k],u);
  }else{const target=caseShot(),u=reduce?1:span(duration);for(const k of Object.keys(camera))camera[k]=mix(transitionFrom[k],target[k],u);}
- state.moving=/Entry|Bank|Finish|Result|File|Window/.test(state.phase);
+ state.moving=/Entry|Bank|Finish|Result/.test(state.phase)||!!spot;
 }
 function caseBlocking(){
  const p=picturePhase(),others=[];let rook=null,courier=null;
@@ -347,9 +357,11 @@ function caseBlocking(){
   if(state.caught&&kranePinned())others.push({x:7.6,z:19.6,pose:'stand',who:'krane'});
  }
  if(sceneName==='office'){
-  // Seated at the desk: the sprite sinks below the floor plane and the desk hides the rest.
-  const u=p==='officeWindow'&&!reduce?span(4):p==='officeWindow'?1:0;
-  rook=u>0?{x:mix(-3.3,-1.2,u),z:mix(9.6,14.3,u),pose:u<1?'walk':'watch'}:{x:-3.3,z:9.6,pose:'read'};
+  // Seated at the desk: the sprite sinks below the floor plane and the desk hides the rest. The window look takes him to
+  // the glass over four seconds; the next look walks him back to the chair.
+  const spot=investigateSpot()?.id||'',back=spot!=='window'&&investigatePrevious()==='window',u=spot==='window'||back?(reduce?1:span(4)):0;
+  const desk={x:-3.3,z:9.6},glass={x:-1.2,z:14.3};
+  rook=spot==='window'?{x:mix(desk.x,glass.x,u),z:mix(desk.z,glass.z,u),pose:u<1?'walk':'watch'}:back?{x:mix(glass.x,desk.x,u),z:mix(glass.z,desk.z,u),pose:u<1?'walk':'read'}:{x:-3.3,z:9.6,pose:'read'};
  }
  if(sceneName==='club'){
   const u=p==='clubEntry'&&!reduce?span(8):1,v=p==='clubResult'&&!reduce?span(4):p==='clubResult'?1:0;
@@ -573,7 +585,7 @@ function caseLabels(){
   if(p==='chaseFinish')worldLabel([44,-2.2,(state.phaseDistance||state.distance)+26+30.5],'SUBSTATION 9',1);
  }
  if(sceneName==='canal')worldLabel([7.4,3.3,20.2],'CITY MEDIC',2);
- if(sceneName==='office'){worldLabel([-7.4,4.5,7],'CASE BOARD',2);worldLabel([0,4.6,16.2],'NIGHT DIVISION',1);if(p!=='officeEntry')worldLabel([-.4,1.55,8.3],'I. BELL',6);if(p==='officeBoard'){worldLabel([-7.55,2.2,5],'I. BELL',6);worldLabel([-7.55,2.0,6.2],'A. VALE',3);worldLabel([-12.8,3.9,-10.6],'VALE',0);}}
+ if(sceneName==='office'){const spot=investigateSpot()?.id;worldLabel([-7.4,4.5,7],'CASE BOARD',2);worldLabel([0,4.6,16.2],'NIGHT DIVISION',1);if(p!=='officeEntry')worldLabel([-.4,1.55,8.3],'I. BELL',6);if(spot==='board'){worldLabel([-7.55,2.2,5],'I. BELL',6);worldLabel([-7.55,2.0,6.2],'A. VALE',3);worldLabel([-12.8,3.9,-10.6],'VALE',0);}}
  if(sceneName==='club'){
   worldLabel([0,5.5,16],'THE FILAMENT',3);worldLabel([11.6,5.3,16.5],'NO EXIT',3);
   if(!['clubEntry','clubQte'].includes(p)){worldLabel([9,3.4,14],'VALE',3);worldLabel([6.5,3.25,11.5],'KRANE',0);}

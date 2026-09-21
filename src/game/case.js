@@ -1,7 +1,7 @@
 // The story driver. Phases registered as data (registry.js and src/game/sets/) run through the generic rules below;
 // the original hand-written phases keep their code here and in runtime.js.
-const caseTitles={officeEntry:'00 / NIGHT DIVISION',officeFile:'THE BELL FILE',officeBoard:'THE CASE BOARD',officeWindow:'RAIN ON THE GLASS',stationEntry:'02 / NORTH STATION',stationQuiet:'THE DESK IS STILL WARM',stationListen:'READING THE MAINTENANCE TAPE',stationReady:'A USEFUL PRECAUTION',pumpEntry:'03 / PUMP ROOM 4',pumpFind:'BELL IS ALIVE',pumpDanger:'THE PIPE IS GIVING WAY',pumpQte:'THE WATER IS RISING',pumpResult:'OUT OF THE WATER',pumpTruth:'WHY BELL DISAPPEARED',roofEntry:'04 / ABOVE THE CITY',roofQuiet:'A MOMENT TO BREATHE',roofListen:'LISTENING TO THE BAND',roofSignal:'A VOICE IN THE STATIC',roofConfession:'THE FORGED ORDER',clubEntry:'05 / THE FILAMENT',clubBooth:'THE BACK BOOTH',clubFace:'VALE SEES ROOK',clubQte:'THE BOTTLE',clubResult:'THE BACK DOOR',chaseEntry:'06 / THE ELEVATED ROAD',chaseQteA:'FREIGHT IN YOUR LANE',chaseBank:'UNDER THE SIGNAL GANTRIES',chaseQteB:'THE BRIDGE IS LIFTING',chaseFinish:'ONE LAST TURN',tunnelEntry:'07 / THE UNDERCITY',tunnelQte:'THE DRAIN FORKS',tunnelFinish:'OUT OF THE DARK',canalEntry:'10 / FIRST LIGHT',canalEnd:'CASE CLOSED'};
-const liveCase=['officeEntry','officeFile','officeBoard','officeWindow','stationEntry','pumpEntry','pumpDanger','pumpResult','roofEntry','clubEntry','clubFace','clubResult','chaseEntry','chaseBank','chaseFinish','tunnelEntry','tunnelFinish','canalEntry'];
+const caseTitles={stationEntry:'02 / NORTH STATION',stationQuiet:'THE DESK IS STILL WARM',stationListen:'READING THE MAINTENANCE TAPE',stationReady:'A USEFUL PRECAUTION',pumpEntry:'03 / PUMP ROOM 4',pumpFind:'BELL IS ALIVE',pumpDanger:'THE PIPE IS GIVING WAY',pumpQte:'THE WATER IS RISING',pumpResult:'OUT OF THE WATER',pumpTruth:'WHY BELL DISAPPEARED',roofEntry:'04 / ABOVE THE CITY',roofQuiet:'A MOMENT TO BREATHE',roofListen:'LISTENING TO THE BAND',roofSignal:'A VOICE IN THE STATIC',roofConfession:'THE FORGED ORDER',clubEntry:'05 / THE FILAMENT',clubBooth:'THE BACK BOOTH',clubFace:'VALE SEES ROOK',clubQte:'THE BOTTLE',clubResult:'THE BACK DOOR',chaseEntry:'06 / THE ELEVATED ROAD',chaseQteA:'FREIGHT IN YOUR LANE',chaseBank:'UNDER THE SIGNAL GANTRIES',chaseQteB:'THE BRIDGE IS LIFTING',chaseFinish:'ONE LAST TURN',tunnelEntry:'07 / THE UNDERCITY',tunnelQte:'THE DRAIN FORKS',tunnelFinish:'OUT OF THE DARK',canalEntry:'10 / FIRST LIGHT',canalEnd:'CASE CLOSED'};
+const liveCase=['stationEntry','pumpEntry','pumpDanger','pumpResult','roofEntry','clubEntry','clubFace','clubResult','chaseEntry','chaseBank','chaseFinish','tunnelEntry','tunnelFinish','canalEntry'];
 const qtePhases=['qte','pumpQte','clubQte','chaseQteA','chaseQteB','tunnelQte'];
 const observePhases=['watch','stationListen','roofListen'];
 const resultPhases=['result','pumpResult','clubResult','chaseBank','chaseFinish','tunnelFinish'];
@@ -10,6 +10,60 @@ function isObserving(){const d=phaseDef();return d?d.kind==='observe':observePha
 function isResult(){const d=phaseDef();return d?d.kind==='result':resultPhases.includes(state.phase);}
 function isLive(){const d=phaseDef();return d?['cutscene','windup','result','death'].includes(d.kind):['follow','danger','result','arrival',...liveCase].includes(state.phase);}
 function isWindup(p=state.phase){const d=phaseDef(p);return d?d.kind==='windup':['danger','pumpDanger','clubFace'].includes(p);}
+function isInvestigating(){return phaseDef()?.kind==='investigate';}
+// Investigate beats: a quiet look around a set. The examined spots live in the beat's saved bitmask; which spot is selected
+// (its caption and camera) is a session detail, and the previous one lets the blocking walk Rook back from it.
+let spotId='',spotPrev='';
+const popcount=n=>{let c=0;for(;n;n>>=1)c+=n&1;return c;};
+function investigateSpot(){const d=phaseDef(picturePhase());if(!d||d.kind!=='investigate')return null;return d.spots.find(s=>s.id===spotId)||null;}
+function investigatePrevious(){return spotPrev;}
+const spotShown=(d,s)=>!s.after||!!(state[d.field]&s.after);
+const spotSeen=(d,s)=>!!(state[d.field]&s.bit);
+function investigateOpen(d=phaseDef()){const bits=d.spots.filter(s=>spotShown(d,s)).reduce((m,s)=>m|s.bit,0);return popcount(state[d.field]&bits)>=d.need;}
+// Selecting a spot: its bit is saved, its clue and enter() run once, its caption replaces the beat's line through the caption
+// queue, and the camera eases to its shot from wherever it stands. An examined spot re-reads for nothing.
+function investigate(spot){
+ if(!isInvestigating()||state.paused||session.menu||transit)return false;
+ const d=phaseDef(),s=typeof spot==='string'?d.spots.find(x=>x.id===spot):spot;
+ if(!s||!spotShown(d,s))return false;
+ if(!spotSeen(d,s)){state[d.field]|=s.bit;if(s.enter)s.enter();const clue=typeof s.clue==='function'?s.clue():s.clue;if(clue)addClue(clue);cue('clue');}
+ if(spotId===s.id)replayCaption();else{spotPrev=spotId;spotId=s.id;transitionFrom={...camera};state.event=0;}
+ ui();render();checkpoint();return true;
+}
+// Number keys pick spots by their label's number; a tap picks the marker whose rectangle it lands in.
+function investigateKey(n){const d=phaseDef();return !!d&&d.kind==='investigate'&&investigate(d.spots[n-1]);}
+function investigateAt(clientX,clientY){const id=labelAt(clientX,clientY,l=>l.spot)?.spot;return !!id&&investigate(id);}
+function investigateUI(d){
+ const seen=spotId?d.spots.find(s=>s.id===spotId):null;
+ el.caption.textContent=seen?seen.look():d.caption?d.caption():'';
+ for(const s of d.spots)if(spotShown(d,s))button(s.label,()=>investigate(s),spotSeen(d,s)?'lc-seen':'');
+ if(investigateOpen(d))button(d.exit.label,()=>enter(nextOf(d.exit)));
+ if(d.exit.early&&d.exit.early.when())button(d.exit.early.label,()=>enter(nextOf(d.exit.early)));
+}
+// 00 / NIGHT DIVISION. The arrival, then the desk: four spots, two of them before the stairs. The looks are the old
+// cutscene captions for now; docs/design/INVESTIGATION.md replaces them.
+const officeSpotShot=()=>look(3.2,2,-.5,-3,1.25,8);// from the front corner: the board left, the desk and the window right
+registerPhases('office',{
+ officeEntry:{kind:'cutscene',title:'00 / NIGHT DIVISION',duration:6,next:'officeDesk',
+  caption:()=>'Night Division, 23:40. Nine days of rain. Rook\'s desk lamp is the only light still burning on the floor.',
+  buttons:b=>b('[SKIP INTRO]',()=>enter('brief'))},
+ officeDesk:{kind:'investigate',title:'THE DESK',field:'officeLooked',need:2,step:'Looked over the desk',shot:officeSpotShot,
+  caption:()=>'The file, the case board, the dispatch log and the window. Rook looks the desk over before he takes the stairs.',
+  spots:[
+   {id:'file',bit:1,at:()=>[-.45,2,8.2],label:'[1] THE BELL FILE',ease:5,shot:()=>look(2.3,1.45,6.4,-1.6,1.2,8.8),
+    look:()=>'The file: IVO BELL, lamplighter, missing four nights. Last seen at the closed North Station. Attached, a report that someone is walking his route with his lantern.'},
+   // The board: three seconds on the two photographs, then a glance out through the open door across the corridor to Vale's dark door.
+   {id:'board',bit:2,at:()=>[-7.55,3.55,5.6],label:'[2] THE CASE BOARD',ease:3,
+    shot:()=>{const a=look(-2.4,1.8,3.6,-7.9,2.7,5.8);return state.event<3||reduce?a:blendShot(a,look(-6.6,1.6,-6.6,-14,1.5,-10.5),smooth(clamp((state.event-3)/2,0,1)));},
+    clue:'Case board: Inspector Aurel Vale of Night Division is the Lumen Board\'s grid security liaison. His office is next to Rook\'s.',
+    look:()=>'On the case board, beside Bell\'s photograph, a commendation: INSPECTOR A. VALE, GRID SECURITY LIAISON, LUMEN BOARD. His office is the dark one across the corridor.'},
+   {id:'log',bit:4,at:()=>[-2.05,1.5,8.45],label:'[3] THE DISPATCH LOG',ease:4,shot:()=>look(-1,2.1,6,-2.05,1.15,8.45),
+    look:()=>'The dispatch log: a maintenance call at 00:17 for Pump Room 4, logged to I. BELL. The hand is not Bell\'s.'},
+   {id:'window',bit:8,at:()=>[0,2.9,15.9],label:'[4] THE WINDOW',ease:6,shot:()=>look(-2.2,2.2,6,0,2.4,16),
+    look:()=>'Rook takes his coat. Below the window the city runs on power it cannot account for, and one street on the lamplighter\'s route has gone dark.'}
+  ],
+  exit:{label:'[TAKE THE STAIRS]',next:'brief'}}
+});
 // Prompt windows, measured from the first flash of the cue: a base per beat, +0.5 s for an earlier observation, -0.5 s for
 // an earlier injury, never under 1.25 or over 3.5 seconds. Registered prompts carry their base and modifiers (or a window()).
 function caseDuration(){
@@ -68,9 +122,9 @@ function caseEnter(phase){
  state.rewound=phase===rewindTo;rewindTo='';cueFirstFrame=frame+1;
  if(isWindup(phase))windupSeconds=reduce||state.untimed?2:1.5+hash(Math.floor(state.t*1000),3);
  if(phase==='deduce')ladder.street=state.wrong?1:0;if(phase==='loftBoard')ladder.loft=state.misread?1:0;if(phase==='roomDeduce')ladder.room=state.slip?1:0;
+ spotId='';spotPrev='';// an investigate beat opens on its own line with nothing selected; its examined bits are the checkpoint's
  const d=phaseDef(phase);if(d){if(d.kind==='death'){if(state.rewinds>0)state.rewinds--;state.deaths|=d.bit;}if(d.enter)d.enter();return;}
  if(phase==='tunnelQte')tunnelFork=state.distance+30;
- if(phase==='officeBoard')addClue('Case board: Inspector Aurel Vale of Night Division is the Lumen Board\'s grid security liaison. His office is next to Rook\'s.');
  if(phase==='stationQuiet')addClue('Maintenance desk: order 7731, RESERVE BATTERIES, signed INSPECTOR VALE. The same number Bell tagged on his route map.');
  if(phase==='stationReady'){state.decoded=true;addClue('The maintenance tape says: close the INLET wheel before pulling someone off the flooded platform.');}
  if(phase==='pumpTruth'){
@@ -133,9 +187,9 @@ function caseAdvance(dt){
  if(moving()&&!reduce&&!(isQte()&&state.untimed)&&!(d&&d.kind==='death')&&p!=='coldCase')state.distance+=dt*(sets[sceneName]?.speed?.(p)??(isQte()?1.6:/Finish/.test(p)?13:21));
  // A cutscene or result holds for its picture or until its caption could be read, whichever is longer (presentation.js holdFor).
  const done=(s)=>e>=holdFor(reduce&&s>2?1:s);
+ const c=cutsceneEnd();if(c){if(done(c.duration))enter(c.next);return;}
  if(d){
-  if(d.kind==='cutscene'&&done(d.duration))enter(nextOf(d));
-  else if(d.kind==='observe'&&e>=8)enter(nextOf(d));
+  if(d.kind==='observe'&&e>=8)enter(nextOf(d));
   else if(d.kind==='windup'&&e>=windupSeconds)enter(nextOf(d));
   else if(d.kind==='prompt'&&!state.untimed&&e>=caseDuration())promptMiss();
   else if(d.kind==='result'&&done(d.duration||4)&&!canRewind())enter(nextOf(d));
@@ -145,37 +199,40 @@ function caseAdvance(dt){
   }
   return;
  }
- if(p==='officeEntry'&&done(8))enter('officeFile');
- else if(p==='officeFile'&&done(5))enter('officeBoard');
- else if(p==='officeBoard'&&done(5))enter('officeWindow');
- else if(p==='officeWindow'&&done(6))enter('brief');
- else if(p==='stationEntry'&&done(7))enter('stationQuiet');
- else if(p==='stationListen'&&e>=8)enter('stationReady');
- else if(p==='pumpEntry'&&done(6))enter('pumpFind');
+ if(p==='stationListen'&&e>=8)enter('stationReady');
  else if(p==='pumpDanger'&&e>=windupSeconds)enter('pumpQte');
  else if(p==='pumpQte'&&!state.untimed&&e>=caseDuration())promptMiss();
  else if(p==='pumpResult'&&done(4)&&!canRewind())enter('pumpTruth');
- else if(p==='roofEntry'&&done(8))enter('roofQuiet');
  else if(p==='roofListen'&&e>=8)enter('roofSignal');
- else if(p==='clubEntry'&&done(8))enter('clubBooth');
  else if(p==='clubFace'&&e>=windupSeconds)enter('clubQte');
  else if(p==='clubQte'&&!state.untimed&&e>=caseDuration())promptMiss();
  else if(p==='clubResult'&&done(4)&&!canRewind())startChase();
- else if(p==='chaseEntry'&&done(6))enter('chaseQteA');
  else if(p==='chaseQteA'&&!state.untimed&&e>=caseDuration())promptMiss();
  else if(p==='chaseBank'&&done(6)&&!canRewind())enter('chaseQteB');
  else if(p==='chaseQteB'&&!state.untimed&&e>=caseDuration())promptMiss();
  else if(p==='chaseFinish'&&done(6)&&!canRewind())enter('subEntry');
- else if(p==='tunnelEntry'&&done(6))enter('tunnelQte');
  else if(p==='tunnelQte'&&!state.untimed&&e>=caseDuration())promptMiss();
  else if(p==='tunnelFinish'&&done(6)&&!canRewind())enter('subEntry');
- else if(p==='canalEntry'&&done(7))enter('canalEnd');
+}
+// Every cutscene's end: registered ones by kind, the hand-written case and street ones from these tables (the street's
+// run from runtime.js's loop). A cutscene ends when its picture has played and its caption could be read; a tap, Enter or
+// Space ends it as soon as both are true (endCutscene), so a fast reader is not held past the text.
+const cutsceneEnds={stationEntry:['stationQuiet',7],pumpEntry:['pumpFind',6],roofEntry:['roofQuiet',8],clubEntry:['clubBooth',8],chaseEntry:['chaseQteA',6],tunnelEntry:['tunnelQte',6],canalEntry:['canalEnd',7]};
+const streetCutscenes={follow:['danger',8],loftTurn:['loftEntry',4],arrival:['stationEntry',5]};
+function cutsceneEnd(p=state.phase){
+ const d=phaseDef(p);if(d)return d.kind==='cutscene'?{next:nextOf(d),duration:d.duration}:null;
+ const c=cutsceneEnds[p]||streetCutscenes[p];return c?{next:c[0],duration:c[1]}:null;
+}
+function endCutscene(){
+ const c=cutsceneEnd();if(!c||state.paused||session.menu||transit)return false;
+ const duration=reduce&&c.duration>2?1:c.duration;
+ if(!captionDone()||state.event<duration)return false;
+ enter(c.next);return true;
 }
 function roofActions(){
  if(!state.radio)button('[LISTEN TO THE RADIO / 8s]',()=>enter('roofListen'));
  button('[PURSUE VALE]',pursuit);button('[STAY WITH BELL]',stayWithBell);
 }
-const skipIntro=()=>button('[SKIP INTRO]',()=>enter('brief'));
 // A live timed beat shows nothing under the picture: the cues are the interface. Untimed play keeps the caption and the buttons.
 function promptUI(caption,cues){
  el.caption.textContent=state.untimed?caption:'';
@@ -186,6 +243,7 @@ function caseUI(){
  const d=phaseDef();
  if(d){
   el.phase.textContent=d.title||'THE LAST LIGHT';el.caption.textContent=d.caption?d.caption():'';
+  if(d.kind==='investigate')investigateUI(d);
   if(d.kind==='prompt')promptUI(el.caption.textContent,d.cues.map(c=>[c.label,c.dir]));
   if(d.buttons)d.buttons(button);
   if(d.kind==='result')rewindActions();
@@ -194,10 +252,6 @@ function caseUI(){
  }
  el.phase.textContent=caseTitles[state.phase]||'THE LAST LIGHT';
  switch(state.phase){
- case 'officeEntry':el.caption.textContent='Night Division, 23:40. Nine days of rain. Rook\'s desk lamp is the only light still burning on the floor.';skipIntro();break;
- case 'officeFile':el.caption.textContent='The file: IVO BELL, lamplighter, missing four nights. Last seen at the closed North Station. Attached, a report that someone is walking his route with his lantern.';skipIntro();break;
- case 'officeBoard':el.caption.textContent='On the case board, beside Bell\'s photograph, a commendation: INSPECTOR A. VALE, GRID SECURITY LIAISON, LUMEN BOARD. His office is the dark one across the corridor.';skipIntro();break;
- case 'officeWindow':el.caption.textContent='Rook takes his coat. Below the window the city runs on power it cannot account for, and one street on the lamplighter\'s route has gone dark.';skipIntro();break;
  case 'stationEntry':el.caption.textContent=state.choice==='person'?'Nell opens the service door with three taps. Footsteps echo through the empty concourse.':'The service latch gives under Rook\'s shoulder. Inside, a maintenance desk glows in an otherwise empty station.';break;
  case 'stationQuiet':
   el.caption.textContent='A fresh order on the desk: INSPECTOR VALE / RESERVE BATTERIES / ORDER 7731. A maintenance tape is still turning. Below the floor, someone strikes a pipe.';

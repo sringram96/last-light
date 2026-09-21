@@ -21,6 +21,12 @@
 // result (stinger():[text,tone], duration seconds unless a rewind is offered, rewind:{miss(),back,reset()}, next),
 // death ({duration:4, caption(), stinger(), dead:'pump'|'market'|'carrier'|'gap'|'pier'|'rack', bit, back:'<windup>', reset()}:
 //  a lamp goes on entry and deaths gains bit; after the duration the night rewinds to back, or the case goes cold).
+// investigate (untimed; field:'officeLooked' names the saved bitmask of examined spots, never reset by enter();
+//  spots:[{id, bit, at:()=>[x,y,z] the marker's world point, label:'[1] THE BELL FILE', look:()=>caption when examined,
+//  shot?:()=>look(...) the camera while it is selected, ease?:seconds, clue?:string|()=>string added on the first look,
+//  enter?:()=>void on the first look, after?:bit of another spot that must be examined before this one shows}],
+//  need: examined spots before the exit shows, step:'Looked over the desk' for the route line,
+//  exit:{label:'[TAKE THE STAIRS]', next:'brief', early?:{label, next, when:()=>bool} an exit offered while when() holds}).
 // A phase registered with set '*' (coldCase) belongs to whichever set the story is in.
 const sets={},phaseDefs={};
 function registerSet(name,def){sets[name]={name,...def};}

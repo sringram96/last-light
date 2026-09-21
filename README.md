@@ -44,7 +44,7 @@ Reduced-motion settings use stable shots, shortened travel, untimed prompts and 
 
 A missing lamplighter, a city running on stolen reserve power, and one night to find who signed for it. Fourteen sets, eight action beats across the routes (seven on any one pursuit), three deductions, seven endings, twenty-two discoveries and six deaths to see. The full beat sheet is in [docs/design/BEATS.md](docs/design/BEATS.md); the cast is in [docs/design/CHARACTERS.md](docs/design/CHARACTERS.md).
 
-0. **Night Division:** a skippable prologue in Rook's office: the desk, the case board with the Lumen Board memo, and the Bell file.
+0. **Night Division:** a skippable arrival in Rook's office, then a look around the desk: the Bell file, the case board with Vale's commendation, the dispatch log and the window, any two of them before the stairs.
 1. **Station Road:** tail the courier, choose whom or what to save, then deduce where Bell is: the station, his loft over the depot, or the hotel.
 2. **Bell's Loft:** a detour over the depot where Bell's note and his own case board explain the order, at the cost of a wrong reading.
 3. **Concourse:** inspect the maintenance tape for order 7731 or follow the knocking immediately.

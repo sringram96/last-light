@@ -53,7 +53,8 @@ test('the sprite loader accepts the design sheet shape and rejects unsafe rows',
 });
 // Route helpers. A cutscene or result holds until its caption could be read, so the harness steps to the next phase (next())
 // rather than waiting a fixed second; observes, windups, prompts and transits keep their fixed clocks.
-const intro=g=>{g.click('NEW CASE');g.phase('officeEntry');g.next();g.phase('officeFile');g.next();g.phase('officeBoard');g.next();g.phase('officeWindow');g.next();g.phase('brief');};
+// The intro: the arrival plays out, then two looks at the desk open the stairs (a transit to the street unless reduced motion cuts).
+const intro=g=>{g.click('NEW CASE');g.phase('officeEntry');g.next();g.phase('officeDesk');g.key('1');g.key('2');g.click('TAKE THE STAIRS');if(g.audit().transit)g.next();g.phase('brief');};
 const throughHall=(g,move)=>{g.phase('subEntry');g.next();g.phase('subDock');g.next();g.phase('subManifest');g.next();g.phase('subDanger');g.next();g.phase('subQte');g.click(move);g.phase('subResult');g.next();g.phase('subDawn');g.next();};
 const throughRoom=(g,pick)=>{g.phase('roomEntry');g.next();g.phase('roomDeduce');g.click(pick);g.phase('roomName');g.click('GO TO BELL');g.next();g.phase('canalEnd');};
 test('menus pause action, preferences persist, and previews preserve the story checkpoint',()=>{
@@ -80,7 +81,7 @@ test('the long route: rescue, confession, the tram, the market, the club, the ro
  throughHall(g,'PULL THE BREAKER');throughRoom(g,'SOMEONE ABOVE');
  const a=g.audit();assert(a.state.caught&&a.state.twist);assert.equal(a.state.rescue,'valve');assert.equal(a.state.hall,'breaker');assert.equal(a.nonASCII,0);assert.equal(a.state.t,0);
  assert.deepEqual(a.reflex,{faced:7,landed:7,deaths:0,restarts:0,grade:'A'});
- assert.deepEqual(a.route,['Followed at once','Caught the courier','Read the tape','Closed the inlet','Listened to the band',"Heard Nell's confession",'Pursued Vale','Spotted the tail','Asked the stall keeper','Went over the stalls','Went over the bar','Dove right','Jumped the gap','Pulled the breaker',"Named the Board's man"]);
+ assert.deepEqual(a.route,['Looked over the desk (2/4)','Followed at once','Caught the courier','Read the tape','Closed the inlet','Listened to the band',"Heard Nell's confession",'Pursued Vale','Spotted the tail','Asked the stall keeper','Went over the stalls','Went over the bar','Dove right','Jumped the gap','Pulled the breaker',"Named the Board's man"]);
  assert.deepEqual(a.records.endings,['board']);assert.deepEqual(a.records.discoveries,['witness','tape','ledger','band','confession','jump','chip','flawless','tail','keeper','vine','manifest','ashe','sharp']);assert.deepEqual(a.records.deaths,[]);
  assert(g.elements['.lc-outcome'].textContent.startsWith('ENDING: LIGHTS ON THE BOARD (1/7 found). Inputs 7/7, deaths 0, restarts 0, grade A.'));
  assert(a.board.some(l=>l.startsWith('HALDEN ASHE')&&l.includes('named on the warrant')));
@@ -316,20 +317,20 @@ test('the menu set draws on its dense grid and a story set returns to 70 rows',(
  // The portrait tier is a close-up for the menu alone: a story shot never picks it.
  const s=game({width:732});s.click('STATION','reel-actions');s.run(3);for(const r of s.audit().sprites)assert(['full','mid','small'].includes(r.sheet),r.sheet);
 });
-test('a cutscene holds until its caption is read; a tap paces the chunks and never ends the beat early',()=>{
- const g=game();g.click('NEW CASE');g.next();g.phase('officeFile');
- const c=g.audit().caption;assert(c.chunks.length>=2,'the file caption plays in chunks');assert(c.hold>5,'the beat holds longer than its 5 s picture');
+test('a cutscene holds until its caption is read; a tap paces the chunks and never ends the beat before the text',()=>{
+ const g=game();g.click('LOFT','reel-actions');g.phase('loftEntry');
+ const c=g.audit().caption;assert(c.chunks.length>=2,'the loft caption plays in chunks');assert(c.hold>7,'the beat holds longer than its 7 s picture');
  for(const t of c.chunks)assert(t.length<=150&&/[.!?"]$/.test(t),t);
  assert(Math.abs(c.holds[0]-Math.max(2,c.chunks[0].length/45+c.chunks[0].split(' ').length*.3+.4))<1e-9);assert(Math.abs(c.hold-c.holds.reduce((s,h)=>s+h,0)-.4)<1e-9);
  assert.equal(g.elements['.lc-said'].textContent,c.text,'the whole caption is announced once');
- g.run(.5);let a=g.audit().caption;assert(a.shown>=20&&a.shown<c.chunks[0].length,'types at 45 characters a second');assert.equal(g.elements['.lc-more'].textContent,'');
+ g.run(.6);let a=g.audit().caption;assert(a.shown>=20&&a.shown<c.chunks[0].length,'types at 45 characters a second');// the reel's first frame carries no timeassert.equal(g.elements['.lc-more'].textContent,'');
  g.elements['.lc-picture'].click();a=g.audit().caption;assert.equal(a.index,0);assert.equal(a.shown,c.chunks[0].length);assert.equal(g.elements['.lc-more'].textContent,'TAP TO CONTINUE');
  g.elements['.lc-caption'].click();a=g.audit().caption;assert.equal(a.index,1);assert.equal(a.shown,0);
  g.key(' ');a=g.audit().caption;assert.equal(a.shown,c.chunks[1].length);
  for(let i=0;i<c.chunks.length;i++)g.key('Enter');
  a=g.audit().caption;assert.equal(a.index,c.chunks.length-1,'the last chunk stays');assert.equal(g.elements['.lc-more'].textContent,'');
- g.run(5.2);g.phase('officeFile');assert(!g.audit().caption.done);
- g.run(c.hold-5.7+.3);g.phase('officeBoard');assert.equal(g.elements['.lc-said'].textContent,g.audit().caption.text);
+ g.run(7.2);g.phase('loftEntry','read early, the beat still waits for its own hold unless the player moves on');
+ g.run(c.hold-7.7+.3);g.phase('loftTable');assert.equal(g.elements['.lc-said'].textContent,g.audit().caption.text);
  // Back from the menu, the beat's caption resumes where it was; a prompt with no caption holds for nothing.
  g.elements['.lc-picture'].click();const shown=g.audit().caption.shown;g.elements['.lc-menu'].click();g.run(1);g.click('RESUME');assert.equal(g.audit().caption.shown,shown);
 });
@@ -347,6 +348,55 @@ test('the transition line is chunk zero of the next phase and outlives the disso
  g.run(7.5);g.phase('stationEntry');g.next();g.phase('stationQuiet');
  // Reduced motion cuts directly; the line then plays as a chunk with its own reading hold.
  const r=game({reduced:true});r.click('NEW CASE');r.click('SKIP INTRO');r.phase('brief');a=r.audit().caption;assert.equal(a.chunks[0],line);assert.equal(a.visible,line);assert.equal(a.holds[0],14*.3+.8);
+});
+// The intro's look-around: four examine markers in the picture and four buttons under it, a tap on a marker's rectangle or
+// its number key examines the spot (its bit, its clue, its caption, its camera), the stairs open at two, arrows do nothing.
+test('the office intro is an arrival and a look around the desk: markers, keys, taps, the exit at two looks, and resume',()=>{
+ const g=game({width:732});g.click('NEW CASE');g.phase('officeEntry');assert.equal(g.audit().card,'NIGHT DIVISION');
+ assert.deepEqual(g.elements['.lc-actions'].children.map(b=>b.textContent),['[SKIP INTRO]']);
+ g.next();g.phase('officeDesk');g.run(2);let a=g.audit();
+ assert.deepEqual(a.labels.map(l=>l.spot+' '+l.text),['file [1]','board [2]','log [3]','window [4]']);
+ assert(a.labels.every(l=>l.x0>=0&&l.x1<a.columns&&l.y0>=0&&l.y0<a.rows),'four markers in the frame');
+ assert.deepEqual(g.elements['.lc-actions'].children.map(b=>b.textContent),['[1] THE BELL FILE','[2] THE CASE BOARD','[3] THE DISPATCH LOG','[4] THE WINDOW']);
+ assert.equal(g.elements['.lc-timer'].textContent,'LOOK AROUND');assert.equal(a.state.officeLooked,0);assert.equal(a.card,'');assert.equal(a.objective,'A MISSING LAMPLIGHTER');
+ assert(g.elements['.lc-caption'].textContent.startsWith('The file, the case board'));assert.deepEqual(a.route,[]);
+ const cw=732/a.columns,ch=cw*1.72,inkAt=l=>g.frame().find(d=>d[0]==='['&&Math.round(d[1]/cw)===l.x0&&Math.round(d[2]/ch)===l.y0)[3];
+ const unseen=inkAt(a.labels[1]);
+ const camera={...a.camera},[x,y]=g.spotCentre('board');g.tap(x+12,y);a=g.audit();
+ assert.equal(a.state.officeLooked,2);assert.equal(a.spot,'board');assert(a.state.clues.some(c=>c.startsWith('Case board: Inspector Aurel Vale')));
+ assert(g.elements['.lc-caption'].textContent.startsWith('On the case board'));assert.equal(a.caption.chunks.length,2);assert.equal(a.caption.index,0);
+ assert.equal(JSON.parse(g.storage.getItem('last-light/save/v1')).state.officeLooked,2,'a look is checkpointed');
+ g.run(1);a=g.audit();assert.notDeepEqual(a.camera,camera,'the camera eases to the board');assert.equal(a.state.phase,'officeDesk');
+ assert(g.elements['.lc-actions'].children[1].className.includes('lc-seen'));assert.equal(g.elements['.lc-timer'].textContent,'LOOK AROUND');
+ assert(g.audit().board.some(l=>l.startsWith('INSPECTOR VALE')),'the board look puts Vale on the persons of interest');
+ g.key('ArrowLeft');g.key('ArrowDown');g.swipe('up');a=g.audit();assert.equal(a.state.phase,'officeDesk');assert.equal(a.state.officeLooked,2);assert.equal(a.state.rewinds,3);
+ g.key('1');a=g.audit();assert.equal(a.state.officeLooked,3);assert.equal(a.spot,'file');assert.equal(g.elements['.lc-timer'].textContent,'YOUR MOVE');
+ assert.deepEqual(g.elements['.lc-actions'].children.map(b=>b.textContent).slice(-1),['[TAKE THE STAIRS]']);assert.deepEqual(a.route,['Looked over the desk (2/4)']);
+ g.run(5.5);a=g.audit();const seen=a.labels.find(l=>l.spot==='file');assert(seen&&inkAt(seen)!==unseen,'an examined marker changes colour');assert.equal(a.labels.filter(l=>l.spot).length,4);
+ // Re-reading an examined spot restarts its caption and changes nothing else.
+ g.key('2');a=g.audit();assert.equal(a.state.officeLooked,3);assert.equal(a.spot,'board');assert.equal(a.caption.index,0);assert.equal(a.state.clues.length,1);
+ // A resume keeps the bits and opens on the beat's own line, with the stairs already open.
+ const r=game({width:732,storage:g.storage});r.click('CONTINUE CASE');r.phase('officeDesk');a=r.audit();assert.equal(a.state.officeLooked,3);assert.equal(a.spot,'');
+ assert(r.elements['.lc-caption'].textContent.startsWith('The file, the case board'));assert(r.elements['.lc-actions'].children.some(b=>b.textContent==='[TAKE THE STAIRS]'));
+ g.click('TAKE THE STAIRS');assert.deepEqual(g.audit().transit,{phase:'brief',t:0});g.next();g.phase('brief');assert.equal(g.audit().scene,'street');assert.equal(g.audit().card,'STATION ROAD');
+ // SKIP INTRO from the arrival still goes straight to the street; a checkpoint at a removed office beat resumes at the desk.
+ const s=game({reduced:true});s.click('NEW CASE');s.click('SKIP INTRO');s.phase('brief');assert.deepEqual(s.audit().route,[]);
+ const old=memoryStorage();old.setItem('last-light/save/v1',JSON.stringify({version:1,state:{phase:'officeWindow',clues:[]}}));
+ const o=game({reduced:true,storage:old});o.click('CONTINUE CASE');o.phase('officeDesk');assert.equal(o.audit().state.officeLooked,0);
+});
+test('a cutscene ends on Enter, Space or a tap only once its caption is read and its picture has played',()=>{
+ // The loft's entry: two chunks over a seven-second picture. Read at once, the text is done at about six seconds.
+ const g=game();g.click('LOFT','reel-actions');g.phase('loftEntry');const c=g.audit().caption;assert.equal(c.chunks.length,2);
+ g.key('Enter');g.key('Enter');g.key(' ');let a=g.audit().caption;assert.equal(a.index,1);assert.equal(a.shown,c.chunks[1].length);assert(!a.done);
+ g.run(c.holds[1]+.2);assert(g.audit().caption.done);g.key('Enter');g.phase('loftEntry','the picture has not played its seven seconds');
+ g.run(7-c.holds[1]);g.key('Enter');g.phase('loftTable');
+ // A tap on the picture: the first paces the chunks, the one after the text is read and the picture played moves on.
+ const t=game();t.click('LOFT','reel-actions');t.run(7.2);t.elements['.lc-picture'].click();t.phase('loftEntry');assert.equal(t.audit().caption.index,1);
+ t.run(c.holds[1]+.2);t.elements['.lc-pause'].click();t.key('Enter');t.phase('loftEntry','not while paused');t.elements['.lc-pause'].click();
+ t.elements['.lc-caption'].click();t.phase('loftTable');
+ // A hand-written case cutscene ends the same way; a result does not.
+ const s=game();s.click('STATION','reel-actions');s.phase('stationEntry');s.run(7.2);for(let i=0;i<4;i++)s.key('Enter');s.run(s.audit().caption.holds.at(-1)+.2);s.key('Enter');s.phase('stationQuiet');
+ const p=game({reduced:true});p.click('FLOOD','reel-actions');p.next();p.click('GET BELL');p.next();p.phase('pumpQte');p.click('CLOSE THE INLET');p.phase('pumpResult');p.run(1);p.key('Enter');p.phase('pumpResult');
 });
 test('the case file drawer replaces the picture, pauses the game and freezes a deadline',()=>{
  const g=game({reduced:true});g.click('CHASE','reel-actions');g.elements['.lc-timing'].click();g.next();g.phase('chaseQteA');g.run(.5);

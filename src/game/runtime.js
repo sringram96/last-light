@@ -189,6 +189,7 @@ function render(){
   const q=project(p);pixel(q.x,q.y,p.z,'/',7*20+7);
  }
  actor(cast.courier,false,'courier');actor(cast.rook,true,'rook');(cast.others||[]).forEach((a,i)=>actor(a,false,'other'+i));
+ investigateLabels();
  if(sceneName==='street'){
  worldLabel([-7.95,3.05,5.5],'PRINT',1);worldLabel([0,6.5,38.75],'NORTH STATION',2);worldLabel([-4.9,2.95,38.6],'PUMP 4',2);
  const hotel=cam([7.03,11.2,11.8]);if(hotel.z>2){const p=project(hotel);'HOTEL'.split('').forEach((g,i)=>pixel(p.x,p.y+i,hotel.z-.2,g,2*20+17));}
@@ -220,8 +221,8 @@ function render(){
 }
 function qteDuration(){return caseDuration();}
 function addClue(text){if(!state.clues.includes(text))state.clues.push(text);}
-function button(text,fn){
- const b=document.createElement('button');b.type='button';b.className='cursor-interaction';b.textContent=text;b.disabled=state.paused;
+function button(text,fn,className=''){
+ const b=document.createElement('button');b.type='button';b.className='cursor-interaction'+(className?' '+className:'');b.textContent=text;b.disabled=state.paused;
  const action=()=>{if(!state.paused&&!b.disabled)fn();};b.addEventListener('click',action);el.actions.appendChild(b);keys.push(action);
 }
 // A scene change plays an exit beat and a dissolve before the next set fades up; previews, resumes and reduced motion cut directly.
@@ -275,7 +276,7 @@ function deduce(where){
  state.wrong=true;ui();
 }
 function reset(){
- Object.assign(state,{t:0,paused:false,mono:state.mono,travel:0,moving:false,phase:'brief',event:0,watched:false,choice:'',untimed:state.untimed,clues:[],wrong:false,decoded:false,radio:false,twist:false,rescue:'',gap:0,pursuit:'',caught:false,distance:20,endingSeen:false,firstMove:'',phaseDistance:20,club:'',tunnel:'',reaction:0,rewinds:3,note:false,loftSeen:false,misread:false,tail:false,keeper:false,market:'',hall:'',slip:false,roomPick:'',dawn:0,deaths:0,restarts:0,dead:'',stalled:false,faced:false,shown:false,rewound:false});
+ Object.assign(state,{t:0,paused:false,mono:state.mono,travel:0,moving:false,phase:'brief',event:0,watched:false,choice:'',untimed:state.untimed,clues:[],wrong:false,decoded:false,radio:false,twist:false,rescue:'',gap:0,pursuit:'',caught:false,distance:20,endingSeen:false,firstMove:'',phaseDistance:20,club:'',tunnel:'',reaction:0,rewinds:3,note:false,loftSeen:false,misread:false,tail:false,keeper:false,market:'',hall:'',slip:false,roomPick:'',dawn:0,deaths:0,restarts:0,dead:'',stalled:false,faced:false,shown:false,rewound:false,officeLooked:0,stationLooked:0,pumpLooked:0,loftLooked:0,subLooked:0,clubLooked:0});
  transit=null;fade=1;fadeIn=0;
  setScene('street');
  Object.assign(camera,startShot);transitionFrom={...startShot};el.journal.open=false;lastTime=0;ui();render();
@@ -286,6 +287,8 @@ function timer(){
  if(state.paused){el.timer.textContent='PAUSED';return;}
  if(transit){el.timer.textContent='LIVE';return;}
  if(isObserving())el.timer.textContent='OBSERVING / '+Math.max(0,Math.ceil(8-state.event))+'s';
+ // An investigate beat asks for looks until enough spots are examined, then the move is the player's.
+ else if(isInvestigating())el.timer.textContent=investigateOpen()?'YOUR MOVE':'LOOK AROUND';
  // A live beat has no countdown, pulse or ticks: the cue's flash rate is the only clock.
  else if(isQte())el.timer.textContent=state.untimed?'TAKE YOUR TIME':'LIVE';
  else if(isResult()&&state.reaction>0)el.timer.textContent='REACTION '+state.reaction.toFixed(2)+'s';
@@ -293,6 +296,7 @@ function timer(){
 }
 function ui(){
  el.actions.replaceChildren();keys=[];el.outcome.hidden=true;
+ el.actions.className='lc-actions'+(!session.menu&&isInvestigating()?' lc-grid':'');// a look-around lists up to six choices: two a row on a phone
  el.clues.replaceChildren();for(const clue of state.clues){const li=document.createElement('li');li.textContent=clue;el.clues.appendChild(li);}
  el.journal.hidden=!state.clues.length&&state.phase==='brief';
  const phases={brief:'01 / STATION ROAD',watch:'WATCH THE COURIER',ready:'A USEFUL DETAIL',follow:'FOLLOW THE LANTERN',danger:'THE COURIER STUMBLES',qte:'THE BOOK IS FALLING',result:state.choice==='person'?'COURIER CAUGHT':state.choice==='book'?'DISPATCH SAVED':'TAKEN',evidence:state.choice==='person'?'A WITNESS':state.choice==='book'?'A WRITTEN LEAD':'A DAMAGED CLUE',deduce:'WHERE DOES THE TRAIL GO?',loftTurn:'TWO DOORS BACK',arrival:'NORTH STATION / SERVICE DOOR'};
@@ -399,8 +403,9 @@ function resize(){
 function layout(){if(typeof window.innerHeight!=='number')return;resize();}
 // Presentation wiring. The drawer (case file, records, reel) replaces the picture and pauses the game through the pause
 // button's own handler; [FULL SCREEN] and the f key fill the screen; Escape and P pause; a tap on the picture or the caption,
-// Space or Enter, pace the caption. Cue taps during a live prompt belong to the pointer handlers below and are left alone.
-let drawerPaused=false,qteTap=false;
+// Space or Enter, pace the caption, or end a cutscene whose picture and text are both done. Cue taps during a live prompt
+// and marker taps in a look-around belong to the pointer handlers below and are left alone.
+let drawerPaused=false,qteTap=false,spotTap=false;
 function drawerOpen(){return !!chrome.drawer&&!chrome.drawer.hidden;}
 function toggleDrawer(open=!drawerOpen()){
  if(!chrome.drawer||open===drawerOpen())return;
@@ -429,12 +434,14 @@ document.addEventListener('keydown',e=>{
  if(e.key==='f'||e.key==='F'){toggleFullscreen();e.preventDefault();}
  else if(e.key==='Escape'){if(drawerOpen())toggleDrawer(false);else if(!session.menu&&!el.pause.disabled)el.pause.click();e.preventDefault();}
  else if(e.key==='p'||e.key==='P'){if(!session.menu&&!drawerOpen()&&!el.pause.disabled)el.pause.click();}
- else if((e.key===' '||e.key==='Enter')&&!onButton&&!isQte()&&!drawerOpen()){advanceCaption();e.preventDefault();}
+ else if((e.key===' '||e.key==='Enter')&&!onButton&&!isQte()&&!drawerOpen()){if(!endCutscene())advanceCaption();e.preventDefault();}
+ // The number keys pick a look-around's spots by their labels (1 and 2 press the untimed prompt's buttons below).
+ else if(/^[1-5]$/.test(e.key)&&!onButton&&!drawerOpen()&&isInvestigating()){if(investigateKey(Number(e.key)))e.preventDefault();}
 });
 const tapSurface=chrome.picture||canvas;
-tapSurface.addEventListener('pointerdown',()=>{qteTap=isQte();});
-tapSurface.addEventListener('click',()=>{if(qteTap){qteTap=false;return;}if(!isQte())advanceCaption();});
-el.caption.addEventListener('click',()=>{if(!isQte())advanceCaption();});
+tapSurface.addEventListener('pointerdown',()=>{qteTap=isQte();spotTap=false;});
+tapSurface.addEventListener('click',()=>{if(qteTap){qteTap=false;return;}if(spotTap){spotTap=false;return;}if(!isQte()&&!endCutscene())advanceCaption();});
+el.caption.addEventListener('click',()=>{if(!isQte()&&!endCutscene())advanceCaption();});
 el.pause.addEventListener('click',()=>{state.paused=!state.paused;lastTime=0;ui();render();});
 el.mono.addEventListener('click',()=>{state.mono=!state.mono;savePreferences();ui();render();});
 el.timing.addEventListener('click',()=>{state.untimed=!state.untimed;if(!state.untimed&&isQte())state.event=0;savePreferences();ui();render();});
@@ -452,23 +459,32 @@ document.addEventListener('keydown',e=>{
 });
 // Pointer input on the picture: a travel of 24 px or more is a swipe in its dominant axis; a tap inside a cue's rectangle
 // (padded by 22 px each side, read from the frame on screen) is that cue's direction; a tap anywhere else is ignored.
+// In a look-around the same rectangles belong to the examine markers: a tap on one selects its spot, a tap elsewhere
+// paces the caption through the click handler above.
 let pointerStart=null;
-function cueAt(clientX,clientY){
- const r=canvas.getBoundingClientRect?.();if(!r||!r.width)return '';
+function labelAt(clientX,clientY,pick){
+ const r=canvas.getBoundingClientRect?.();if(!r||!r.width)return null;
  const scale=(canvas.width/dpr)/r.width,x=(clientX-r.left)*scale/cw,y=(clientY-r.top)*scale/ch,px=22/cw,py=22/ch;
- let best='',nearest=Infinity;
+ let best=null,nearest=Infinity;
  for(const l of labelRects){
-  if(!l.dir||x<l.x0-px||x>l.x1+1+px||y<l.y0-py||y>l.y1+1+py)continue;
-  const dist=Math.hypot(x-(l.x0+l.x1+1)/2,y-l.y0-.5);if(dist<nearest){nearest=dist;best=l.dir;}
+  if(!pick(l)||x<l.x0-px||x>l.x1+1+px||y<l.y0-py||y>l.y1+1+py)continue;
+  const dist=Math.hypot(x-(l.x0+l.x1+1)/2,y-l.y0-.5);if(dist<nearest){nearest=dist;best=l;}
  }
  return best;
 }
-canvas.addEventListener('pointerdown',e=>{if(!promptLive())return;pointerStart={x:e.clientX,y:e.clientY};e.preventDefault?.();});
+function cueAt(clientX,clientY){return labelAt(clientX,clientY,l=>l.dir)?.dir||'';}
+const investigateLive=()=>root.isConnected&&!session.menu&&!state.paused&&!transit&&isInvestigating();
+canvas.addEventListener('pointerdown',e=>{
+ if(promptLive()){pointerStart={x:e.clientX,y:e.clientY};e.preventDefault?.();}
+ else if(investigateLive())pointerStart={x:e.clientX,y:e.clientY};
+});
 canvas.addEventListener('pointercancel',()=>{pointerStart=null;});
 canvas.addEventListener('pointerup',e=>{
- const start=pointerStart;pointerStart=null;if(!start||!promptLive())return;
- const dx=e.clientX-start.x,dy=e.clientY-start.y;
- const dir=Math.hypot(dx,dy)>=24?(Math.abs(dx)>=Math.abs(dy)?(dx>0?'right':'left'):(dy>0?'down':'up')):cueAt(e.clientX,e.clientY);
+ const start=pointerStart;pointerStart=null;if(!start)return;
+ const dx=e.clientX-start.x,dy=e.clientY-start.y,travel=Math.hypot(dx,dy);
+ if(investigateLive()){if(travel<24)spotTap=investigateAt(e.clientX,e.clientY);return;}
+ if(!promptLive())return;
+ const dir=travel>=24?(Math.abs(dx)>=Math.abs(dy)?(dx>0?'right':'left'):(dy>0?'down':'up')):cueAt(e.clientX,e.clientY);
  if(dir)promptInput(dir,e);
 });
 document.addEventListener('visibilitychange',()=>{lastTime=0;});
@@ -494,13 +510,12 @@ function tick(now){
    if(!(isQte()&&state.untimed))state.event+=dt;
    if(extended())caseAdvance(dt);
    pose();
+   const street=streetCutscenes[state.phase];
    if(state.phase==='watch'&&state.event>=8)enter('ready');
-   else if(state.phase==='follow'&&state.event>=holdFor(reduce?1:8))enter('danger');
+   else if(street){if(state.event>=holdFor(reduce?1:street[1]))enter(street[0]);}
    else if(state.phase==='danger'&&state.event>=windupSeconds)enter('qte');
    else if(state.phase==='qte'&&!state.untimed&&state.event>=qteDuration())promptMiss();
    else if(state.phase==='result'&&state.event>=holdFor(4)&&!canRewind())enter('evidence');
-   else if(state.phase==='loftTurn'&&state.event>=holdFor(reduce?1:4))enter('loftEntry');
-   else if(state.phase==='arrival'&&state.event>=holdFor(reduce?1:5))enter('stationEntry');
   }
   if(now-lastFrame>66){if(!reduce)render();else timer();lastFrame=now;}
  }
@@ -513,5 +528,5 @@ const stageObserver=new ResizeObserver(layout);stageObserver.observe(root);if(ch
 if(typeof IntersectionObserver!=='undefined')new IntersectionObserver(es=>{visible=es[0].isIntersecting&&es[0].intersectionRatio>.15;lastTime=0;},{threshold:.15}).observe(canvas);
 requestAnimationFrame(tick);
 root.cinemaSprites={load:data=>{const w=loadSprites(data);render();return w;},characters:()=>Object.keys(spriteSheets),warnings:()=>spriteWarnings.slice()};
-root.cinemaAudit=()=>({state:JSON.parse(JSON.stringify(state)),session:{...session},scene:sceneName,camera:{...camera},columns:W,rows:H,frame,cast:blocking(),nonASCII:chars.filter(g=>g.charCodeAt(0)<32||g.charCodeAt(0)>126).length,card:cardText,route:routeSteps(),board:boardEntries(),reflex:reflexes(),records:saveStore.readRecords(),sprites:spriteRects.map(r=>({...r})),labels:labelRects.map(r=>({...r})),window:isQte()?caseDuration():0,transit:transit?{phase:transit.phase,t:transit.t}:null,fade,objective:objective(),grid:{W,H,cw,ch,fx,fy,density},layout:root.classList?.contains('lc-side')?'side':'stacked',caption:captionAudit(),drawer:drawerOpen()});
+root.cinemaAudit=()=>({state:JSON.parse(JSON.stringify(state)),session:{...session},scene:sceneName,camera:{...camera},columns:W,rows:H,frame,cast:blocking(),nonASCII:chars.filter(g=>g.charCodeAt(0)<32||g.charCodeAt(0)>126).length,card:cardText,route:routeSteps(),board:boardEntries(),reflex:reflexes(),records:saveStore.readRecords(),sprites:spriteRects.map(r=>({...r})),labels:labelRects.map(r=>({...r})),window:isQte()?caseDuration():0,spot:spotId,transit:transit?{phase:transit.phase,t:transit.t}:null,fade,objective:objective(),grid:{W,H,cw,ch,fx,fy,density},layout:root.classList?.contains('lc-side')?'side':'stacked',caption:captionAudit(),drawer:drawerOpen()});
 })();
