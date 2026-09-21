@@ -329,7 +329,7 @@ function caseBlocking(){
   if(state.choice==='person')courier=['stationListen','stationReady'].includes(p)?{x:2.4,z:21,pose:'watch',who:'nell'}:{x:1.3,z:mix(9,18,u),pose:u<1?'walk':'stand',who:'nell'};
  }
  if(sceneName==='pump'){
-  const u=p==='pumpEntry'&&!reduce?span(6):1,v=p==='pumpResult'&&!reduce?span(4):p==='pumpTruth'?1:0;
+  const u=p==='pumpEntry'&&!reduce?span(6):1,v=p==='pumpResult'&&!reduce?span(4):['pumpTruth','pumpRoom'].includes(p)?1:0;
   rook={x:mix(-.6,1.8,v),z:mix(mix(1,11,u),15.7,v),pose:u<1?'walk':v>0?'support':'watch'};
   others.push({x:mix(4.8,3.25,v),y:1.2*(1-v),z:mix(17.8,16.2,v),pose:['pumpEntry','pumpFind'].includes(p)?'wrench':['pumpDanger','pumpQte'].includes(p)?'reach':'stand',who:'bell'});
   if(state.choice==='person')courier={x:1.5,z:14.5,pose:'watch',who:'nell'};
@@ -386,19 +386,34 @@ function caseGeometry(){
   // The tape reels on the console face turn: eight wedges, alternately steel and paper, spun with the clock.
   const spin=state.t*(picturePhase()==='stationListen'?3:1.2);
   for(const cx of [-.45,.45])for(let i=0;i<8;i++){const a=i*Math.PI/4+spin,b=a+Math.PI/4,c=q=>[cx+Math.cos(q)*.31,2.06+Math.sin(q)*.31,19.52],e=q=>[cx+Math.cos(q)*.08,2.06+Math.sin(q)*.08,19.52];quad(c(a),c(b),e(b),e(a),i%2?mat('rubber'):mat('dispatch',6),[0,0,-1]);}
+
+  // What the desk keeps: the tape's leader tag, a tin cup somebody left warm beside the order, and the Division padlock
+  // hanging open on the hatch's hasp down the concourse.
+  box(-.1,2.1,19.49,.1,2.18,19.53,mat('paper',6));
+  box(-1.56,1.2,19.54,-1.44,1.36,19.66,mat('metal'));box(-1.45,1.26,19.57,-1.4,1.3,19.63,mat('metal',0));
+  box(2.23,2.0,43.52,2.37,2.2,43.58,mat('metal',0));box(2.26,2.18,43.53,2.34,2.3,43.57,mat('cable',0));
  }
  if(sceneName==='pump'){
   const p=picturePhase(),spin=p==='pumpResult'&&state.rescue==='valve'?span(4)*Math.PI:0;
   const x=-1.25,z=11.88,y=1.35;
   for(let i=0;i<12;i++){const a=i*Math.PI/6+spin,b=(i+1)*Math.PI/6+spin;quad([x+Math.cos(a)*.6,y+Math.sin(a)*.6,z],[x+Math.cos(b)*.6,y+Math.sin(b)*.6,z],[x+Math.cos(b)*.43,y+Math.sin(b)*.43,z],[x+Math.cos(a)*.43,y+Math.sin(a)*.43,z],mat('lamp',2),[0,0,-1]);}
   box(-1.3,1.29,11.85,-1.2,1.41,12,mat('metal'));
-  const valve=state.rescue==='valve',v=p==='pumpResult'&&!reduce?span(4):p==='pumpTruth'?1:0;
+  const valve=state.rescue==='valve',v=p==='pumpResult'&&!reduce?span(4):['pumpTruth','pumpRoom'].includes(p)?1:0;
   // The joint splits in the windup: the pipe section drops 0.6 and water pours from it until the inlet is closed.
-  const jd=p==='pumpDanger'?span(2)*.6:['pumpQte','pumpResult','pumpTruth','pumpDeath'].includes(p)?.6:0;
+  const jd=p==='pumpDanger'?span(2)*.6:['pumpQte','pumpResult','pumpTruth','pumpRoom','pumpDeath'].includes(p)?.6:0;
   box(2.5,6.8-jd,16.5,3.5,7.6-jd,17.5,mat('pipe',2));
   if(jd>0){box(2.5,6.5-jd,16.5,3.5,6.8-jd,17.5,mat('water',1));if(!(valve&&(p==='pumpTruth'||v>.5)))box(2.85,-.7,16.85,3.15,6.5-jd,17.15,mat('water',1));}
   // Bell's satchel at his hip, carried across on the valve route and dropped into the torrent on the others.
-  const bx=mix(4.8,3.25,v),by=1.2*(1-v),bz=mix(17.8,16.2,v),lost=['pumpResult','pumpTruth','pumpDeath'].includes(p)&&!valve;
+  const bx=mix(4.8,3.25,v),by=1.2*(1-v),bz=mix(17.8,16.2,v),lost=['pumpResult','pumpTruth','pumpRoom','pumpDeath'].includes(p)&&!valve;
+  // The crime scene: the bolt and its closed padlock on the platform door, the pin gone from the inlet wheel's rim, the
+  // paint worn bright where Bell struck the pipe, and, on the route that lost it, the satchel a metre down in the water.
+  if(p==='pumpRoom'){
+   box(-.6,1.95,33.5,.6,2.05,33.62,mat('metal'));box(.5,1.8,33.46,.72,2.04,33.58,mat('metal',0));
+   box(-.72,1.28,11.83,-.62,1.36,11.9,mat('metal',0));
+   quad([5.3,7.25,16.78],[5.7,7.25,16.78],[5.7,7.55,16.78],[5.3,7.55,16.78],mat('metal',6),[0,0,-1]);
+   if(lost)box(4.95,-1,17.55,5.3,-.55,17.85,mat('wood',2));
+   if(valve)box(2.2,0,15.2,2.8,.12,15.6,mat('dispatch',6));
+  }
   if(!lost)box(bx+.25,by+.75,bz-.08,bx+.6,by+1.2,bz+.07,mat('wood',2));
   else if(p!=='pumpTruth'){const fy=mix(1.95,-1.2,clamp(state.event/1.5,0,1));if(fy>-1)box(4.95,fy,17.7,5.3,fy+.45,17.85,mat('wood',2));}
   // The ledger open on the walkway between them once the story reaches it dry, and the water dropping as the inlet closes.
@@ -569,9 +584,9 @@ function tunnelVale(){
 function tunnelRookZ(){const d=state.distance;return picturePhase()==='tunnelDeath'?mix(d,forkZ()-2.6,smooth(clamp(pictureClock(1)/1,0,1))):d;}
 function caseLabels(){
  const set=sets[sceneName],p=picturePhase();if(set){if(set.labels)set.labels(p);return;}
- if(sceneName==='station'){worldLabel([0,6.3,43.2],'PUMP ROOM 4',2);worldLabel([0,2.9,19.1],'MAINTENANCE',2);if(p==='stationQuiet')worldLabel([.4,1.7,19.3],'ORDER 7731',6);}
+ if(sceneName==='station'&&p!=='stationDesk'){worldLabel([0,6.3,43.2],'PUMP ROOM 4',2);worldLabel([0,2.9,19.1],'MAINTENANCE',2);}
  // The cues: the wheel (left) and Bell (right), unlit through the windup's cuts and live on the wide prompt frame.
- if(sceneName==='pump'){worldLabel([-2.1,1.6,12.2],'INLET',2);if(!['pumpResult','pumpTruth'].includes(p))worldLabel([4.8,3.9,17.7],'BELL',2);if(p==='pumpDanger'||p==='pumpQte'){cueLabel([-1.25,2.15,11.8],'left',1);cueLabel([4.8,4.5,17.7],'right',2);}}
+ if(sceneName==='pump'){if(p!=='pumpRoom')worldLabel([-2.1,1.6,12.2],'INLET',2);if(!['pumpResult','pumpTruth','pumpRoom'].includes(p))worldLabel([4.8,3.9,17.7],'BELL',2);if(p==='pumpDanger'||p==='pumpQte'){cueLabel([-1.25,2.15,11.8],'left',1);cueLabel([4.8,4.5,17.7],'right',2);}}
  if(sceneName==='roof'){worldLabel([0,3.2,17],'RADIO',2);if(p==='roofQuiet')worldLabel([-30,-6.9,58],'THE FILAMENT',3);}
  if(sceneName==='chase'){
   const v=chasePos.vale,f=chasePos.freight;

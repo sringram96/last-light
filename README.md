@@ -27,6 +27,7 @@ npm test         # Save-system, story-route and renderer regression checks
 
 - The menu opens on Rook at a rooftop ledge over the city, a cigarette going, a billboard cycling, neon flickering and a chase in the sky; it plays for as long as you take. Choose **New Case**, or **Continue Case** to load your saved checkpoint. The game fills the window; **Full Screen** (or `f`) takes the whole display.
 - Watch the characters and camera. Quiet choices are buttons under the picture; narration types in and holds until it can be read, and a tap on the picture, Space or Enter shows the next sentence without skipping a beat.
+- **Look around.** At a crime scene the picture carries numbered markers on things worth a look: the bolted door, the inlet wheel with its pin taken, the order on a desk, a cup still warm. Tap a marker, press its number, or use its button; the camera moves in, Rook reads it, and the case file keeps it. Look at what you like, in any order, then take the way out. Nothing is timed.
 - **Text under the picture means think; a flash in the picture means move.** At an action beat two direction cues (`<<`, `>>`, `^^`, `vv`) flash on the things Rook can act on. Press that arrow key (or WASD), swipe that way on the picture, or tap the cue, within a window of 1.5 to 3 seconds. A wrong direction or no input is the miss.
 - Three **lamps** per case. Six misses are lethal: the death plays, a lamp goes out, and the night rewinds to the moment. Three are survivable with a worse story, and rewinding them costs a lamp. With no lamp left the case goes cold; restart the chapter or return to the menu.
 - Deductions cost a lamp on the second wrong answer, and Vale can stall the interview.
@@ -48,7 +49,7 @@ A missing lamplighter, a city running on stolen reserve power, and one night to 
 1. **Station Road:** tail the courier, choose whom or what to save, then deduce where Bell is: the station, his loft over the depot, or the hotel.
 2. **Bell's Loft:** a detour over the depot where Bell's note and his own case board explain the order, at the cost of a wrong reading.
 3. **Concourse:** inspect the maintenance tape for order 7731 or follow the knocking immediately.
-4. **Pump Room 4:** rescue Bell; how you respond changes the evidence recovered.
+4. **Pump Room 4:** rescue Bell, then search the room he was locked in: a door bolted from outside, an inlet opened to full with its stop pin taken, four nights of knocking worn into the paint.
 5. **Rooftop:** listen to the radio, hear Nell's confession, then pursue Vale or stay with Bell.
 6. **The Last Tram:** a quiet ride across the lift bridge that decides whether Vale's man is tailing you.
 7. **Night Market:** a slip through the stalls and a keeper who saw the red car, ending in a shove and a knife.

@@ -36,7 +36,7 @@ function investigateAt(clientX,clientY){const id=labelAt(clientX,clientY,l=>l.sp
 function investigateUI(d){
  const seen=spotId?d.spots.find(s=>s.id===spotId):null;
  el.caption.textContent=seen?seen.look():d.caption?d.caption():'';
- for(const s of d.spots)if(spotShown(d,s))button(s.label,()=>investigate(s),spotSeen(d,s)?'lc-seen':'');
+ for(const s of d.spots)if(spotShown(d,s))button(typeof s.label==='function'?s.label():s.label,()=>investigate(s),spotSeen(d,s)?'lc-seen':'');
  if(investigateOpen(d))button(d.exit.label,()=>enter(nextOf(d.exit)));
  if(d.exit.early&&d.exit.early.when())button(d.exit.early.label,()=>enter(nextOf(d.exit.early)));
 }
@@ -64,8 +64,55 @@ registerPhases('office',{
   ],
   exit:{label:'[TAKE THE STAIRS]',next:'brief'}}
 });
+// 02 / NORTH STATION. The maintenance desk: the order that names Vale, the tape that buys reaction time, the hatch with
+// its Division padlock, the departures board and, under the order, a cup somebody left warm.
+registerPhases('station',{
+ stationDesk:{kind:'investigate',title:'THE MAINTENANCE DESK',field:'stationLooked',need:2,step:'Searched the maintenance desk',
+  caption:()=>'The desk is still lit and the knocking is still going. Rook looks it over before he goes down.',
+  spots:[
+   {id:'order',bit:1,at:()=>[.4,1.7,19.3],label:'[1] THE ORDER',ease:3,shot:()=>look(-.2,1.9,17.6,.4,1.25,19.3),
+    clue:'Maintenance desk: order 7731, RESERVE BATTERIES, signed INSPECTOR VALE, countersigned H.A., stamped by the Lumen Board. Dated tonight.',
+    look:()=>state.loftLooked&2?'A fresh order on the desk: RESERVE BATTERIES / ORDER 7731 / INSPECTOR VALE, the number from Bell\'s map. Countersigned in a second hand, H.A. Dated tonight.':'A fresh order on the desk: RESERVE BATTERIES / ORDER 7731 / INSPECTOR VALE. Countersigned in a second hand, H.A., and stamped by the Lumen Board. Dated tonight.'},
+   {id:'tape',bit:2,at:()=>[0,2.7,19.75],label:'[2] THE TAPE',ease:3,shot:()=>look(-1.2,1.9,17.4,0,2.05,19.6),
+    look:()=>'A maintenance tape, still turning. Its leader reads FLOOD PROCEDURE / PUMP ROOMS. Reading it takes time. Under the floor, the knocking keeps its own.'},
+   {id:'hatch',bit:4,at:()=>[0,5.3,43.4],label:'[3] THE HATCH',ease:4,shot:()=>look(-1.6,1.9,30,0,2.2,43.8),
+    clue:'The Pump Room 4 hatch carries a Division-issue padlock, hanging open.',
+    look:()=>'PUMP ROOM 4, stencilled on the service hatch. A new padlock hangs open on its hasp, Division issue, the same pattern as the one on Rook\'s own locker.'},
+   {id:'board',bit:8,at:()=>[0,5.6,21],label:'[4] THE DEPARTURES BOARD',ease:3,shot:()=>look(-1.2,2.2,15,0,4.7,21),
+    clue:'Departures board: BOARD VAN / BAY 2 / 01:30. A Lumen Board van is due at the closed station tonight.',
+    look:()=>'The departures board still runs on the station\'s reserve. Last train: a year ago. Under it, tonight\'s line: BOARD VAN / BAY 2 / 01:30. The Board still uses this station.'},
+   {id:'cup',bit:16,after:1,at:()=>[-1.5,1.8,19.6],label:'[5] THE CUP',ease:3,shot:()=>look(-2.4,1.8,17.8,-1.5,1.3,19.6),
+    clue:'The cup beside order 7731 was still warm. Vale left the desk minutes before Rook reached it.',
+    look:()=>'A tin cup beside the order, still warm. Whoever signed for the batteries was sitting here ten minutes ago, and left without the cup.'}
+  ],
+  exit:{label:'[THE KNOCKING BELOW]',next:'stationQuiet'}}
+});
+// 03 / PUMP ROOM 4. The crime scene: a door bolted from outside, an inlet opened to full with its stop pin taken, and
+// four nights of knocking worn into the paint. Rook has a minute before he takes Bell up.
+registerPhases('pump',{
+ pumpRoom:{kind:'investigate',title:'THE ROOM BELL WAS LOCKED IN',field:'pumpLooked',need:2,step:'Searched Pump Room 4',
+  caption:()=>state.rescue==='valve'?'The inlet is shut and the water is falling. Rook has a minute, and he uses it to look at the room.':'The water is at the walkway\'s edge. Rook has less than a minute, and he uses it to look at the room.',
+  spots:[
+   {id:'door',bit:1,at:()=>[0,4.4,33.5],label:'[1] THE DOOR',ease:4,shot:()=>look(1.2,2.2,24,0,1.8,33.8),
+    clue:'Pump Room 4\'s platform door was bolted from outside and padlocked with Division issue. Someone locked Bell in.',
+    look:()=>state.stationLooked&4?'The platform door, bolted from the outside. On the bolt a Division padlock, closed, the twin of the open one upstairs. The same hand locked both.':'The platform door, bolted from the outside. On the bolt a Division padlock, closed, keyed like the one on the concourse hatch. Bell did not lock himself in.'},
+   {id:'ledger',bit:2,at:()=>state.rescue==='valve'?[2.5,.7,15.4]:[5.1,.3,17.7],label:()=>state.rescue==='valve'?'[2] THE LEDGER':'[2] THE SATCHEL',ease:3,
+    shot:()=>state.rescue==='valve'?look(1.4,1.6,13.2,2.5,.2,15.4):look(2.8,2.2,13.8,5.1,-.5,17.7),
+    clue:()=>state.rescue==='valve'?'Ledger pages: lot numbers, a buyer\'s code, and THE FILAMENT named as the handover point.':'Bell\'s satchel lies under the water at the platform\'s foot. The ledger is in it and cannot be recovered tonight.',
+    look:()=>state.rescue==='valve'?'Bell\'s ledger, dry. Transfer by transfer: lot numbers, a buyer\'s code, THE FILAMENT as the handover, Vale\'s signature, and under each entry the same initials, H.A.':'The satchel, a metre down in black water at the platform\'s foot, out of reach. The ledger is in it. By morning the pages will be pulp.'},
+   {id:'wheel',bit:4,at:()=>[-1.25,2.3,11.8],label:'[3] THE INLET WHEEL',ease:3,shot:()=>look(-2.4,2,9.6,-1.25,1.35,11.9),
+    clue:'The Pump Room 4 inlet was opened to full and its stop pin removed. The flood was deliberate.',
+    look:()=>'The inlet wheel, its stop pin gone, the gate set to full. Somebody opened it full and took the pin so it would stay open. The flood was set.'},
+   {id:'pipe',bit:8,at:()=>[4.8,3.3,17.3],label:'[4] THE PIPE',ease:3,shot:()=>look(2.6,3.2,12.4,5.5,7.4,17),
+    clue:'Bell tapped the pipe for four nights in the lamplighters\' knock. Nobody at the desk above answered.',
+    look:()=>state.stationLooked&16?'The pipe Bell struck, its paint worn bright: three short, a rest, three short, for four nights. Somebody sat upstairs with a warm cup and heard it.':'The pipe Bell struck. The paint is worn bright in one place: three short, a rest, three short, for four nights. Somebody upstairs had to have heard it.'}
+  ],
+  exit:{label:'[WHAT BELL KNOWS]',next:'pumpTruth'}}
+});
 // Prompt windows, measured from the first flash of the cue: a base per beat, +0.5 s for an earlier observation, -0.5 s for
 // an earlier injury, never under 1.25 or over 3.5 seconds. Registered prompts carry their base and modifiers (or a window()).
+const orderRead=()=>!!(state.stationLooked&1||state.loftLooked&2),callSeen=()=>!!(state.officeLooked&4);
+const padlockSeen=()=>!!(state.pumpLooked&1),tinHeld=()=>!!(state.subLooked&8);
 function caseDuration(){
  const p=state.phase,d=phaseDef(),win=(base,bonus,penalty)=>clamp(base+(bonus?.5:0)-(penalty?.5:0),1.25,3.5);
  if(d&&d.kind==='prompt')return d.window?d.window():win(d.base,d.bonus?.(),d.penalty?.());
@@ -202,7 +249,7 @@ function caseAdvance(dt){
  if(p==='stationListen'&&e>=8)enter('stationReady');
  else if(p==='pumpDanger'&&e>=windupSeconds)enter('pumpQte');
  else if(p==='pumpQte'&&!state.untimed&&e>=caseDuration())promptMiss();
- else if(p==='pumpResult'&&done(4)&&!canRewind())enter('pumpTruth');
+ else if(p==='pumpResult'&&done(4)&&!canRewind())enter('pumpRoom');
  else if(p==='roofListen'&&e>=8)enter('roofSignal');
  else if(p==='clubFace'&&e>=windupSeconds)enter('clubQte');
  else if(p==='clubQte'&&!state.untimed&&e>=caseDuration())promptMiss();
@@ -217,7 +264,7 @@ function caseAdvance(dt){
 // Every cutscene's end: registered ones by kind, the hand-written case and street ones from these tables (the street's
 // run from runtime.js's loop). A cutscene ends when its picture has played and its caption could be read; a tap, Enter or
 // Space ends it as soon as both are true (endCutscene), so a fast reader is not held past the text.
-const cutsceneEnds={stationEntry:['stationQuiet',7],pumpEntry:['pumpFind',6],roofEntry:['roofQuiet',8],clubEntry:['clubBooth',8],chaseEntry:['chaseQteA',6],tunnelEntry:['tunnelQte',6],canalEntry:['canalEnd',7]};
+const cutsceneEnds={stationEntry:['stationDesk',7],pumpEntry:['pumpFind',6],roofEntry:['roofQuiet',8],clubEntry:['clubBooth',8],chaseEntry:['chaseQteA',6],tunnelEntry:['tunnelQte',6],canalEntry:['canalEnd',7]};
 const streetCutscenes={follow:['danger',8],loftTurn:['loftEntry',4],arrival:['stationEntry',5]};
 function cutsceneEnd(p=state.phase){
  const d=phaseDef(p);if(d)return d.kind==='cutscene'?{next:nextOf(d),duration:d.duration}:null;
@@ -254,7 +301,7 @@ function caseUI(){
  switch(state.phase){
  case 'stationEntry':el.caption.textContent=state.choice==='person'?'Nell opens the service door with three taps. Footsteps echo through the empty concourse.':'The service latch gives under Rook\'s shoulder. Inside, a maintenance desk glows in an otherwise empty station.';break;
  case 'stationQuiet':
-  el.caption.textContent='A fresh order on the desk: INSPECTOR VALE / RESERVE BATTERIES / ORDER 7731. A maintenance tape is still turning. Below the floor, someone strikes a pipe.';
+  el.caption.textContent='Below the floor, someone strikes a pipe: three short, a rest, three short. The tape is still turning.';
   button('[READ THE TAPE / 8s]',()=>enter('stationListen'));button('[FOLLOW THE KNOCKING]',()=>enter('pumpEntry'));break;
  case 'stationListen':el.caption.textContent='Rook feeds the tape through its reader. Rain ticks against the roof glass. The knocking below continues.';break;
  case 'stationReady':
@@ -270,7 +317,7 @@ function caseUI(){
  case 'pumpResult':
   el.caption.textContent=state.rescue==='valve'?'Rook shuts the inlet, then helps Bell across. His satchel stays above the water.':state.rescue==='pull'?'Rook pulls Bell onto the walkway. His satchel drops into the torrent.':state.choice==='person'?'Nell throws a line. Rook and Nell haul Bell clear, but the water takes his satchel.':'Bell leaps as the platform breaks. Rook catches his sleeve. His satchel vanishes into the flood.';rewindActions();break;
  case 'pumpTruth':
-  el.caption.textContent=state.rescue==='valve'?'The dry ledger bears Vale\'s signature, and under every entry a second set of initials Bell does not know: H.A. The city\'s emergency batteries were sold. The locked room was meant to silence him.':'Bell: "Vale sold the emergency batteries. When I confronted him, he locked me in. The proof was in that satchel. I will say it in court."';
+  el.caption.textContent=state.rescue==='valve'?(state.officeLooked&2?'The dry ledger bears Vale\'s signature, and under every entry a second set of initials Bell does not know. Rook does: H.A., from the memo on his own case board. The locked room was meant to silence him.':'The dry ledger bears Vale\'s signature, and under every entry a second set of initials Bell does not know: H.A. The city\'s emergency batteries were sold. The locked room was meant to silence him.'):'Bell: "Vale sold the emergency batteries. When I confronted him, he locked me in. The proof was in that satchel. I will say it in court."';
   button('[TAKE BELL TO THE ROOF]',()=>enter('roofEntry'));break;
  case 'roofEntry':el.caption.textContent='Rook brings Bell up the service stair. The city opens beneath them. Flying traffic passes between the towers; a medic answers the roof radio.';break;
  case 'roofQuiet':
