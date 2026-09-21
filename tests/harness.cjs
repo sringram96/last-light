@@ -38,7 +38,10 @@ function game({width=320,reduced=false,storage=memoryStorage(),script,innerWidth
  const pointer=(type,x,y,extra={})=>canvas.listeners[type]?.({clientX:x,clientY:y,pointerId:1,button:0,timeStamp:clock,preventDefault(){},...extra});
  const tap=(x,y)=>{pointer('pointerdown',x,y);pointer('pointerup',x,y);};
  const swipe=(dir,from=[40,40],travel=40)=>{const [x,y]=from;pointer('pointerdown',x,y);pointer('pointerup',x+(dir==='right'?travel:dir==='left'?-travel:0),y+(dir==='down'?travel:dir==='up'?-travel:0));};
- const cueCentre=dir=>{const a=audit(),l=a.labels.find(r=>r.dir===dir);assert(l,`No ${dir} cue in the frame`);const cw=canvas.clientWidth/a.columns,ch=cw*1.72;return[(l.x0+l.x1+1)/2*cw,(l.y0+.5)*ch];};
- return{audit,click,run,next,key,pointer,tap,swipe,cueCentre,storage,canvas,root,document,window,elements,frame:()=>JSON.parse(JSON.stringify(draws)),resize:w=>{canvas.clientWidth=w;layoutCb()},layout:(w,h)=>{const p=elements['.lc-picture'];if(w)p.clientWidth=w;if(h)p.clientHeight=h;layoutCb()},phase:p=>assert.equal(audit().state.phase,p)};
+ const centre=l=>{const a=audit(),cw=canvas.clientWidth/a.columns,ch=cw*1.72;return[(l.x0+l.x1+1)/2*cw,(l.y0+.5)*ch];};
+ const cueCentre=dir=>{const l=audit().labels.find(r=>r.dir===dir);assert(l,`No ${dir} cue in the frame`);return centre(l);};
+ // The centre of an examine marker's rectangle in a look-around, by the spot's id.
+ const spotCentre=id=>{const l=audit().labels.find(r=>r.spot===id);assert(l,`No ${id} marker in the frame`);return centre(l);};
+ return{audit,click,run,next,key,pointer,tap,swipe,cueCentre,spotCentre,storage,canvas,root,document,window,elements,frame:()=>JSON.parse(JSON.stringify(draws)),resize:w=>{canvas.clientWidth=w;layoutCb()},layout:(w,h)=>{const p=elements['.lc-picture'];if(w)p.clientWidth=w;if(h)p.clientHeight=h;layoutCb()},phase:p=>assert.equal(audit().state.phase,p)};
 }
 module.exports={game,memoryStorage};

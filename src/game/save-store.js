@@ -5,11 +5,14 @@ function createSaveStore(storage, validPhases) {
  const booleans=['watched','wrong','decoded','radio','twist','caught','endingSeen','note','loftSeen','misread','tail','keeper','slip','stalled','faced','shown'];
  // The late values stay valid for old checkpoints; nothing new writes them. dead is the death that closed a cold case.
  const enums={choice:['','person','book','missed'],rescue:['','valve','pull','late'],pursuit:['','chasing','stay','ramp','jump','late'],firstMove:['','dodge','brake','late'],club:['','duck','vault','late'],tunnel:['','right','left','late'],market:['','slip','cut','late'],hall:['','dive','breaker','late'],dead:['','pump','market','carrier','gap','pier','rack']};
- const legacyPhases={ending:'arrival'};
+ // A checkpoint at a removed phase resumes at the beat that replaced it: the office's three cutscenes became the desk.
+ const legacyPhases={ending:'arrival',officeFile:'officeDesk',officeBoard:'officeDesk',officeWindow:'officeDesk'};
  const legacyEndings={'arrest-ledger':'board','arrest-word':'word'};
  // deaths is a bitmask of the deaths seen this case (pump 1, market 2, carrier 4, gap 8, pier 16, rack 32); rewinds are the lamps.
- const numbers={t:[0,86400],distance:[0,950],phaseDistance:[0,950],gap:[0,2],rewinds:[0,3],deaths:[0,63],restarts:[0,9]};
- const integers=['gap','rewinds','deaths','restarts'];
+ // The *Looked fields are bitmasks of the spots examined in a set's investigate beat (five spots at most).
+ const looked=['officeLooked','stationLooked','pumpLooked','loftLooked','subLooked','clubLooked'];
+ const numbers={t:[0,86400],distance:[0,950],phaseDistance:[0,950],gap:[0,2],rewinds:[0,3],deaths:[0,63],restarts:[0,9],...Object.fromEntries(looked.map(key=>[key,[0,31]]))};
+ const integers=['gap','rewinds','deaths','restarts',...looked];
  let memory=null,settingsMemory=null,recordsMemory=null,durable=true;
  const copy=v=>v===null?null:JSON.parse(JSON.stringify(v));
  const get=key=>{try{return storage?.getItem(key)||null;}catch(e){durable=false;return null;}};

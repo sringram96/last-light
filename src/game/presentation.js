@@ -59,21 +59,25 @@ function presentEnter(phase,sceneChanged,wasEndingSeen){
  else if(['chaseQteA','chaseQteB','tunnelQte'].includes(phase)||phaseDef(phase)?.kind==='prompt')cue('danger');
 }
 // Story order lets the case file describe how far the investigation has come.
-const phaseOrder=['officeEntry','officeFile','officeBoard','officeWindow','brief','watch','ready','follow','danger','qte','result','evidence','deduce','loftTurn','loftEntry','loftTable','loftNote','loftBoard','loftStair','loftLeave','arrival','stationEntry','stationQuiet','stationListen','stationReady','pumpEntry','pumpFind','pumpDanger','pumpQte','pumpDeath','pumpResult','pumpTruth','roofEntry','roofQuiet','roofListen','roofSignal','roofConfession','tramEntry','tramRide','tramWatch','tramSpotted','tramArrive','marketEntry','marketAisle','marketKeeper','marketDanger','marketQte','marketDeath','marketResult','clubEntry','clubBooth','clubFace','clubQte','clubResult','chaseEntry','chaseQteA','chaseDeath','chaseBank','chaseQteB','gapDeath','chaseFinish','tunnelEntry','tunnelQte','tunnelDeath','tunnelFinish','subEntry','subDock','subManifest','subDanger','subQte','subDeath','subResult','subDawn','roomEntry','roomVale','roomDeduce','roomName','canalEntry','canalEnd','coldCase'];
+const phaseOrder=['officeEntry','officeDesk','brief','watch','ready','follow','danger','qte','result','evidence','deduce','loftTurn','loftEntry','loftTable','loftNote','loftBoard','loftStair','loftLeave','arrival','stationEntry','stationDesk','stationQuiet','stationListen','stationReady','pumpEntry','pumpFind','pumpDanger','pumpQte','pumpDeath','pumpResult','pumpRoom','pumpTruth','roofEntry','roofQuiet','roofListen','roofSignal','roofConfession','tramEntry','tramRide','tramWatch','tramSpotted','tramArrive','marketEntry','marketAisle','marketKeeper','marketDanger','marketQte','marketDeath','marketResult','clubEntry','clubBooth','clubFace','clubQte','clubResult','chaseEntry','chaseQteA','chaseDeath','chaseBank','chaseQteB','gapDeath','chaseFinish','tunnelEntry','tunnelQte','tunnelDeath','tunnelFinish','subEntry','subDock','subManifest','subDanger','subQte','subDeath','subResult','subDawn','roomEntry','roomVale','roomDeduce','roomName','canalEntry','canalEnd','coldCase'];
 // A cold case stands where the death that closed it stands.
 function reached(phase){return phaseOrder.indexOf(picturePhase())>=phaseOrder.indexOf(phase);}
 const deathLabels=[['pump','drowned','Watched the water take Bell'],['market','arc','Went down among the cells'],['carrier','edge','Went over the barrier'],['gap','gap','Followed Vale over the gap'],['pier','pier','Met the pier in the drain'],['rack','crushed',"Went under Krane's rack"]];
 const deathsSeen=()=>deathLabels.filter((_,i)=>state.deaths&(1<<i)).map(([,id])=>id);
 const coldSteps={pump:'Case cold at the pump',market:'Case cold at the market',carrier:'Case cold on the elevated road',gap:'Case cold at the bridge',pier:'Case cold in the drain',rack:'Case cold at Substation Nine'};
+// A look-around's line comes from its bitmask: the beat's step text and how many of its spots were examined.
+const looks=set=>Object.values(phaseDefs).filter(d=>d.kind==='investigate'&&d.set===set&&state[d.field]).map(d=>d.step+' ('+popcount(state[d.field])+'/'+d.spots.length+')');
 function routeSteps(){
- const steps=[];
+ const steps=[...looks('office')];
  if(reached('follow'))steps.push(state.watched?'Watched first':'Followed at once');
  if(reached('result'))steps.push({person:'Caught the courier',book:'Saved the book',missed:'Missed the fall'}[state.choice]);
  if(state.wrong)steps.push('Chased a false lead');
  if(state.loftSeen)steps.push('Climbed to the loft');
  if(state.note)steps.push('Read Nell\'s note');
  if(state.misread)steps.push('Misread the photographs');
+ steps.push(...looks('loft'),...looks('station'));
  if(reached('pumpEntry'))steps.push(state.decoded?'Read the tape':'Followed the knocking');
+ steps.push(...looks('pump'));
  if(reached('pumpResult'))steps.push({valve:'Closed the inlet',pull:'Pulled Bell out',late:'Late at the pump'}[state.rescue]);
  if(state.radio)steps.push('Listened to the band');
  if(state.twist)steps.push("Heard Nell's confession");
@@ -83,10 +87,12 @@ function routeSteps(){
   if(state.tail)steps.push('Spotted the tail');
   if(state.keeper)steps.push('Asked the stall keeper');
   if(reached('marketResult'))steps.push({slip:'Slipped the cart',cut:'Went over the stalls',late:'Took the cart'}[state.market]);
+  steps.push(...looks('club'));
   if(reached('clubResult'))steps.push({duck:'Ducked the bottle',vault:'Went over the bar',late:'Took the bottle'}[state.club]);
   if(reached('chaseBank'))steps.push({dodge:'Dove right',brake:'Braked',late:'Clipped the carrier'}[state.firstMove]);
   if(reached('chaseQteB')&&state.pursuit!=='chasing')steps.push({ramp:'Took the ramp',jump:'Jumped the gap',late:'Stopped at the bridge'}[state.pursuit]);
   if(state.pursuit==='ramp'&&reached('tunnelFinish'))steps.push({right:'Followed right',left:'Cut left',late:'Braked at the fork'}[state.tunnel]);
+  steps.push(...looks('substation'));
   if(reached('subResult'))steps.push({dive:'Dived clear',breaker:'Pulled the breaker',late:'Crushed at the rack'}[state.hall]);
  }
  if(reached('roomName'))steps.push((proofHeld()&&!state.stalled?'Named the Board\'s man':'Left the line blank')+(state.slip?' (second try)':''));
@@ -108,7 +114,7 @@ function boardEntries(){
  if(at('result'))entries.push(state.twist?'NELL MARROW, Bell\'s apprentice: confessed to forging the work order. Cooperating witness.':state.choice==='person'?'NELL MARROW, courier: cooperating witness. Says she is Bell\'s apprentice.':state.choice==='missed'?'THE COURIER: taken from Station Road by a red car with its lights off. A second missing person on Rook\'s desk.':state.note?'THE COURIER: signed a note in Bell\'s loft with an N. Made the maintenance call. Not yet found.':'THE COURIER: limped away toward the station with Bell\'s lantern.');
  // Story order is one list for both routes, so the pursuit's beats read as reached on the stay route too: pursuit-only lines are guarded.
  const chase=pursuing();
- if(at('officeBoard'))entries.push(state.caught&&at('roomName')&&proofHeld()?'INSPECTOR VALE, Night Division: in custody. Signed order 7731 for the Board.':state.caught?'INSPECTOR VALE, Night Division: in custody.':at('canalEnd')?'INSPECTOR VALE, Night Division: at large; warrant issued.':chase&&at('subEntry')?'INSPECTOR VALE, Night Division: escaped tonight. His buyers are at Substation Nine.':at('pumpTruth')?'INSPECTOR VALE, Night Division: prime suspect. Sold the reserve batteries; locked Bell in.':state.faced?'INSPECTOR VALE, Night Division: met Rook under Bell\'s loft at midnight. Knows Rook is on it.':at('stationQuiet')||(at('loftBoard')&&!state.misread)?'INSPECTOR VALE, Night Division: named on the battery order.':'INSPECTOR VALE, Night Division: grid security liaison to the Lumen Board. Office across the corridor.');
+ if(state.officeLooked&2||at('brief'))entries.push(state.caught&&at('roomName')&&proofHeld()?'INSPECTOR VALE, Night Division: in custody. Signed order 7731 for the Board.':state.caught?'INSPECTOR VALE, Night Division: in custody.':at('canalEnd')?'INSPECTOR VALE, Night Division: at large; warrant issued.':chase&&at('subEntry')?'INSPECTOR VALE, Night Division: escaped tonight. His buyers are at Substation Nine.':at('pumpTruth')?'INSPECTOR VALE, Night Division: prime suspect. Sold the reserve batteries; locked Bell in.':state.faced?'INSPECTOR VALE, Night Division: met Rook under Bell\'s loft at midnight. Knows Rook is on it.':at('stationQuiet')||(at('loftBoard')&&!state.misread)?'INSPECTOR VALE, Night Division: named on the battery order.':'INSPECTOR VALE, Night Division: grid security liaison to the Lumen Board. Office across the corridor.');
  if(chase&&(at('marketDanger')||(at('tramSpotted')&&state.tail)))entries.push(state.hall==='dive'?'KRANE, division sergeant on paper: arrested at Substation Nine under his own rack.':at('subResult')?'KRANE, division sergeant on paper: escaped from Substation Nine in the Board van.':at('subManifest')?'KRANE, Vale\'s bodyguard: at Substation Nine, loading the van.':at('clubResult')&&state.club==='late'&&state.rescue==='valve'?'KRANE, Vale\'s bodyguard: has the signed ledger. Took it off Rook at The Filament.':at('marketDanger')?'KRANE, Vale\'s bodyguard: tried to run Rook down with a cell-cart at the night market.':'PLATE 41: a black division car following the tram with its lights off.');
  if(at('roofEntry'))entries.push(at('canalEntry')?'INES OKAFOR, city medic: brought Bell to the canal-side post. Bell will walk.':'INES OKAFOR, city medic: on the roof with Bell. Answers the roof radio.');
  if(state.radio)entries.push((state.pursuit==='ramp'&&state.caught&&state.tunnel==='left'?'HEDDY LASKO, bridge operator, call sign HALF HOUR: her tip about the maintenance channel put Rook ahead of Vale.':'HEDDY LASKO, bridge operator, call sign HALF HOUR: lifts the canal bridge at the half hour. Reported a Board van booked to Substation Nine.')+(chase&&at('tramRide')?' Keeps a dated log of Vale\'s crossings.':''));
@@ -205,6 +211,8 @@ function startChunk(index){const c=queue.chunks[index];queue.index=index;queue.t
 function captionHold(){return queue.chunks.length?queue.chunks.reduce((s,c)=>s+c.hold,0)+.4:0;}
 function captionDone(){const c=queue.chunks[queue.index];return !c||(queue.index===queue.chunks.length-1&&queue.shown>=c.text.length&&queue.time>=c.hold);}
 function holdFor(seconds){return Math.max(seconds,captionHold());}
+// Re-reading the same text (an examined spot picked again): the next presentUI starts its queue over.
+function replayCaption(){captionFull='';}
 function advanceCaption(){
  const c=queue.chunks[queue.index];if(!c||state.paused)return;
  if(queue.shown<c.text.length){queue.shown=c.text.length;typeCaption();}
