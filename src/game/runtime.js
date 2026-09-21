@@ -364,7 +364,7 @@ let density=1,densityFor=1;
 // budget has it lowered once and keeps the lower one, so a phone is never asked to draw the menu's dense grid twice.
 const hasClock=typeof performance!=='undefined'&&!!performance.now;
 const clockMs=()=>hasClock?performance.now():Date.now();
-let renderMs=0,densityCeil=Infinity,overBudget=0;
+let renderMs=0,densityCeil=Infinity,overBudget=0,underBudget=0;
 // What a frame may cost before the picture is eased. A story beat is played, so it is held to a smooth thirty; the menu
 // only drifts, so it is allowed a cinematic twenty-five and keeps its dense grid wherever the machine can draw it.
 const budgetMs=()=>session.menu?40:24;
@@ -375,12 +375,22 @@ const wantedDensity=()=>Math.min(sets[sceneName]?.density||1,densityCeil);
 const frameGap=()=>Math.max(33,Math.min(120,renderMs*1.7));
 // A frame over budget on a dense grid drops the density a step and re-sizes; the picture keeps its framing and its field
 // of view, and the cost falls with the cell count.
+// The first frames of a page are its slowest (fonts, layout, a cold compile), so the picture is judged only once the
+// loop has warmed up. Three slow frames running lower the density a step; a long, comfortable run raises it back, so a
+// hitch at the door does not cost the whole session its detail.
+const WARM_FRAMES=12;
 function easeDensity(){
- if(!hasClock||density<=1)return false;
- // Three slow frames running, not one: a single hitch (a collection, a restored tab) never costs the picture its density.
- if(renderMs<=budgetMs()){overBudget=0;return false;}
- if(++overBudget<3)return false;
- overBudget=0;densityCeil=density>1.5?1.5:1;resize();return true;
+ if(!hasClock||frame<WARM_FRAMES)return false;
+ if(renderMs>budgetMs()){
+  underBudget=0;
+  if(density<=1||++overBudget<3)return false;
+  overBudget=0;densityCeil=density>1.5?1.5:1;resize();return true;
+ }
+ overBudget=0;
+ // Room to spare for a sustained stretch: give a step back, and let the next slow run take it away again.
+ if(renderMs>budgetMs()*.5||densityCeil>=(sets[sceneName]?.density||1))return false;
+ if(++underBudget<90)return false;
+ underBudget=0;densityCeil=densityCeil<1.5?1.5:Infinity;resize();return true;
 }
 function stageArea(){
  if(typeof window.innerHeight!=='number'||typeof window.innerWidth!=='number')return null;
