@@ -274,7 +274,7 @@ function deduce(where){
  state.wrong=true;ui();
 }
 function reset(){
- Object.assign(state,{t:0,paused:false,mono:state.mono,travel:0,moving:false,phase:'brief',event:0,watched:false,choice:'',untimed:state.untimed,clues:[],wrong:false,decoded:false,radio:false,twist:false,rescue:'',gap:0,pursuit:'',caught:false,distance:20,endingSeen:false,firstMove:'',phaseDistance:20,club:'',tunnel:'',reaction:0,rewinds:3,note:false,loftSeen:false,misread:false,tail:false,keeper:false,market:'',hall:'',slip:false,roomPick:'',dawn:0,deaths:0,restarts:0,dead:'',stalled:false,faced:false,shown:false,rewound:false,officeLooked:0,stationLooked:0,pumpLooked:0,loftLooked:0,subLooked:0,clubLooked:0});
+ Object.assign(state,{t:0,paused:false,mono:state.mono,travel:0,moving:false,phase:'brief',event:0,watched:false,choice:'',untimed:state.untimed,clues:[],wrong:false,decoded:false,radio:false,twist:false,rescue:'',gap:0,pursuit:'',caught:false,distance:20,endingSeen:false,firstMove:'',phaseDistance:20,club:'',tunnel:'',reaction:0,rewinds:3,note:false,loftSeen:false,misread:false,tail:false,keeper:false,market:'',hall:'',slip:false,roomPick:'',dawn:0,deaths:0,restarts:0,dead:'',stalled:false,faced:false,shown:false,rewound:false,theory:'',officeLooked:0,stationLooked:0,pumpLooked:0,loftLooked:0,subLooked:0,clubLooked:0});
  transit=null;fade=1;fadeIn=0;
  setScene('street');
  Object.assign(camera,startShot);transitionFrom={...startShot};el.journal.open=false;lastTime=0;ui();render();
