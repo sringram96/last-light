@@ -19,13 +19,16 @@ function investigateSpot(){const d=phaseDef(picturePhase());if(!d||d.kind!=='inv
 function investigatePrevious(){return spotPrev;}
 const spotShown=(d,s)=>!s.after||!!(state[d.field]&s.after);
 const spotSeen=(d,s)=>!!(state[d.field]&s.bit);
+// A beat with turns has time for that many looks; once they are spent the unexamined spots close and only the exit is left.
+const lookLeft=d=>d.turns?Math.max(0,d.turns-popcount(state[d.field])):Infinity;
+const spotOpen=(d,s)=>spotShown(d,s)&&(spotSeen(d,s)||lookLeft(d)>0);
 function investigateOpen(d=phaseDef()){const bits=d.spots.filter(s=>spotShown(d,s)).reduce((m,s)=>m|s.bit,0);return popcount(state[d.field]&bits)>=d.need;}
 // Selecting a spot: its bit is saved, its clue and enter() run once, its caption replaces the beat's line through the caption
 // queue, and the camera eases to its shot from wherever it stands. An examined spot re-reads for nothing.
 function investigate(spot){
  if(!isInvestigating()||state.paused||session.menu||transit)return false;
  const d=phaseDef(),s=typeof spot==='string'?d.spots.find(x=>x.id===spot):spot;
- if(!s||!spotShown(d,s))return false;
+ if(!s||!spotOpen(d,s))return false;
  if(!spotSeen(d,s)){state[d.field]|=s.bit;if(s.enter)s.enter();const clue=typeof s.clue==='function'?s.clue():s.clue;if(clue)addClue(clue);cue('clue');}
  if(spotId===s.id)replayCaption();else{spotPrev=spotId;spotId=s.id;transitionFrom={...camera};state.event=0;}
  ui();render();checkpoint();return true;
@@ -34,9 +37,10 @@ function investigate(spot){
 function investigateKey(n){const d=phaseDef();return !!d&&d.kind==='investigate'&&investigate(d.spots[n-1]);}
 function investigateAt(clientX,clientY){const id=labelAt(clientX,clientY,l=>l.spot)?.spot;return !!id&&investigate(id);}
 function investigateUI(d){
- const seen=spotId?d.spots.find(s=>s.id===spotId):null;
- el.caption.textContent=seen?seen.look():d.caption?d.caption():'';
- for(const s of d.spots)if(spotShown(d,s))button(typeof s.label==='function'?s.label():s.label,()=>investigate(s),spotSeen(d,s)?'lc-seen':'');
+ const seen=spotId?d.spots.find(s=>s.id===spotId):null,left=lookLeft(d);
+ el.caption.textContent=(seen?seen.look():d.caption?d.caption():'')+(seen&&d.pressure?' '+d.pressure():'');
+ if(d.turns)el.phase.textContent=d.title+' / '+(left?left+(left===1?' LOOK':' LOOKS')+' LEFT':'NO TIME LEFT');
+ for(const s of d.spots)if(spotOpen(d,s))button(typeof s.label==='function'?s.label():s.label,()=>investigate(s),spotSeen(d,s)?'lc-seen':'');
  if(investigateOpen(d))button(d.exit.label,()=>enter(nextOf(d.exit)));
  if(d.exit.early&&d.exit.early.when())button(d.exit.early.label,()=>enter(nextOf(d.exit.early)));
 }
@@ -64,17 +68,21 @@ registerPhases('office',{
   ],
   exit:{label:'[TAKE THE STAIRS]',next:'brief'}}
 });
-// 02 / NORTH STATION. The maintenance desk: the order that names Vale, the tape that buys reaction time, the hatch with
-// its Division padlock, the departures board and, under the order, a cup somebody left warm.
+// 02 / NORTH STATION. The maintenance desk: the order that names Vale, the tape that says which wheel, the hatch with
+// its Division padlock, the departures board and, under the order, a cup somebody left warm. The knocking gives Rook time
+// for three of the five; what he reads decides what he can think at the hatch and what he knows at the inlet.
+const knockLines=['','The knocking goes on under the floor: three short, a rest, three short.','The knocking is slower now. The rests are getting longer.','The knocking stops, then starts again, weaker. Rook has looked long enough.'];
 registerPhases('station',{
- stationDesk:{kind:'investigate',title:'THE MAINTENANCE DESK',field:'stationLooked',need:2,step:'Searched the maintenance desk',
-  caption:()=>'The desk is still lit and the knocking is still going. Rook looks it over before he goes down.',
+ stationDesk:{kind:'investigate',title:'THE MAINTENANCE DESK',field:'stationLooked',need:2,turns:3,step:'Searched the maintenance desk',
+  caption:()=>'The desk is still lit, and under the floor someone is striking a pipe. Rook has time for three things here, not five.',
+  pressure:()=>knockLines[popcount(state.stationLooked)]||'',
   spots:[
    {id:'order',bit:1,at:()=>[.4,1.7,19.3],label:'[1] THE ORDER',ease:3,shot:()=>look(-.2,1.9,17.6,.4,1.25,19.3),
     clue:'Maintenance desk: order 7731, RESERVE BATTERIES, signed INSPECTOR VALE, countersigned H.A., stamped by the Lumen Board. Dated tonight.',
     look:()=>state.loftLooked&2?'A fresh order on the desk: RESERVE BATTERIES / ORDER 7731 / INSPECTOR VALE, the number from Bell\'s map. Countersigned in a second hand, H.A. Dated tonight.':'A fresh order on the desk: RESERVE BATTERIES / ORDER 7731 / INSPECTOR VALE. Countersigned in a second hand, H.A., and stamped by the Lumen Board. Dated tonight.'},
-   {id:'tape',bit:2,at:()=>[0,2.7,19.75],label:'[2] THE TAPE',ease:3,shot:()=>look(-1.2,1.9,17.4,0,2.05,19.6),
-    look:()=>'A maintenance tape, still turning. Its leader reads FLOOD PROCEDURE / PUMP ROOMS. Reading it takes time. Under the floor, the knocking keeps its own.'},
+   {id:'tape',bit:2,at:()=>[0,2.7,19.75],label:'[2] THE TAPE',ease:3,shot:()=>look(-1.2,1.9,17.4,0,2.05,19.6),enter:()=>{state.decoded=true;},
+    clue:'The maintenance tape says: close the INLET wheel before pulling someone off the flooded platform.',
+    look:()=>'A maintenance tape, still turning, its leader marked FLOOD PROCEDURE / PUMP ROOMS. Rook runs it back to the one line that matters: FLOOD RESCUE, CLOSE INLET FIRST.'},
    {id:'hatch',bit:4,at:()=>[0,5.3,43.4],label:'[3] THE HATCH',ease:4,shot:()=>look(-1.6,1.9,30,0,2.2,43.8),
     clue:'The Pump Room 4 hatch carries a Division-issue padlock, hanging open.',
     look:()=>'PUMP ROOM 4, stencilled on the service hatch. A new padlock hangs open on its hasp, Division issue, the same pattern as the one on Rook\'s own locker.'},
@@ -85,8 +93,44 @@ registerPhases('station',{
     clue:'The cup beside order 7731 was still warm. Vale left the desk minutes before Rook reached it.',
     look:()=>'A tin cup beside the order, still warm. Whoever signed for the batteries was sitting here ten minutes ago, and left without the cup.'}
   ],
-  exit:{label:'[THE KNOCKING BELOW]',next:'stationQuiet'}}
+  exit:{label:'[THE KNOCKING BELOW]',next:'stationTheory'}},
+ // The hatch: before he goes down Rook commits to who put Bell there, from what he read. The names on offer are the ones
+ // his evidence supports; going down without one is always open. Vale is right. Any other answer costs the minute it took,
+ // and suspecting the courier costs what she would have said on the roof, or, with her gone, the band Rook fills with her.
+ stationTheory:{kind:'quiet',title:'WHO PUT BELL DOWN THERE?',
+  caption:()=>{const has=theoryEvidence();return (has.length?'Rook has '+listed(has)+'.':'Rook has the knocking and nothing else.')+' Before he goes down, who does he think locked Bell under the station?';},
+  buttons:b=>{
+   const pick=who=>()=>{state.theory=who;if(who!=='vale')addClue(theoryClues[who]());enter('pumpEntry');};
+   if(valeNamed())b('[INSPECTOR VALE]',pick('vale'));
+   if(courierNamed())b(state.choice==='person'||state.note?'[NELL MARROW]':'[THE COURIER]',pick('nell'));
+   if(boardNamed())b('[THE LUMEN BOARD]',pick('board'));
+   b('[NO THEORY. GO DOWN]',pick('none'));
+  }}
 });
+const listed=a=>a.length<2?a.join(''):a.slice(0,-1).join(', ')+' and '+a[a.length-1];
+function theoryEvidence(){
+ const l=state.stationLooked,has=[];
+ if(orderRead())has.push('order 7731, signed by Vale and countersigned H.A.');if(l&16)has.push('a cup beside it, still warm');
+ if(l&4)has.push('a Division padlock on the hatch');if(l&8)has.push('a Board van due at 01:30');
+ if(callSeen())has.push('a call logged to Bell in someone else\'s hand');if(state.note)has.push('a note in Bell\'s loft signed N');
+ if(state.officeLooked&2&&!orderRead())has.push('Vale\'s name on the case board');
+ return has;
+}
+const valeNamed=()=>!!(orderRead()||state.stationLooked&4||state.officeLooked&2);
+const courierNamed=()=>callSeen()||state.note;
+const boardNamed=()=>!!(orderRead()||state.stationLooked&8);
+const theoryClues={
+ nell:()=>state.choice==='person'?'Rook accused Nell at the hatch of North Station. She has not spoken to him since.':'Rook put the courier\'s description out on the Division band from North Station. Every Division car can hear it.',
+ board:()=>'Rook watched Bay 2 for the Board van before he went down. It never came.',
+ none:()=>'Rook went down to Pump Room 4 without a theory.'};
+// What the theory costs later: any answer but Vale is a minute at the hatch; suspecting the courier also closes her mouth
+// (with her there) or fills the band with Rook's own call (without her).
+const lateDown=()=>!!state.theory&&state.theory!=='vale';
+const nellWary=()=>state.theory==='nell'&&state.choice==='person';
+const bandBusy=()=>state.theory==='nell'&&state.choice!=='person';
+// The tape told Rook which wheel: at the inlet the wheel's cue flashes alone for the first beat and Bell's comes up after it.
+// Without the tape both flash together. Either direction is live from the first frame.
+const inletFirst=()=>state.phase==='pumpQte'&&state.decoded&&!state.untimed&&!reduce&&state.event<.6;
 // 03 / PUMP ROOM 4. The crime scene: a door bolted from outside, an inlet opened to full with its stop pin taken, and
 // four nights of knocking worn into the paint. Rook has a minute before he takes Bell up.
 registerPhases('pump',{
@@ -117,7 +161,7 @@ function caseDuration(){
  const p=state.phase,d=phaseDef(),win=(base,bonus,penalty)=>clamp(base+(bonus?.5:0)-(penalty?.5:0),1.25,3.5);
  if(d&&d.kind==='prompt')return d.window?d.window():win(d.base,d.bonus?.(),d.penalty?.());
  if(p==='qte')return win(3,state.watched,false);
- if(p==='pumpQte')return win(2.5,state.decoded,state.wrong);
+ if(p==='pumpQte')return clamp(win(2.5,state.decoded,state.wrong)-(lateDown()?.5:0),1.25,3.5);
  if(p==='clubQte')return win(2,state.market==='cut',state.shown||state.market==='late');
  if(p==='chaseQteA'||p==='chaseQteB')return win(2,state.radio,state.club==='late');
  if(p==='tunnelQte')return win(1.75,state.radio,false);
@@ -151,7 +195,7 @@ registerPhases('*',{coldCase:{kind:'quiet',title:'THE CASE GOES COLD',stinger:()
 // Restarting a chapter: three lamps back, restarts +1, the current set's entry phase, and only the fields that set writes
 // reset; a field earned in an earlier set is never touched. deaths stays.
 const entryPhases={office:'officeEntry',street:'brief',loft:'loftEntry',station:'stationEntry',pump:'pumpEntry',roof:'roofEntry',tram:'tramEntry',market:'marketEntry',club:'clubEntry',chase:'chaseEntry',tunnel:'tunnelEntry',substation:'subEntry',room:'roomEntry',canal:'canalEntry'};
-const setFields={street:{choice:'',watched:false,wrong:false},loft:{note:false,loftSeen:false,misread:false},station:{decoded:false},pump:{rescue:''},roof:{radio:false,twist:false,pursuit:'',caught:false,gap:0},tram:{tail:false},market:{keeper:false,market:''},club:{club:'',shown:false},chase:{firstMove:'',gap:0,pursuit:'chasing',caught:false},tunnel:{tunnel:'',caught:false},substation:{hall:''},room:{slip:false,stalled:false,roomPick:''}};
+const setFields={street:{choice:'',watched:false,wrong:false},loft:{note:false,loftSeen:false,misread:false},station:{decoded:false,theory:''},pump:{rescue:''},roof:{radio:false,twist:false,pursuit:'',caught:false,gap:0},tram:{tail:false},market:{keeper:false,market:''},club:{club:'',shown:false},chase:{firstMove:'',gap:0,pursuit:'chasing',caught:false},tunnel:{tunnel:'',caught:false},substation:{hall:''},room:{slip:false,stalled:false,roomPick:''}};
 function restartChapter(){
  const name=sceneName,entry=entryPhases[name]||'brief';
  Object.assign(state,setFields[name]||{},{rewinds:3,restarts:Math.min(9,state.restarts+1),dead:'',endingSeen:false,reaction:0,paused:false});
@@ -276,8 +320,10 @@ function endCutscene(){
  if(!captionDone()||state.event<duration)return false;
  enter(c.next);return true;
 }
+// Bell's answer against the name Rook brought down the ladder.
+const theoryVerdicts={vale:()=>'It is the name Rook came down with. ',nell:()=>state.choice==='person'?'Not the courier. Nell heard Rook accuse her, and she heard Bell clear her. ':'Not the courier. Rook\'s call for her is still going out on the band. ',board:()=>'Not a Board driver: Vale\'s own hand on the bolt. ',none:()=>''};
 function roofActions(){
- if(!state.radio)button('[LISTEN TO THE RADIO / 8s]',()=>enter('roofListen'));
+ if(!state.radio&&!bandBusy())button('[LISTEN TO THE RADIO / 8s]',()=>enter('roofListen'));
  button('[PURSUE VALE]',pursuit);button('[STAY WITH BELL]',stayWithBell);
 }
 // A live timed beat shows nothing under the picture: the cues are the interface. Untimed play keeps the caption and the buttons.
@@ -307,9 +353,9 @@ function caseUI(){
  case 'stationReady':
   el.caption.textContent='The tape warns: "FLOOD RESCUE: CLOSE INLET FIRST." Rook knows which wheel to reach for. Extra reaction time earned.';
   button('[FOLLOW THE KNOCKING]',()=>enter('pumpEntry'));break;
- case 'pumpEntry':el.caption.textContent='Under the station, pumps tower above black water. A man on the far platform is tapping a wrench against a pipe.';break;
+ case 'pumpEntry':el.caption.textContent='Under the station, pumps tower above black water. A man on the far platform is tapping a wrench against a pipe'+(lateDown()?', and the water is a hand higher than it was a minute ago.':'.');break;
  case 'pumpFind':
-  el.caption.textContent=(state.wrong?'Bell: "Vale took the reserve batteries. I found his ledger, so he locked me down here." The water is at his knees. "You took your time. That pipe will not hold much longer."':'Bell: "Vale took the reserve batteries. I found his ledger, so he locked me down here. That pipe will not hold much longer."')+' The INLET wheel is beside Rook.';
+  el.caption.textContent=(state.wrong||lateDown()?'Bell: "Vale took the reserve batteries. I found his ledger, so he locked me down here." The water is at his knees. "You took your time. That pipe will not hold much longer."':'Bell: "Vale took the reserve batteries. I found his ledger, so he locked me down here. That pipe will not hold much longer."')+' '+(theoryVerdicts[state.theory]?.()||'')+'The INLET wheel is beside Rook.';
   button('[GET BELL OUT]',()=>enter('pumpDanger'));break;
  case 'pumpDanger':el.caption.textContent='A joint splits. Water surges under the platform. Get ready.';break;
  case 'pumpQte':
@@ -321,12 +367,12 @@ function caseUI(){
   button('[TAKE BELL TO THE ROOF]',()=>enter('roofEntry'));break;
  case 'roofEntry':el.caption.textContent='Rook brings Bell up the service stair. The city opens beneath them. Flying traffic passes between the towers; a medic answers the roof radio.';break;
  case 'roofQuiet':
-  el.caption.textContent='Bell is safe with the medic. Far below, a red car pulls away from the station forecourt and heads west under the elevated road, toward the market and the Filament\'s sign. The last tram of the night is crossing the dark district the same way.';
+  el.caption.textContent='Bell is safe with the medic. Far below, a red car pulls away from the station forecourt and heads west under the elevated road, toward the market and the Filament\'s sign. The last tram of the night is crossing the dark district the same way.'+(bandBusy()?' The roof radio is full of Rook\'s own call for the courier; nothing else is getting through.':nellWary()?' Nell stands at the far parapet and does not come over.':'');
   roofActions();break;
  case 'roofListen':el.caption.textContent='Rook waits on the open channel. Traffic slides through the rain. A bridge operator comes through the static.';break;
  case 'roofSignal':
-  el.caption.textContent=state.choice==='person'?'Radio: "Bridge lifting at the half hour. Lower ramp is clear to the basin. Board van booked through to Nine." Beside the receiver, Nell goes quiet. "There is something about Bell\'s work order I should tell you."':'Radio: "Bridge lifting at the half hour. Lower ramp is clear to the basin. Board van booked through to Nine." Rook now knows a way to intercept Vale and has extra time at every turn of the road.';
-  if(state.choice==='person')button('[ASK NELL ABOUT THE ORDER]',()=>enter('roofConfession'));
+  el.caption.textContent=state.choice==='person'&&nellWary()?'Radio: "Bridge lifting at the half hour. Lower ramp is clear to the basin. Board van booked through to Nine." Nell listens from the parapet. Whatever she knows about Bell\'s work order, she is not telling the man who accused her.':state.choice==='person'?'Radio: "Bridge lifting at the half hour. Lower ramp is clear to the basin. Board van booked through to Nine." Beside the receiver, Nell goes quiet. "There is something about Bell\'s work order I should tell you."':'Radio: "Bridge lifting at the half hour. Lower ramp is clear to the basin. Board van booked through to Nine." Rook now knows a way to intercept Vale and has extra time at every turn of the road.';
+  if(state.choice==='person'&&!nellWary())button('[ASK NELL ABOUT THE ORDER]',()=>enter('roofConfession'));
   roofActions();break;
  case 'roofConfession':
   el.caption.textContent='Nell: "I forged the maintenance call. Bell was the only person who could prove the batteries were missing. I wanted Vale exposed. I did not know he would trap him." Rook records the confession.';
@@ -337,7 +383,7 @@ function caseUI(){
  case 'clubBooth':
   el.caption.textContent=state.shown?'Rook puts order 7731 on the table. Vale reads his own signature and does not deny it. "Reserve batteries. Signed. Nobody reads a maintenance order." Krane is already on his feet.':state.faced?'Vale does not get up. "Twice in one night, Rook. You are still on the wrong floor." Krane\'s hand is on a bottle.':'Vale does not get up. "Rook. You are on the wrong floor for this." Krane\'s hand is on a bottle.';
   if(state.shown)button('[STAND YOUR GROUND]',()=>enter('clubFace'));
-  else{button('[SHOW HIM ORDER 7731]',()=>{state.shown=true;addClue('Vale, shown order 7731 at The Filament, did not deny signing it. His words: "Nobody reads a maintenance order."');ui();});button('[SAY NOTHING]',()=>enter('clubFace'));}
+  else{if(orderRead())button('[SHOW HIM ORDER 7731]',()=>{state.shown=true;addClue('Vale, shown order 7731 at The Filament, did not deny signing it. His words: "Nobody reads a maintenance order."');ui();});button('[SAY NOTHING]',()=>enter('clubFace'));}
   break;
  case 'clubFace':el.caption.textContent=state.shown?'The bottle leaves Krane\'s hand. Get ready.':'"Put the light down." Krane rises. Get ready.';break;
  case 'clubQte':
@@ -363,7 +409,7 @@ function caseUI(){
   const ending=endingFor();
   el.caption.textContent=typeof ending.closing==='function'?ending.closing():ending.closing;
   const evidence=(ledgerHeld()?'Evidence: signed ledger recovered. ':manifestHeld()?'Evidence: the Substation Nine manifest. ':state.rescue==='valve'&&state.club==='late'?'Evidence: the signed ledger, lost to Krane at The Filament. ':'Evidence: Bell\'s testimony; ledger lost. ')+(chipHeld()?'The Filament chip ties the batteries to Vale\'s tables. ':'');
-  const nell=state.twist?'Nell\'s forged order is part of the case.':state.choice==='person'?'Nell remains a trusted witness.':state.choice==='missed'?'The courier is missing since Station Road. Rook has two names on his desk now.':state.note?'Nell\'s note is in the file; she has not been found.':'Rook worked without Nell.';
+  const nell=state.twist?'Nell\'s forged order is part of the case.':nellWary()?'Nell gave her statement to the desk sergeant, not to Rook.':state.choice==='person'?'Nell remains a trusted witness.':state.choice==='missed'?'The courier is missing since Station Road. Rook has two names on his desk now.':state.note?'Nell\'s note is in the file; she has not been found.':'Rook worked without Nell.';
   el.outcome.hidden=false;el.outcome.textContent=caseReport()+' '+ending.summary+' '+evidence+nell;
   button('[RETURN TO MENU]',showIdle);break;}
  }
@@ -385,6 +431,8 @@ function reel(name){
  if(name==='street'){chapterCard();return;}
  if(name==='office'){enter('officeEntry',true);return;}
  Object.assign(state,{choice:'person',decoded:true,watched:true,rescue:'valve',clues:['Scene preview: Bell\'s trail leads from the station to Pump Room 4.']});
+ // Sets past the station preview a night in which Rook read the order at the desk.
+ if(!['loft','station'].includes(name))state.stationLooked=1;
  const set=sets[name];
  if(set&&set.preview){enter(set.preview(),true);return;}
  if(name==='club'){state.pursuit='chasing';enter('clubEntry',true);return;}

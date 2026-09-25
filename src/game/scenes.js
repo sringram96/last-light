@@ -234,7 +234,7 @@ function cueLabel(p,dir,index,lit=true){
 function spotLabel(p,index,seen,id){worldLabel(p,'['+index+']',seen?1:2,{spot:id,level:seen?8:12,front:true});}
 function investigateLabels(){
  const d=phaseDef(picturePhase());if(!d||d.kind!=='investigate')return;
- d.spots.forEach((s,i)=>{if(s.after&&!(state[d.field]&s.after))return;spotLabel(s.at(),i+1,!!(state[d.field]&s.bit),s.id);});
+ d.spots.forEach((s,i)=>{if(!spotOpen(d,s))return;spotLabel(s.at(),i+1,!!(state[d.field]&s.bit),s.id);});
 }
 const moving=()=>sceneName==='chase'||sceneName==='tunnel'||!!sets[sceneName]?.moving;
 const look=(x,y,z,tx,ty,tz)=>({x,y,z,yaw:Math.atan2(tx-x,tz-z),pitch:Math.atan2(ty-y,Math.hypot(tx-x,tz-z))});
@@ -249,7 +249,7 @@ function caseShot(){
   // The crane settles behind Rook; the listen pushes in beside him onto the reels, then tilts to the floor where the knocking is; ready pans right to the hatch.
   if(p==='stationEntry')return look(-3.5,3.1,10,0,1.5,19);
   if(p==='stationListen'){const a=look(1.6,1.75,16.6,-.1,1.4,19.6);return state.event<3||reduce?a:blendShot(a,look(1.6,1.75,16.6,.4,.2,21),smooth(clamp((state.event-3)/5,0,1)));}
-  if(p==='stationReady')return look(1.6,1.9,16.6,2.5,1.5,43);
+  if(p==='stationReady'||p==='stationTheory')return look(1.6,1.9,16.6,2.5,1.5,43);
   return look(-3.5,2.9,13,.9,1.1,19);
  }
  // The pump room stays low; the windup is two one-second cuts, the splitting joint and then the wheel, before the fixed wide prompt.
@@ -312,7 +312,7 @@ function sceneStart(name){
 function casePose(){
  const set=sets[sceneName],spot=investigateSpot();
  // A selected spot eases the camera over its own time (its clock restarts on selection); the beat's spot-less shot takes 1.5 s.
- const duration=spot?spot.ease||3:set&&set.ease?set.ease(state.phase):{stationEntry:7,stationQuiet:2,stationListen:3,stationReady:3,pumpEntry:6,pumpDanger:.05,roofEntry:8,roofQuiet:4,roofConfession:4,canalEntry:7,canalEnd:10,officeEntry:6,clubEntry:8,clubFace:2}[state.phase]||1.5;
+ const duration=spot?spot.ease||3:set&&set.ease?set.ease(state.phase):{stationEntry:7,stationQuiet:2,stationListen:3,stationReady:3,stationTheory:3,pumpEntry:6,pumpDanger:.05,roofEntry:8,roofQuiet:4,roofConfession:4,canalEntry:7,canalEnd:10,officeEntry:6,clubEntry:8,clubFace:2}[state.phase]||1.5;
  if(moving()){
   const target=caseShot(),u=reduce?1:span(set&&set.ease?duration:/Entry/.test(state.phase)?5:state.phase==='chaseFinish'?2.5:1.1);
   const origin={...transitionFrom,z:transitionFrom.z+state.distance-(state.phaseDistance||state.distance)};
@@ -326,7 +326,7 @@ function caseBlocking(){
  if(sceneName==='station'){
   const u=p==='stationEntry'&&!reduce?span(7):1;
   rook={x:mix(-1.6,-1.2,u),z:mix(8,17.2,u),pose:u<1?'walk':'read'};
-  if(state.choice==='person')courier=['stationListen','stationReady'].includes(p)?{x:2.4,z:21,pose:'watch',who:'nell'}:{x:1.3,z:mix(9,18,u),pose:u<1?'walk':'stand',who:'nell'};
+  if(state.choice==='person')courier=['stationListen','stationReady','stationTheory'].includes(p)?{x:2.4,z:21,pose:'watch',who:'nell'}:{x:1.3,z:mix(9,18,u),pose:u<1?'walk':'stand',who:'nell'};
  }
  if(sceneName==='pump'){
   const u=p==='pumpEntry'&&!reduce?span(6):1,v=p==='pumpResult'&&!reduce?span(4):['pumpTruth','pumpRoom'].includes(p)?1:0;
@@ -586,7 +586,7 @@ function caseLabels(){
  const set=sets[sceneName],p=picturePhase();if(set){if(set.labels)set.labels(p);return;}
  if(sceneName==='station'&&p!=='stationDesk'){worldLabel([0,6.3,43.2],'PUMP ROOM 4',2);worldLabel([0,2.9,19.1],'MAINTENANCE',2);}
  // The cues: the wheel (left) and Bell (right), unlit through the windup's cuts and live on the wide prompt frame.
- if(sceneName==='pump'){if(p!=='pumpRoom')worldLabel([-2.1,1.6,12.2],'INLET',2);if(!['pumpResult','pumpTruth','pumpRoom'].includes(p))worldLabel([4.8,3.9,17.7],'BELL',2);if(p==='pumpDanger'||p==='pumpQte'){cueLabel([-1.25,2.15,11.8],'left',1);cueLabel([4.8,4.5,17.7],'right',2);}}
+ if(sceneName==='pump'){if(p!=='pumpRoom')worldLabel([-2.1,1.6,12.2],'INLET',2);if(!['pumpResult','pumpTruth','pumpRoom'].includes(p))worldLabel([4.8,3.9,17.7],'BELL',2);if(p==='pumpDanger'||p==='pumpQte'){cueLabel([-1.25,2.15,11.8],'left',1);cueLabel([4.8,4.5,17.7],'right',2,!inletFirst());}}
  if(sceneName==='roof'){worldLabel([0,3.2,17],'RADIO',2);if(p==='roofQuiet')worldLabel([-30,-6.9,58],'THE FILAMENT',3);}
  if(sceneName==='chase'){
   const v=chasePos.vale,f=chasePos.freight;
