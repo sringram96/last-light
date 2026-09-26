@@ -125,6 +125,45 @@ test('the booth only offers order 7731 to a Rook who read it',()=>{
  const bad=memoryStorage();bad.setItem('last-light/save/v1',JSON.stringify({version:1,state:{phase:'clubBooth',clues:[],theory:'krane'}}));
  assert(!game({reduced:true,storage:bad}).elements['.lc-actions'].children.some(b=>/CONTINUE/.test(b.textContent)),'an unknown theory is not a checkpoint');
 });
+// Turning an object over: an insert of the object alone in the dark; a detail's engraving and marker show only while its
+// face is toward the camera, and only then can it be read. The rows of the frame as text, to read the engravings.
+const rowsOf=g=>{const a=g.audit(),grid=Array.from({length:a.rows},()=>Array(a.columns).fill(' '));for(const [c,x,y] of g.frame()){const cx=Math.round(x/a.grid.cw),cy=Math.round(y/a.grid.ch);if(cy>=0&&cy<a.rows&&cx>=0&&cx<a.columns)grid[cy][cx]=c;}return grid.map(r=>r.join(''));};
+test('Bell\'s lantern turns over in the dark, and each face keeps its own detail',()=>{
+ const g=game({reduced:true});g.click('NEW CASE');g.click('SKIP INTRO');g.phase('brief');g.click('FOLLOW');g.next();g.next();g.phase('qte');g.key('ArrowUp');g.next();g.phase('evidence');
+ const buttons=()=>g.elements['.lc-actions'].children.map(b=>b.textContent),spots=()=>g.audit().labels.filter(l=>l.spot).map(l=>l.spot);
+ g.click('TURN THE LANTERN OVER');g.phase('lanternExamine');assert.equal(g.audit().scene,'street');assert.equal(g.elements['.lc-timer'].textContent,'TURN IT OVER');
+ assert(g.elements['.lc-caption'].textContent.startsWith('Nell hands Rook the lantern'));
+ assert.deepEqual(buttons(),['[<< TURN]','[TURN >>]','[TIP IT]','[1] THE STENCIL','[PUT IT DOWN]']);assert.deepEqual(spots(),['stencil']);
+ assert(rowsOf(g).some(r=>r.includes('DEPOT LOFT')),'the stencil is cut into the face toward the camera');assert(!rowsOf(g).some(r=>r.includes('7731')));
+ // A detail on a face turned away cannot be read.
+ g.key('3');assert.equal(g.audit().state.lanternLooked,0);
+ g.key('1');assert.equal(g.audit().state.lanternLooked,1);assert(g.audit().state.clues.some(l=>l.startsWith('Bell\'s lantern is stencilled BELL / DEPOT LOFT')));
+ // Paused, it does not turn; half a turn round with the arrows shows the back, where the knock is scratched.
+ g.elements['.lc-pause'].click();g.key('ArrowRight');g.elements['.lc-pause'].click();assert.deepEqual(spots(),['stencil']);
+ for(let i=0;i<4;i++)g.key('ArrowRight');assert.deepEqual(spots(),['knock']);assert(rowsOf(g).some(r=>r.includes('III  III')));
+ g.key('2');assert.equal(g.audit().state.lanternLooked,3);
+ // Tipped, the underside: the Board's reserve cell and its lot number.
+ g.click('TIP IT');assert.deepEqual(spots(),['cell']);assert(rowsOf(g).some(r=>r.includes('LOT 7731')));
+ g.tap(...g.spotCentre('cell'));assert.equal(g.audit().state.lanternLooked,7);assert(g.elements['.lc-caption'].textContent.startsWith('Under the base, the reserve cell'));
+ assert.deepEqual(buttons().slice(3,6),['[1] THE STENCIL','[2] THE SCRATCHES','[3] THE CELL'],'a detail once read keeps its button');
+ g.click('PUT IT DOWN');g.phase('evidence');assert(g.audit().route.includes('Turned Bell\'s lantern over (3/3)'));assert(g.audit().camera.y>0,'back on the street');
+ // The desk remembers the lantern: the knock and the lot number.
+ g.click('CONNECT');g.click('STATION SERVICE');g.next();g.phase('stationEntry');g.next();g.phase('stationDesk');g.key('1');
+ const caption=g.elements['.lc-caption'].textContent;assert(caption.includes('The same number is stamped on the cell in Bell\'s lantern.'));assert(caption.startsWith('Under the floor: three short, a rest, three short. The mark on Bell\'s lantern.'));
+});
+test('the padlock off the pump-room door names the office it was signed out to',()=>{
+ const saved=memoryStorage();saved.setItem('last-light/save/v1',JSON.stringify({version:1,state:{phase:'pumpRoom',clues:[],choice:'person',rescue:'valve',officeLooked:3,stationLooked:5}}));
+ const g=game({reduced:true,storage:saved});g.click('CONTINUE CASE');g.phase('pumpRoom');
+ assert(!g.elements['.lc-actions'].children.some(b=>b.textContent.includes('PADLOCK')),'picked up from the door, once it is looked at');
+ g.key('1');g.click('TURN THE PADLOCK OVER');g.phase('pumpPadlock');assert(rowsOf(g).some(r=>r.includes('NIGHT DIVISION')));
+ g.key('1');assert.equal(g.audit().state.padlockLooked,0,'the stamp is on the back');
+ g.swipe('left',[300,200],314);assert.deepEqual(g.audit().labels.filter(l=>l.spot).map(l=>l.spot),['number']);assert(rowsOf(g).some(r=>r.includes('K-14')));
+ g.key('1');assert(g.elements['.lc-caption'].textContent.endsWith('Fourteen is the dark door across the corridor from Rook\'s. Vale\'s.'));
+ // A checkpoint taken in the insert resumes there.
+ const again=game({reduced:true,storage:g.storage});again.click('CONTINUE CASE');again.phase('pumpPadlock');assert.equal(again.audit().state.padlockLooked,1);
+ g.click('TIP IT');g.key('2');assert.equal(g.audit().state.padlockLooked,3);assert(g.audit().state.clues.some(l=>l.includes('the night Bell went missing')));
+ g.click('PUT IT DOWN');g.phase('pumpRoom');assert(g.audit().route.includes('Turned the padlock over (2/2)'));
+});
 test('Pump Room 4 is a crime scene: the bolted door, the taken pin, and what the ledger route holds',()=>{
  const g=game({reduced:true,width:732});g.click('FLOOD','reel-actions');g.next();g.click('GET BELL');g.next();g.phase('pumpQte');
  g.click('CLOSE THE INLET');g.next();g.phase('pumpRoom');

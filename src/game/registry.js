@@ -27,6 +27,9 @@
 //  enter?:()=>void on the first look, after?:bit of another spot that must be examined before this one shows}],
 //  need: examined spots before the exit shows, step:'Looked over the desk' for the route line,
 //  exit:{label:'[TAKE THE STAIRS]', next:'brief', early?:{label, next, when:()=>bool} an exit offered while when() holds}).
+// examine (untimed; an object turned over in an insert shot, see examine.js: field, step, back:'<phase to return to>',
+//  model(solid,ellipsoid), marks and details [{id, bit, label, at, normal, lines, look, clue?}] read only while their face
+//  is toward the camera). A look-around spot can pick one up: pick:{label:'[TURN THE PADLOCK OVER]', phase:'pumpPadlock'}.
 // A phase registered with set '*' (coldCase) belongs to whichever set the story is in.
 const sets={},phaseDefs={};
 function registerSet(name,def){sets[name]={name,...def};}

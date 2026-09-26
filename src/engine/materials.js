@@ -1,5 +1,7 @@
 // Additional surface types; original street shaders are retained verbatim.
 if(kind==='dispatch'){hue=6;lum=.95;g=mat.roof?'=':fract(y*9)<.16?'-':'.';}
+// The dark an examined object is held in: almost nothing, with a rare mote of dust.
+else if(kind==='void'){hue=7;lum=.14;g=grain>.985?'.':' ';}
 else if(kind==='hatch'){hue=0;lum=.18;g=fract(x*5)<.09?'|':'.';}
 else if(kind==='tiles'){
  const a=Math.floor(x*.8),b=Math.floor(z*.8);hue=(a+b)%2?0:2;lum=(a+b)%2?.36:.64;g=fract(x*.8)<.05||fract(z*.8)<.05?'+':grain>.65?':':'.';

@@ -15,6 +15,8 @@ function shotFor(){
  return endShot;
 }
 function pose(){
+ // An examined object is held under the camera, which circles it as the player turns it.
+ if(isExamining()){Object.assign(camera,examineShot());state.moving=false;return;}
  if(extended()){casePose();return;}
  const target=shotFor(),duration=state.phase==='follow'?8:state.phase==='arrival'?5:state.phase==='danger'?2:state.phase==='loftTurn'?4:state.phase==='deduce'?3:.9;
  const u=reduce?1:span(duration);
@@ -139,6 +141,7 @@ function actor(a,isRook=false,key){
  for(let b=0;b<bands.length;b+=4)for(let ly=bands[b];ly<bands[b+1];ly++)for(let lx=bands[b+2];lx<bands[b+3];lx++)put(lx,ly,' ',0,zAt(ly));
 }
 function geometry(){
+ if(isExamining()){surfaces.length=staticCount;return examineGeometry();}
  if(extended())return caseGeometry();
  surfaces.length=staticCount;
  // The only new architecture is a small service hatch on the station facade.
@@ -185,13 +188,14 @@ function renderInner(){
  // Rain is rendered before people, so it does not cover their faces. Sets say where it falls (the office only beyond the window).
  const rainHere=sets[sceneName]?sets[sceneName].rain:['street','roof','chase','canal'].includes(sceneName)?true:sceneName==='office'?(x,z)=>z>16.6:false;
  const drops=sets[sceneName]?.rainDensity||125;
- if(rainHere)for(let i=0;i<drops;i++){
+ if(rainHere&&!isExamining())for(let i=0;i<drops;i++){
   const x=hash(i,3)*22-11,z=camera.z+hash(i,7)*37,y=fract(hash(i,11)-state.t*.25)*16,p=cam([x,y,z]);if(p.z<.4||(typeof rainHere==='function'&&!rainHere(x,z)))continue;
   const q=project(p);pixel(q.x,q.y,p.z,'/',7*20+7);
  }
  actor(cast.courier,false,'courier');actor(cast.rook,true,'rook');(cast.others||[]).forEach((a,i)=>actor(a,false,'other'+i));
  investigateLabels();
- if(sceneName==='street'){
+ if(isExamining())examineLabels();
+ else if(sceneName==='street'){
  worldLabel([-7.95,3.05,5.5],'PRINT',1);worldLabel([0,6.5,38.75],'NORTH STATION',2);worldLabel([-4.9,2.95,38.6],'PUMP 4',2);
  const hotel=cam([7.03,11.2,11.8]);if(hotel.z>2){const p=project(hotel);'HOTEL'.split('').forEach((g,i)=>pixel(p.x,p.y+i,hotel.z-.2,g,2*20+17));}
  // The cues: catch the courier (up), save the book (down); unlit through the windup, live on the prompt.
@@ -235,9 +239,11 @@ function enter(phase,direct=false){
  transit=null;enterNow(phase);
 }
 function enterNow(phase){
- const scene=sceneName,wasEndingSeen=state.endingSeen;
+ const scene=sceneName,wasEndingSeen=state.endingSeen,leaving=isExamining();
  transitionFrom={...camera};state.phase=phase;state.event=0;
  caseEnter(phase);
+ // Putting an object down cuts straight back to the beat's own shot, as picking it up cut to the insert.
+ if(leaving&&!isExamining()){const s=shotFor();Object.assign(camera,s);transitionFrom={...s};}
  if(phase==='ready'){state.watched=true;addClue('The courier favors an injured leg. You can anticipate the stumble.');}
  if(phase==='evidence'){
   if(state.choice==='person')addClue('Nell says Bell is alive below the station, in Pump Room 4. The service knock is three short taps.');
@@ -274,7 +280,7 @@ function deduce(where){
  state.wrong=true;ui();
 }
 function reset(){
- Object.assign(state,{t:0,paused:false,mono:state.mono,travel:0,moving:false,phase:'brief',event:0,watched:false,choice:'',untimed:state.untimed,clues:[],wrong:false,decoded:false,radio:false,twist:false,rescue:'',gap:0,pursuit:'',caught:false,distance:20,endingSeen:false,firstMove:'',phaseDistance:20,club:'',tunnel:'',reaction:0,rewinds:3,note:false,loftSeen:false,misread:false,tail:false,keeper:false,market:'',hall:'',slip:false,roomPick:'',dawn:0,deaths:0,restarts:0,dead:'',stalled:false,faced:false,shown:false,rewound:false,theory:'',officeLooked:0,stationLooked:0,pumpLooked:0,loftLooked:0,subLooked:0,clubLooked:0});
+ Object.assign(state,{t:0,paused:false,mono:state.mono,travel:0,moving:false,phase:'brief',event:0,watched:false,choice:'',untimed:state.untimed,clues:[],wrong:false,decoded:false,radio:false,twist:false,rescue:'',gap:0,pursuit:'',caught:false,distance:20,endingSeen:false,firstMove:'',phaseDistance:20,club:'',tunnel:'',reaction:0,rewinds:3,note:false,loftSeen:false,misread:false,tail:false,keeper:false,market:'',hall:'',slip:false,roomPick:'',dawn:0,deaths:0,restarts:0,dead:'',stalled:false,faced:false,shown:false,rewound:false,theory:'',officeLooked:0,lanternLooked:0,padlockLooked:0,stationLooked:0,pumpLooked:0,loftLooked:0,subLooked:0,clubLooked:0});
  transit=null;fade=1;fadeIn=0;
  setScene('street');
  Object.assign(camera,startShot);transitionFrom={...startShot};el.journal.open=false;lastTime=0;ui();render();
@@ -287,6 +293,7 @@ function timer(){
  if(isObserving())el.timer.textContent='OBSERVING / '+Math.max(0,Math.ceil(8-state.event))+'s';
  // An investigate beat asks for looks until enough spots are examined, then the move is the player's.
  else if(isInvestigating())el.timer.textContent=investigateOpen()?'YOUR MOVE':'LOOK AROUND';
+ else if(isExamining())el.timer.textContent='TURN IT OVER';
  // A live beat has no countdown, pulse or ticks: the cue's flash rate is the only clock.
  else if(isQte())el.timer.textContent=state.untimed?'TAKE YOUR TIME':'LIVE';
  else if(isResult()&&state.reaction>0)el.timer.textContent='REACTION '+state.reaction.toFixed(2)+'s';
@@ -294,7 +301,7 @@ function timer(){
 }
 function ui(){
  el.actions.replaceChildren();keys=[];el.outcome.hidden=true;
- el.actions.className='lc-actions'+(!session.menu&&isInvestigating()?' lc-grid':'');// a look-around lists up to six choices: two a row on a phone
+ el.actions.className='lc-actions'+(!session.menu&&(isInvestigating()||isExamining())?' lc-grid':'');// a look-around lists up to six choices: two a row on a phone
  el.clues.replaceChildren();for(const clue of state.clues){const li=document.createElement('li');li.textContent=clue;el.clues.appendChild(li);}
  el.journal.hidden=!state.clues.length&&state.phase==='brief';
  const phases={brief:'01 / STATION ROAD',watch:'WATCH THE COURIER',ready:'A USEFUL DETAIL',follow:'FOLLOW THE LANTERN',danger:'THE COURIER STUMBLES',qte:'THE BOOK IS FALLING',result:state.choice==='person'?'COURIER CAUGHT':state.choice==='book'?'DISPATCH SAVED':'TAKEN',evidence:state.choice==='person'?'A WITNESS':state.choice==='book'?'A WRITTEN LEAD':'A DAMAGED CLUE',deduce:'WHERE DOES THE TRAIL GO?',loftTurn:'TWO DOORS BACK',arrival:'NORTH STATION / SERVICE DOOR'};
@@ -319,7 +326,7 @@ function ui(){
   rewindActions();break;
  case 'evidence':
   el.caption.textContent=state.choice==='person'?'The courier is Nell Marrow, Bell\'s apprentice. Nell: "Tonight I heard his knock, three short, from Pump Room 4. I will take you."':state.choice==='book'?'The entry is four nights old and still open: "00:17 / I. BELL / PUMP ROOM 4 / JOB OPEN." The courier\'s lantern is stencilled BELL / DEPOT LOFT.':'The rain has erased the entries. The cover still reads "PUMP ROOM 4." The lantern is stencilled BELL / DEPOT LOFT, and its carrier is in the back of a red car.';
-  button('[CONNECT THE CLUE]',()=>enter('deduce'));break;
+  button('[TURN THE LANTERN OVER]',()=>enter('lanternExamine'));button('[CONNECT THE CLUE]',()=>enter('deduce'));break;
  case 'deduce':
   el.caption.textContent=ladder.street>=2?'The hotel night clerk has never heard of Bell and says so twice. Rook has spent time the water under the station has not.':state.wrong?'The hotel desk has no Bell. The clue says PUMP ROOM 4, and pump rooms sit under the station. Rook has lost minutes; the water has not.':'Bell is somewhere below. Where does the trail go first?';
   button('[THE STATION SERVICE DOOR]',()=>deduce('station'));
@@ -467,6 +474,9 @@ document.addEventListener('keydown',e=>{
  else if((e.key===' '||e.key==='Enter')&&!onButton&&!isQte()&&!drawerOpen()){if(!endCutscene())advanceCaption();e.preventDefault();}
  // The number keys pick a look-around's spots by their labels (1 and 2 press the untimed prompt's buttons below).
  else if(/^[1-5]$/.test(e.key)&&!onButton&&!drawerOpen()&&isInvestigating()){if(investigateKey(Number(e.key)))e.preventDefault();}
+ // An examined object: the number keys read its details, and the arrows or WASD turn it.
+ else if(/^[1-5]$/.test(e.key)&&!onButton&&isExamining()){if(examineKey(Number(e.key)))e.preventDefault();}
+ else if(e.key in dirKeys&&isExamining()){if(examineTurn(dirKeys[e.key]))e.preventDefault();}
 });
 const tapSurface=chrome.picture||canvas;
 tapSurface.addEventListener('pointerdown',()=>{qteTap=isQte();spotTap=false;});
@@ -507,12 +517,16 @@ const investigateLive=()=>root.isConnected&&!session.menu&&!state.paused&&!trans
 canvas.addEventListener('pointerdown',e=>{
  if(promptLive()){pointerStart={x:e.clientX,y:e.clientY};e.preventDefault?.();}
  else if(investigateLive())pointerStart={x:e.clientX,y:e.clientY};
+ else if(examineLive()){pointerStart={x:e.clientX,y:e.clientY,lx:e.clientX,ly:e.clientY};e.preventDefault?.();}
 });
+// Turning an examined object follows the drag as it happens; whatever the last move left over is turned on release.
+canvas.addEventListener('pointermove',e=>{if(!pointerStart||pointerStart.lx===undefined)return;examineDrag(e.clientX-pointerStart.lx,e.clientY-pointerStart.ly);pointerStart.lx=e.clientX;pointerStart.ly=e.clientY;});
 canvas.addEventListener('pointercancel',()=>{pointerStart=null;});
 canvas.addEventListener('pointerup',e=>{
  const start=pointerStart;pointerStart=null;if(!start)return;
  const dx=e.clientX-start.x,dy=e.clientY-start.y,travel=Math.hypot(dx,dy);
  if(investigateLive()){if(travel<24)spotTap=investigateAt(e.clientX,e.clientY);return;}
+ if(start.lx!==undefined){if(travel<24)spotTap=examineAt(e.clientX,e.clientY);else{examineDrag(e.clientX-start.lx,e.clientY-start.ly);spotTap=true;}return;}
  if(!promptLive())return;
  const dir=travel>=24?(Math.abs(dx)>=Math.abs(dy)?(dx>0?'right':'left'):(dy>0?'down':'up')):cueAt(e.clientX,e.clientY);
  if(dir)promptInput(dir,e);

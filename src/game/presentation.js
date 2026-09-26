@@ -59,18 +59,19 @@ function presentEnter(phase,sceneChanged,wasEndingSeen){
  else if(['chaseQteA','chaseQteB','tunnelQte'].includes(phase)||phaseDef(phase)?.kind==='prompt')cue('danger');
 }
 // Story order lets the case file describe how far the investigation has come.
-const phaseOrder=['officeEntry','officeDesk','brief','watch','ready','follow','danger','qte','result','evidence','deduce','loftTurn','loftEntry','loftTable','loftNote','loftBoard','loftStair','loftLeave','arrival','stationEntry','stationDesk','stationTheory','stationQuiet','stationListen','stationReady','pumpEntry','pumpFind','pumpDanger','pumpQte','pumpDeath','pumpResult','pumpRoom','pumpTruth','roofEntry','roofQuiet','roofListen','roofSignal','roofConfession','tramEntry','tramRide','tramWatch','tramSpotted','tramArrive','marketEntry','marketAisle','marketKeeper','marketDanger','marketQte','marketDeath','marketResult','clubEntry','clubBooth','clubFace','clubQte','clubResult','chaseEntry','chaseQteA','chaseDeath','chaseBank','chaseQteB','gapDeath','chaseFinish','tunnelEntry','tunnelQte','tunnelDeath','tunnelFinish','subEntry','subDock','subManifest','subDanger','subQte','subDeath','subResult','subDawn','roomEntry','roomVale','roomDeduce','roomName','canalEntry','canalEnd','coldCase'];
+const phaseOrder=['officeEntry','officeDesk','brief','watch','ready','follow','danger','qte','result','evidence','lanternExamine','deduce','loftTurn','loftEntry','loftTable','loftNote','loftBoard','loftStair','loftLeave','arrival','stationEntry','stationDesk','stationTheory','stationQuiet','stationListen','stationReady','pumpEntry','pumpFind','pumpDanger','pumpQte','pumpDeath','pumpResult','pumpRoom','pumpPadlock','pumpTruth','roofEntry','roofQuiet','roofListen','roofSignal','roofConfession','tramEntry','tramRide','tramWatch','tramSpotted','tramArrive','marketEntry','marketAisle','marketKeeper','marketDanger','marketQte','marketDeath','marketResult','clubEntry','clubBooth','clubFace','clubQte','clubResult','chaseEntry','chaseQteA','chaseDeath','chaseBank','chaseQteB','gapDeath','chaseFinish','tunnelEntry','tunnelQte','tunnelDeath','tunnelFinish','subEntry','subDock','subManifest','subDanger','subQte','subDeath','subResult','subDawn','roomEntry','roomVale','roomDeduce','roomName','canalEntry','canalEnd','coldCase'];
 // A cold case stands where the death that closed it stands.
 function reached(phase){return phaseOrder.indexOf(picturePhase())>=phaseOrder.indexOf(phase);}
 const deathLabels=[['pump','drowned','Watched the water take Bell'],['market','arc','Went down among the cells'],['carrier','edge','Went over the barrier'],['gap','gap','Followed Vale over the gap'],['pier','pier','Met the pier in the drain'],['rack','crushed',"Went under Krane's rack"]];
 const deathsSeen=()=>deathLabels.filter((_,i)=>state.deaths&(1<<i)).map(([,id])=>id);
 const coldSteps={pump:'Case cold at the pump',market:'Case cold at the market',carrier:'Case cold on the elevated road',gap:'Case cold at the bridge',pier:'Case cold in the drain',rack:'Case cold at Substation Nine'};
 // A look-around's line comes from its bitmask: the beat's step text and how many of its spots were examined.
-const looks=set=>Object.values(phaseDefs).filter(d=>d.kind==='investigate'&&d.set===set&&state[d.field]).map(d=>d.step+' ('+popcount(state[d.field])+'/'+d.spots.length+')');
+const looks=set=>Object.values(phaseDefs).filter(d=>(d.kind==='investigate'||d.kind==='examine')&&d.set===set&&state[d.field]).map(d=>d.step+' ('+popcount(state[d.field])+'/'+(d.spots||d.details).length+')');
 function routeSteps(){
  const steps=[...looks('office')];
  if(reached('follow'))steps.push(state.watched?'Watched first':'Followed at once');
  if(reached('result'))steps.push({person:'Caught the courier',book:'Saved the book',missed:'Missed the fall'}[state.choice]);
+ steps.push(...looks('street'));
  if(state.wrong)steps.push('Chased a false lead');
  if(state.loftSeen)steps.push('Climbed to the loft');
  if(state.note)steps.push('Read Nell\'s note');
