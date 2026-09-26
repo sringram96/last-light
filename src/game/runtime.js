@@ -175,15 +175,82 @@ function geometry(){
 }
 let spriteRects=[];
 function render(){const t0=clockMs();renderInner();renderMs=Math.max(clockMs()-t0,renderMs*.85);}
+// One surface into the grid: backface and frustum tests on its bounding sphere, then transform, clip and raster.
+function rasterSurface(s,tx,ty,kx,ky,id){
+  const v=s.v,a=v[0],f=s.n[0]*(camera.x-a[0])+s.n[1]*(camera.y-a[1])+s.n[2]*(camera.z-a[2]);if(f<-.01&&s.mat.kind!=='cable')return;
+  let mx=0,my=0,mz=0;for(const p of v){mx+=p[0];my+=p[1];mz+=p[2];}mx/=v.length;my/=v.length;mz/=v.length;
+  let r=0;for(const p of v)r=Math.max(r,(p[0]-mx)**2+(p[1]-my)**2+(p[2]-mz)**2);r=Math.sqrt(r);
+  const dx=mx-camera.x,dy=my-camera.y,dz=mz-camera.z,xx=dx*cy-dz*sy,zz=dx*sy+dz*cy,yy=dy*cp-zz*sp,depth=dy*sp+zz*cp;
+  if(depth<.18-r||Math.abs(xx)-r*kx>depth*tx||Math.abs(yy)-r*ky>depth*ty)return;
+  const poly=clip(v.map(cam));if(poly.length<3)return;const proj=poly.map(project);for(let i=1;i<proj.length-1;i++)triangle(proj[0],proj[i],proj[i+1],s.mat,s.n,id);
+}
+// Materials whose look moves with the clock or the dawn; everything else shades the same from one frame to the next.
+const movingKinds=new Set(['road','water','screen','neon','dawn','arc','video','wet','beacon','led','ideogram','cell','beam','glow','halo','haze']);
+const movingMaterial=m=>movingKinds.has(m.kind);
+// What a still raster depends on besides the clock: the camera, the grid and projection, the set, its standing geometry
+// (vertices and materials, which some sets move or swap in place) and its lamps.
+const lastCam={x:NaN};
+let stillAt='',stillZ=null,stillX=null,stillO=null,stillI=null,stillC=null,stillMats=[];
+function stillKey(){
+ let sum=0,same=stillMats.length===staticCount;
+ for(let i=0;i<staticCount;i++){const s=surfaces[i];if(same&&stillMats[i]!==s.mat)same=false;for(const p of s.v)sum+=p[0]*1.3+p[1]*7.1+p[2]*.7;}
+ if(!same)stillMats=surfaces.slice(0,staticCount).map(s=>s.mat);
+ let lit=0;for(const l of lamps)lit+=l[0]*3.1+l[1]*.9;
+ return (same?'':'m'+frame)+[camera.x,camera.y,camera.z,camera.yaw,camera.pitch,W,H,fx,fy,sceneName,staticCount,lamps.length,sum,lit].join('|');
+}
+// Painting the grid. Drawing text is the most expensive thing a frame does, and most of an ASCII picture is the same from
+// one frame to the next (a still camera, a quiet beat: only the rain, the neon and the water move), so the canvas keeps
+// the last frame and only the cells that changed are cleared and drawn again, one cell wider on each side so a glyph that
+// leans past its cell is repainted whole. The whole grid is painted when the canvas is new or resized, when the palette
+// or font changes, and every two seconds besides, so nothing a partial clear left behind can outlive a glance.
+// Within a changed span, every run of equal ink is one string (runs stop at 24 cells and at a colour change), so the
+// picture is glyph for glyph what the cell-by-cell draw made. (Drawing a row one colour at a time, spaces between, was
+// measured slower: the canvas pays per character, spaces included.)
+let shownChars=null,shownInk=null,shownKey='',paintedFull=0;
+function paint(){
+ const colors=state.mono?gray:palettes,font=(cw/.6)+'px "Liberation Mono",Consolas,monospace';
+ const key=font+'|'+W+'x'+H+'|'+canvas.width+'|'+(state.mono?1:0);
+ const full=key!==shownKey||!shownChars||frame-paintedFull>=60;
+ if(full){shownKey=key;paintedFull=frame;shownChars=new Array(W*H);shownInk=new Uint16Array(W*H);ctx.font=font;ctx.textBaseline='top';ctx.fillStyle='#03070b';ctx.fillRect(0,0,canvas.width/dpr,canvas.height/dpr);}
+ let current=-1;
+ const draw=(y,from,to)=>{
+  for(let x=from;x<to;){const i=y*W+x,g=chars[i];shownChars[i]=g;shownInk[i]=ink[i];if(g===' '){x++;continue;}const k=ink[i];let run=g,n=1;while(n<24&&x+n<to&&ink[i+n]===k&&chars[i+n]!==' '){shownChars[i+n]=chars[i+n];shownInk[i+n]=k;run+=chars[i+n];n++;}if(k!==current){current=k;ctx.fillStyle=colors[k];}ctx.fillText(run,x*cw,y*ch);x+=n;}
+ };
+ if(full){for(let y=0;y<H;y++)draw(y,0,W);return;}
+ for(let y=0;y<H;y++){
+  const row=y*W;
+  for(let x=0;x<W;x++){
+   const i=row+x;if(chars[i]===shownChars[i]&&(chars[i]===' '||ink[i]===shownInk[i]))continue;
+   let end=x+1;while(end<W&&(chars[row+end]!==shownChars[row+end]||(chars[row+end]!==' '&&ink[row+end]!==shownInk[row+end])))end++;
+   const a=Math.max(0,x-1),b=Math.min(W,end+1);
+   ctx.fillStyle='#03070b';current=-1;ctx.fillRect(a*cw,y*ch,(b-a)*cw,ch);draw(y,a,b);x=b-1;
+  }
+ }
+}
 function renderInner(){
  // A scene change between grid densities (the menu and a story set) re-sizes first; resize() renders once it has the grid.
  if(wantedDensity()!==densityFor){resize();return;}
- if(!W||!H)return;frame++;zbuf.fill(Infinity);chars.fill(' ');ink.fill(0);spriteRects=[];labelRects=[];
+ if(!W||!H)return;frame++;zbuf.fill(Infinity);owner.fill(0x7fffffff);chars.fill(' ');ink.fill(0);spriteRects=[];labelRects=[];
  sy=Math.sin(camera.yaw);cy=Math.cos(camera.yaw);sp=Math.sin(camera.pitch);cp=Math.cos(camera.pitch);
  const cast=geometry();
- for(const s of surfaces){
-  const a=s.v[0],f=s.n[0]*(camera.x-a[0])+s.n[1]*(camera.y-a[1])+s.n[2]*(camera.z-a[2]);if(f<-.01&&s.mat.kind!=='cable')continue;
-  const poly=clip(s.v.map(cam));if(poly.length<3)continue;const proj=poly.map(project);for(let i=1;i<proj.length-1;i++)triangle(proj[0],proj[i],proj[i+1],s.mat,s.n);
+ // What the camera can see this frame: a surface whose bounding sphere lies wholly behind the near plane or outside the
+ // picture's edges is skipped before it is transformed, and a lamp pool that cannot reach anything in front of the camera
+ // is left out of the shading. Both tests are conservative, so the picture is the one a full pass draws.
+ const tx=(W/2+2)/fx,ty=(H/2+2)/fy,kx=Math.hypot(1,tx),ky=Math.hypot(1,ty);
+ litLamps=[];for(const l of lamps){const dx=l[0]-camera.x,dz=l[1]-camera.z,d=dx*sy+dz*cy,s=dx*cy-dz*sy;if(d>-8&&Math.abs(s)<(Math.max(d,0)+8)*tx*1.2+8)litLamps.push(l);}
+ // A still picture keeps what cannot change: while the camera, the grid, the lamps and the set's standing geometry are
+ // what they were last frame, the standing surfaces whose materials do not move with the clock are copied from the last
+ // raster instead of drawn again, and only the moving materials and this frame's props are drawn over them.
+ // A camera that moved since the last frame (and every frame of a travelling set) draws everything in order and keeps
+ // nothing, so a moving picture pays nothing for the reuse it cannot have.
+ const held=!moving()&&camera.x===lastCam.x&&camera.y===lastCam.y&&camera.z===lastCam.z&&camera.yaw===lastCam.yaw&&camera.pitch===lastCam.pitch;
+ Object.assign(lastCam,camera);
+ if(!held){stillAt='';for(let i=0;i<surfaces.length;i++)rasterSurface(surfaces[i],tx,ty,kx,ky,i);}
+ else{
+ const still=stillKey(),reuse=still===stillAt;
+ if(reuse){zbuf.set(stillZ);zexact.set(stillX);owner.set(stillO);ink.set(stillI);for(let i=0;i<chars.length;i++)chars[i]=stillC[i];}
+ else{for(let i=0;i<staticCount;i++)if(!movingMaterial(surfaces[i].mat))rasterSurface(surfaces[i],tx,ty,kx,ky,i);stillAt=still;if(!stillZ||stillZ.length!==zbuf.length){stillZ=new Float32Array(zbuf.length);stillO=new Int32Array(zbuf.length);stillX=new Float64Array(zbuf.length);stillI=new Uint16Array(ink.length);stillC=new Array(chars.length);}stillZ.set(zbuf);stillX.set(zexact);stillO.set(owner);stillI.set(ink);for(let i=0;i<chars.length;i++)stillC[i]=chars[i];}
+ for(let i=0;i<surfaces.length;i++){if(i<staticCount&&!movingMaterial(surfaces[i].mat))continue;rasterSurface(surfaces[i],tx,ty,kx,ky,i);}
  }
  // Rain is rendered before people, so it does not cover their faces. Sets say where it falls (the office only beyond the window).
  const rainHere=sets[sceneName]?sets[sceneName].rain:['street','roof','chase','canal'].includes(sceneName)?true:sceneName==='office'?(x,z)=>z>16.6:false;
@@ -213,12 +280,7 @@ function renderInner(){
   const level=ink[i]%20;ink[i]=ink[i]-level+Math.round(level*fade);
   if(fade<.15)chars[i]=' ';else if(fade<.35)chars[i]='.';else if(fade<.6&&(g==='#'||g==='@'||g==='%'||g==='&'||g==='H'))chars[i]='+';
  }
- const colors=state.mono?gray:palettes;
- ctx.fillStyle='#03070b';ctx.fillRect(0,0,canvas.width/dpr,canvas.height/dpr);ctx.font=(cw/.6)+'px "Liberation Mono",Consolas,monospace';ctx.textBaseline='top';
- // Every run of equal ink is drawn as one string, which is where a frame's time goes: a grid of six thousand cells is a
- // few hundred draws instead of six thousand. Runs stop at 24 cells, so a font whose advance is not exactly 0.6 em drifts
- // by under a tenth of a cell, and at a colour change, so the picture is glyph for glyph what the cell-by-cell draw made.
- let current=-1;for(let y=0;y<H;y++)for(let x=0;x<W;){const i=y*W+x,g=chars[i];if(g===' '){x++;continue;}const k=ink[i];let run=g,n=1;while(n<24&&x+n<W&&ink[i+n]===k&&chars[i+n]!==' '){run+=chars[i+n];n++;}if(k!==current){current=k;ctx.fillStyle=colors[k];}ctx.fillText(run,x*cw,y*ch);x+=n;}
+ paint();
  timer();
 }
 function qteDuration(){return caseDuration();}
@@ -435,7 +497,7 @@ function resize(){
  }
  dpr=Math.min(window.devicePixelRatio||1,2);
  canvas.width=Math.round(W*cw*dpr);canvas.height=Math.round(H*ch*dpr);canvas.style.height=H*ch+'px';ctx.setTransform(dpr,0,0,dpr,0,0);
- zbuf=new Float32Array(W*H);chars=new Array(W*H);ink=new Uint16Array(W*H);fitCard();render();
+ zbuf=new Float32Array(W*H);owner=new Int32Array(W*H);zexact=new Float64Array(W*H);chars=new Array(W*H);ink=new Uint16Array(W*H);fitCard();render();
 }
 // layout() answers the stage observer, orientation and fullscreen changes; it is a no-op without a viewport (the harness).
 function layout(){if(typeof window.innerHeight!=='number')return;resize();}

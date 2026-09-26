@@ -6,7 +6,7 @@ else if(kind==='hatch'){hue=0;lum=.18;g=fract(x*5)<.09?'|':'.';}
 else if(kind==='tiles'){
  const a=Math.floor(x*.8),b=Math.floor(z*.8);hue=(a+b)%2?0:2;lum=(a+b)%2?.36:.64;g=fract(x*.8)<.05||fract(z*.8)<.05?'+':grain>.65?':':'.';
  if(Math.abs(x)<2.5){hue=2;lum=.65;g=fract(z*2)<.12?'=':':';}
- for(let i=0;i<lamps.length;i++){const l=lamps[i],d=(x-l[0])**2+(z-l[1])**2;if(d<22){const a2=(1-d/22);if(a2>.25){hue=2;lum=Math.max(lum,.3+a2*.55);if(grain>.6)g='=';}}}
+ for(let i=0;i<litLamps.length;i++){const l=litLamps[i],d=(x-l[0])**2+(z-l[1])**2;if(d<22){const a2=(1-d/22);if(a2>.25){hue=2;lum=Math.max(lum,.3+a2*.55);if(grain>.6)g='=';}}}
 }
 else if(kind==='wall'||kind==='brick'){
  hue=kind==='wall'?2:(mat.hue||0);lum=(kind==='brick'&&!mat.hue?.43:.37)+grain*.15;g=fract(y*2)<.10?'-':fract(x*.8+z*.8+Math.floor(y*2)*.5)<.055?'|':grain>.6?':':'.';
@@ -18,14 +18,14 @@ else if(kind==='ceiling'){hue=4;lum=.3;g=fract(x*.8)<.07?'|':fract(z*.5)<.1?'=':
 else if(kind==='water'){
  const r=Math.sin(x*2+z*.6+state.t*1.2)+Math.sin(z*3-x*.6-state.t*.8);hue=1;lum=.22+Math.max(0,r)*.23+(state.dawn||0)*.2;g=r>1.1?'=':r>.2?'-':'.';
  if(Math.abs(x)<2&&kind==='water'){hue=2;lum+=.15;}
- for(let i=0;i<lamps.length;i++){const l=lamps[i],d=(x-l[0])**2+(z-l[1])**2;if(d<22){const a2=(1-d/22);if(a2>.25){hue=2;lum=Math.max(lum,.28+a2*.5);if(r>.2)g='=';}}}
+ for(let i=0;i<litLamps.length;i++){const l=litLamps[i],d=(x-l[0])**2+(z-l[1])**2;if(d<22){const a2=(1-d/22);if(a2>.25){hue=2;lum=Math.max(lum,.28+a2*.5);if(r>.2)g='=';}}}
 }
 else if(kind==='tank'){lum=.45+grain*.15;g=Math.abs(n[1])>.5?'=':fract(y*2)<.07?'=':fract((x+z)*2)<.05?'|':':';if(Math.abs(y-2.1)<.16){hue=2;lum=.9;g='=';}}
 else if(kind==='pipe'){hue=2;lum=.65;g=fract(z*.8)<.12?'#':'=';}
 else if(kind==='grate'){hue=0;lum=.6;g=fract(x*4)<.3||fract(z*4)<.25?'+':'.';}
 else if(kind==='console'){hue=1;lum=.5;g=':';if(!mat.roof&&y>1.35){hue=2;lum=1;g=fract(x*7)<.25?'|':'=';}}
 else if(kind==='poster'){hue=2;lum=.75;g=fract(y*4)<.32?'=':'.';}
-else if(kind==='roof'){hue=0;lum=.44;g=fract(x*.8)<.025||fract(z*.8)<.03?'=':grain>.65?':':'.';for(let i=0;i<lamps.length;i++){const l=lamps[i],d=(x-l[0])**2+(z-l[1])**2;if(d<22){const a2=(1-d/22);if(a2>.25){hue=2;lum=Math.max(lum,.3+a2*.55);if(grain>.6)g='=';}}}}
+else if(kind==='roof'){hue=0;lum=.44;g=fract(x*.8)<.025||fract(z*.8)<.03?'=':grain>.65?':':'.';for(let i=0;i<litLamps.length;i++){const l=litLamps[i],d=(x-l[0])**2+(z-l[1])**2;if(d<22){const a2=(1-d/22);if(a2>.25){hue=2;lum=Math.max(lum,.3+a2*.55);if(grain>.6)g='=';}}}}
 else if(kind==='vent'){hue=0;lum=.58;g=fract(y*7)<.48?'=':'.';if(mat.roof){g=fract(x*5)<.3?'|':'-';}}
 else if(kind==='express'){
  hue=7;lum=.34+grain*.12;g=grain>.6?':':'.';
@@ -44,7 +44,7 @@ else if(kind==='plank'||kind==='carpet'||kind==='drain'){
  if(kind==='plank'){hue=2;lum=.4+grain*.14;g=fract(z*1.6)<.1?'-':fract(x*.9)<.07?'|':grain>.7?':':'.';}
  else if(kind==='carpet'){hue=3;lum=.28+grain*.1;g=grain>.8?'+':grain>.5?':':'.';if(Math.abs(x)<1.2&&z<16){hue=2;lum=.4;g=fract(z*2)<.15?'=':':';}}
  else{hue=7;lum=.3+grain*.12;g=grain>.6?':':'.';if(Math.abs(x)<.08){hue=0;lum=.55;g='|';}if(fract(z*.08)<.02){lum=.5;g='=';}if(Math.abs(x)>4.2&&fract(x*3)<.3){hue=5;lum=.4;g='~';}}
- for(let i=0;i<lamps.length;i++){const l=lamps[i],d=(x-l[0])**2+(z-l[1])**2;if(d<22){const a=(1-d/22);if(a>.25){hue=2;lum=Math.max(lum,.3+a*.55);if(grain>.6)g='=';}}}
+ for(let i=0;i<litLamps.length;i++){const l=litLamps[i],d=(x-l[0])**2+(z-l[1])**2;if(d<22){const a=(1-d/22);if(a>.25){hue=2;lum=Math.max(lum,.3+a*.55);if(grain>.6)g='=';}}}
 }
 else if(kind==='blind'){hue=4;lum=fract(y*4)<.45?.9:.25;g=fract(y*4)<.45?'=':'-';}
 else if(kind==='board'){hue=2;lum=.4;g='.';const c=hash(Math.floor(z*1.6),Math.floor(y*2.2));if(c>.55){hue=6;lum=.75;g=fract(y*2.2)<.3?'-':'=';}if(fract(z*1.6)<.06&&c>.55){hue=3;lum=.9;g='+';}}
