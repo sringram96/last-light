@@ -220,18 +220,29 @@ function picturePhase(){return state.phase==='coldCase'&&deathPhases[state.dead]
 // thirds of the window and 8 Hz for the last third (the beat's first rendered frame is always on); steady with its number
 // in untimed mode or under reduced motion; dim and steady during the windup or when the move is not open (lit=false).
 // The label's cell rectangle is recorded every frame, lit or not, so a tap lands between flashes too.
-const cueGlyphs={left:'<<',right:'>>',up:'^^',down:'vv'};
+const cueGlyphs={left:'<<',right:'>>',up:'^^',down:'vv'},cueBig={left:'<<<',right:'>>>',up:'^^^',down:'vvv'};
 function cueLabel(p,dir,index,lit=true){
- const glyph=cueGlyphs[dir];
- if(!isQte()||!lit){worldLabel(p,glyph,1,{dir,level:6});return;}
- if(state.untimed||reduce){worldLabel(p,glyph+' '+index,1,{dir});return;}
+ const glyph='  '+cueBig[dir]+'  ',n=labelRects.length;
+ if(!isQte()||!lit){worldLabel(p,glyph,1,{dir,level:6,front:true});cueFrame(n,6);return;}
+ if(state.untimed||reduce){worldLabel(p,' '+cueBig[dir]+' '+index+' ',1,{dir,level:19,front:true});cueFrame(n,19);return;}
  const T=caseDuration(),e=state.event,on=frame===cueFirstFrame||fract(e*(e<T*2/3?4:8))<.5;
- worldLabel(p,glyph,1,{dir,draw:on});
+ worldLabel(p,glyph,1,{dir,draw:on,level:19,front:true});cueFrame(n,on?19:13);
+}
+// A cue is framed, so a target reads as a target at any size: a solid box of cyan around its arrows, drawn ahead of
+// everything (the frame stays lit between flashes, so the target never vanishes), and its tap rectangle grows to it.
+function cueFrame(n,level){
+ if(labelRects.length===n)return;// behind the camera: no label, no frame
+ const r=labelRects[n];r.x0-=1;r.x1+=1;r.y0-=1;r.y1+=1;
+ const ink=1*20+level;
+ for(let x=r.x0;x<=r.x1;x++){pixel(x,r.y0,.4,'#',ink);pixel(x,r.y1,.4,'#',ink);}
+ pixel(r.x0,r.y0+1,.4,'#',ink);pixel(r.x1,r.y0+1,.4,'#',ink);
+ // The inside is cleared behind the arrows, so the target reads as a target and not as more of the picture.
+ for(let x=r.x0+1;x<r.x1;x++)pixel(x,r.y0+1,.55,' ',0);
 }
 // An examine marker in the scene: the spot's number in brackets at its world point, dim amber until the spot has been
 // examined and dim cyan after, steady in every mode, drawn ahead of every sprite and recorded as a tap target like a cue.
 // These and the cues are the only interface drawn in the picture.
-function spotLabel(p,index,seen,id){worldLabel(p,'['+index+']',seen?1:2,{spot:id,level:seen?8:12,front:true});}
+function spotLabel(p,index,seen,id){worldLabel(p,'['+index+']',seen?1:2,{spot:id,level:seen?8:18,front:true});}
 function investigateLabels(){
  const d=phaseDef(picturePhase());if(!d||d.kind!=='investigate')return;
  d.spots.forEach((s,i)=>{if(!spotOpen(d,s))return;spotLabel(s.at(),i+1,!!(state[d.field]&s.bit),s.id);});

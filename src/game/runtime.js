@@ -225,7 +225,7 @@ function qteDuration(){return caseDuration();}
 function addClue(text){if(!state.clues.includes(text))state.clues.push(text);}
 function button(text,fn,className=''){
  const b=document.createElement('button');b.type='button';b.className='cursor-interaction'+(className?' '+className:'');b.textContent=text;b.disabled=state.paused;
- const action=()=>{if(!state.paused&&!b.disabled)fn();};b.addEventListener('click',action);el.actions.appendChild(b);keys.push(action);
+ const action=e=>{if(!state.paused&&!b.disabled)fn(e);};b.addEventListener('click',action);el.actions.appendChild(b);keys.push(action);
 }
 // A scene change plays an exit beat and a dissolve before the next set fades up; previews, resumes and reduced motion cut directly.
 let transit=null,fade=1,fadeIn=0;
@@ -292,10 +292,11 @@ function timer(){
  if(transit){el.timer.textContent='LIVE';return;}
  if(isObserving())el.timer.textContent='OBSERVING / '+Math.max(0,Math.ceil(8-state.event))+'s';
  // An investigate beat asks for looks until enough spots are examined, then the move is the player's.
- else if(isInvestigating())el.timer.textContent=investigateOpen()?'YOUR MOVE':'LOOK AROUND';
- else if(isExamining())el.timer.textContent='TURN IT OVER';
+ else if(isInvestigating())el.timer.textContent=investigateOpen()?'YOUR MOVE':'TAP A [NUMBER]';
+ else if(isExamining())el.timer.textContent='DRAG TO TURN';
  // A live beat has no countdown, pulse or ticks: the cue's flash rate is the only clock.
- else if(isQte())el.timer.textContent=state.untimed?'TAKE YOUR TIME':'LIVE';
+ // A live beat shows how much of its window is left as a draining bar, so the clock is never a guess.
+ else if(isQte())el.timer.textContent=state.untimed?'TAKE YOUR TIME':'LIVE '+'#'.repeat(Math.max(0,Math.ceil(10*(1-state.event/caseDuration()))))+'.'.repeat(Math.min(10,Math.floor(10*state.event/caseDuration())));
  else if(isResult()&&state.reaction>0)el.timer.textContent='REACTION '+state.reaction.toFixed(2)+'s';
  else el.timer.textContent=phaseDef()?.kind==='death'?'':isLive()?'LIVE':'YOUR MOVE';
 }

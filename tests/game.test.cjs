@@ -131,7 +131,7 @@ const rowsOf=g=>{const a=g.audit(),grid=Array.from({length:a.rows},()=>Array(a.c
 test('Bell\'s lantern turns over in the dark, and each face keeps its own detail',()=>{
  const g=game({reduced:true});g.click('NEW CASE');g.click('SKIP INTRO');g.phase('brief');g.click('FOLLOW');g.next();g.next();g.phase('qte');g.key('ArrowUp');g.next();g.phase('evidence');
  const buttons=()=>g.elements['.lc-actions'].children.map(b=>b.textContent),spots=()=>g.audit().labels.filter(l=>l.spot).map(l=>l.spot);
- g.click('TURN THE LANTERN OVER');g.phase('lanternExamine');assert.equal(g.audit().scene,'street');assert.equal(g.elements['.lc-timer'].textContent,'TURN IT OVER');
+ g.click('TURN THE LANTERN OVER');g.phase('lanternExamine');assert.equal(g.audit().scene,'street');assert.equal(g.elements['.lc-timer'].textContent,'DRAG TO TURN');
  assert(g.elements['.lc-caption'].textContent.startsWith('Nell hands Rook the lantern'));
  assert.deepEqual(buttons(),['[<< TURN]','[TURN >>]','[TIP IT]','[1] THE STENCIL','[PUT IT DOWN]']);assert.deepEqual(spots(),['stencil']);
  assert(rowsOf(g).some(r=>r.includes('DEPOT LOFT')),'the stencil is cut into the face toward the camera');assert(!rowsOf(g).some(r=>r.includes('7731')));
@@ -244,21 +244,21 @@ test('scene changes play an exit beat and a dissolve before the next set fades u
  g.click('FOLLOW');g.next();g.next();g.phase('qte');g.key('ArrowUp');g.phase('result');g.next();g.click('CONNECT');g.click('STATION SERVICE');g.run(5.4);assert(g.audit().transit);g.phase('arrival');
  g.elements['.lc-menu'].click();const t=g.audit().transit.t;g.run(2);assert.equal(g.audit().transit.t,t);g.click('RESUME');g.run(1.5);g.phase('stationEntry');
 });
-// Lamps. A wrong direction at a lethal beat is a death: a lamp goes, the picture plays with no buttons, and the night rewinds
+// Lamps. Running out of time at a lethal beat is a death: a lamp goes, the picture plays with no buttons, and the night rewinds
 // itself to the windup with the rewind line. The third death from three lamps goes cold; a restart refills the lamps and resets
 // only the chapter's own fields.
 const toThePump=g=>{g.click('NEW CASE');g.click('SKIP INTRO');g.elements['.lc-timing'].click();g.click('FOLLOW');g.next();g.next();g.phase('qte');g.key('ArrowUp');g.phase('result');assert.equal(g.audit().state.choice,'person');
  g.next();g.click('CONNECT');g.click('STATION SERVICE');g.next();g.phase('stationEntry');g.next();throughDesk(g,'123');g.next();g.phase('pumpFind');g.click('GET BELL');g.phase('pumpDanger');};
-test('lamps: a wrong direction at the pump is a death, the night rewinds itself, and the third death goes cold',()=>{
+test('lamps: running out of time at the pump is a death, the night rewinds itself, and the third death goes cold',()=>{
  const g=game({reduced:true});toThePump(g);
  assert.equal(g.audit().card,'','no GET READY card');assert.equal(g.elements['.lc-timer'].textContent,'LIVE');g.run(2.2);g.phase('pumpQte');
- let a=g.audit();assert.equal(a.window,3,'2.5 s plus the tape');assert.equal(g.elements['.lc-caption'].textContent,'');assert.equal(g.elements['.lc-actions'].children.length,0);assert.equal(g.elements['.lc-timer'].textContent,'LIVE');
- assert.deepEqual(a.labels.map(l=>l.dir+' '+l.text),['left << 1','right >> 2'],'steady cues with their numbers under reduced motion');
- g.key('ArrowDown');g.phase('pumpDeath');a=g.audit();assert.equal(a.card,'DROWNED');assert.equal(a.state.rewinds,2);assert.equal(a.state.deaths,1);assert.equal(a.state.rescue,'');assert.equal(g.elements['.lc-actions'].children.length,0);
+ let a=g.audit();assert.equal(a.window,3,'2.5 s plus the tape');assert.equal(g.elements['.lc-caption'].textContent,'');assert.deepEqual(g.elements['.lc-actions'].children.map(b=>b.textContent),['[<< CLOSE THE INLET]','[PULL BELL OUT >>]'],'the two moves are named, pointing the way their cues do');assert.equal(g.elements['.lc-timer'].textContent,'LIVE ##########','the window as a full bar');
+ assert.deepEqual(a.labels.map(l=>l.dir+' '+l.text),['left  <<< 1 ','right  >>> 2 '],'steady cues with their numbers under reduced motion');
+ g.key('ArrowDown');g.swipe('up');g.phase('pumpQte','a direction the beat does not offer is ignored');g.run(3.2,50);g.phase('pumpDeath');a=g.audit();assert.equal(a.card,'DROWNED');assert.equal(a.state.rewinds,2);assert.equal(a.state.deaths,1);assert.equal(a.state.rescue,'');assert.equal(g.elements['.lc-actions'].children.length,0);
  assert.equal(g.elements['.lc-score'].textContent,'REFLEX 1/2 // LAMPS ##. // ');assert.equal(JSON.parse(g.storage.getItem('last-light/save/v1')).state.phase,'pumpDanger','a death is never a resume point');
  g.next();g.phase('pumpDanger');assert.equal(g.audit().card,'REWIND');assert.equal(g.elements['.lc-caption'].textContent,'The night rewinds. The joint holds, Bell is still tapping the pipe, and the INLET wheel is at Rook\'s hand. Get ready.');
  g.run(2.2);g.phase('pumpQte');assert(!g.elements['.lc-caption'].textContent);g.run(3.2,50);g.phase('pumpDeath');assert.equal(g.audit().state.rewinds,1,'a timeout is the same death');
- g.next();g.phase('pumpDanger');g.run(2.2);g.key('w');g.phase('pumpDeath');assert.equal(g.audit().state.rewinds,0);assert.equal(g.audit().state.deaths,1,'the same death seen thrice is one bit');
+ g.next();g.phase('pumpDanger');g.run(2.2);g.run(3.2,50);g.phase('pumpDeath');assert.equal(g.audit().state.rewinds,0);assert.equal(g.audit().state.deaths,1,'the same death seen thrice is one bit');
  g.next();g.phase('coldCase');a=g.audit();assert.equal(a.state.dead,'pump');assert.equal(a.card,'CASE COLD');assert.equal(a.objective,'CASE COLD');assert.equal(a.scene,'pump');
  assert(g.elements['.lc-caption'].textContent.startsWith('Night Division, morning. IVO BELL, lamplighter, is recovered from Pump Room 4'));
  assert.equal(g.elements['.lc-outcome'].textContent,'ENDING: THE CASE GOES COLD (1/7 found). Inputs 1/2, deaths 1, restarts 0, grade B. Bell did not come out of Pump Room 4. Vale signed the report. Deaths seen this case: 1.');
@@ -270,19 +270,19 @@ test('lamps: a wrong direction at the pump is a death, the night rewinds itself,
  g.next();g.click('GET BELL');g.run(2.2);g.phase('pumpQte');g.key('ArrowLeft');g.phase('pumpResult');a=g.audit();assert.equal(a.card,'INLET CLOSED');assert.equal(a.state.rescue,'valve');
  assert.deepEqual(a.reflex,{faced:2,landed:2,deaths:1,restarts:1,grade:'B'});assert(a.route.includes('Restarted a chapter'));assert.equal(a.records.cold,1);
  // Leaving a cold case for the menu clears the checkpoint; the records stay.
- const h=game({reduced:true});toThePump(h);h.run(2.2);for(let i=0;i<3;i++){h.key('ArrowDown');h.phase('pumpDeath');h.next();if(i<2)h.run(2.2);}
+ const h=game({reduced:true});toThePump(h);h.run(2.2);for(let i=0;i<3;i++){h.run(3.2,50);h.phase('pumpDeath');h.next();if(i<2)h.run(2.2);}
  h.phase('coldCase');h.click('RETURN TO MENU');assert(h.audit().session.menu);assert(!h.elements['.lc-actions'].children.some(b=>/CONTINUE|RESUME/.test(b.textContent)));assert.equal(h.audit().records.cold,1);
  const back=game({reduced:true,storage:h.storage});assert(!back.elements['.lc-actions'].children.some(b=>/CONTINUE/.test(b.textContent)));assert.equal(back.audit().records.cold,1);
 });
 test('a survivable miss plays its worse story and offers the night for a lamp, or carrying on',()=>{
  const g=game({reduced:true});g.click('NEW CASE');g.click('SKIP INTRO');g.elements['.lc-timing'].click();g.click('FOLLOW');g.next();g.next();g.phase('qte');
- g.key('ArrowLeft');g.phase('result');let a=g.audit();assert.equal(a.state.choice,'missed');assert.equal(a.card,'TAKEN');assert.equal(a.state.rewinds,3,'a survivable miss takes no lamp by itself');
+ g.key('ArrowLeft');g.phase('qte','a direction the beat does not offer is ignored');g.run(3.2,50);g.phase('result');let a=g.audit();assert.equal(a.state.choice,'missed');assert.equal(a.card,'TAKEN');assert.equal(a.state.rewinds,3,'a survivable miss takes no lamp by itself');
  assert(g.elements['.lc-caption'].textContent.includes('the red car comes back round the corner'));assert.deepEqual(g.elements['.lc-actions'].children.map(b=>b.textContent),['[REWIND THE NIGHT / 3 LAMPS]','[CARRY ON]']);
  g.click('REWIND');g.phase('danger');a=g.audit();assert.equal(a.state.rewinds,2);assert.equal(a.state.choice,'');assert(g.elements['.lc-caption'].textContent.startsWith('The night rewinds. The courier is upright'));
  g.run(2.2);g.phase('qte');assert(!g.audit().state.rewound||true);g.key('ArrowDown');g.phase('result');assert.equal(g.audit().state.choice,'book');assert.equal(g.elements['.lc-actions'].children.length,0);
- // The club: a wrong direction is the bottle; Krane takes the ledger; carrying on goes to the road without it.
+ // The club: running out of time is the bottle; Krane takes the ledger; carrying on goes to the road without it.
  const c=game({reduced:true});c.click('CLUB','reel-actions');c.elements['.lc-timing'].click();c.next();c.phase('clubBooth');c.click('SAY NOTHING');c.phase('clubFace');assert.equal(c.audit().card,'');c.run(2.2);c.phase('clubQte');
- assert.deepEqual(c.audit().labels.map(l=>l.dir),['down','up']);c.key('ArrowLeft');c.phase('clubResult');a=c.audit();assert.equal(a.card,'SIT DOWN');assert.equal(a.state.club,'late');assert.equal(a.state.rescue,'valve');
+ assert.deepEqual(c.audit().labels.map(l=>l.dir),['down','up']);c.key('ArrowLeft');c.phase('clubQte','a direction the beat does not offer is ignored');c.run(3,50);c.phase('clubResult');a=c.audit();assert.equal(a.card,'SIT DOWN');assert.equal(a.state.club,'late');assert.equal(a.state.rescue,'valve');
  assert(c.elements['.lc-caption'].textContent.includes('with Bell\'s ledger in his jacket'));assert(a.board.some(l=>l.startsWith('KRANE, Vale\'s bodyguard: has the signed ledger')));
  assert(c.elements['.lc-actions'].children.some(b=>b.textContent==='[REWIND THE NIGHT / 3 LAMPS]'));c.click('CARRY ON');c.phase('chaseEntry');assert(c.audit().state.clues.some(l=>l.startsWith('Krane took Vale\'s signed ledger')));
  // The bridge timed out: Vale gone for good; the jump with the gap open is a death.
@@ -298,7 +298,7 @@ test('the back booth: showing Vale the order costs half a second at the bottle a
  assert(c.audit().state.clues.some(l=>l.startsWith('Vale, shown order 7731')));assert.deepEqual(c.elements['.lc-actions'].children.map(b=>b.textContent),['[STAND YOUR GROUND]']);
  c.click('STAND YOUR GROUND');c.phase('clubFace');assert.equal(c.elements['.lc-caption'].textContent,'The bottle leaves Krane\'s hand. Get ready.');c.run(2.2);c.phase('clubQte');assert.equal(c.audit().window,1.5,'2 s less the half second for Krane already up');
  // The bottle lands and Krane takes the ledger; Vale is caught over the gap and Krane pinned, so the case ends word against word, with the booth in the closing.
- c.key('ArrowLeft');c.phase('clubResult');c.click('CARRY ON');c.phase('chaseEntry');c.next();c.key('ArrowRight');c.phase('chaseBank');c.next();c.phase('chaseQteB');c.key('ArrowUp');c.phase('chaseFinish');assert(c.audit().state.caught);c.next();
+ c.run(1.6,50);c.phase('clubResult');c.click('CARRY ON');c.phase('chaseEntry');c.next();c.key('ArrowRight');c.phase('chaseBank');c.next();c.phase('chaseQteB');c.key('ArrowUp');c.phase('chaseFinish');assert(c.audit().state.caught);c.next();
  c.elements['.lc-timing'].click();throughHall(c,'DIVE CLEAR');throughRoom(c,'NOT ENOUGH');
  assert(c.elements['.lc-outcome'].textContent.startsWith('ENDING: WORD AGAINST WORD'));assert(c.elements['.lc-caption'].textContent.endsWith(' Vale\'s own words about the order are in Rook\'s notebook. It will have to be enough.'));
  assert(c.audit().route.includes('Took the bottle'));
@@ -308,10 +308,10 @@ test('a tap on a cue is that cue, a swipe is its direction, and a tap elsewhere 
  g.tap(1,1);g.phase('pumpQte');const [x,y]=g.cueCentre('right');g.tap(x+18,y);g.phase('pumpResult');assert.equal(g.audit().state.rescue,'pull');assert(g.audit().state.reaction>0);
  const s=game({reduced:true,width:732});s.click('FLOOD','reel-actions');s.elements['.lc-timing'].click();s.next();s.click('GET BELL');s.run(2.2);s.phase('pumpQte');
  s.swipe('down',[400,400],20);s.phase('pumpQte','a travel under 24 px is not a swipe, and there is no cue there');s.swipe('left',[400,400]);s.phase('pumpResult');assert.equal(s.audit().state.rescue,'valve');
- // Keys and taps converge: the wrong cue tapped is the miss, and nothing lands while paused or in the menu.
+ // Nothing lands while paused or in the menu; a swipe the beat does not offer is ignored, and the named button is its cue.
  const p=game({reduced:true,width:732});p.click('FLOOD','reel-actions');p.elements['.lc-timing'].click();p.next();p.click('GET BELL');p.run(2.2);p.phase('pumpQte');
  p.elements['.lc-pause'].click();p.key('ArrowLeft');p.swipe('left');p.phase('pumpQte');p.elements['.lc-pause'].click();p.elements['.lc-menu'].click();p.key('ArrowLeft');p.click('RESUME');p.phase('pumpQte');
- p.key('1');p.phase('pumpQte','1 and 2 do nothing in timed play');p.swipe('up');p.phase('pumpDeath');
+ p.key('1');p.phase('pumpQte','1 and 2 do nothing in timed play');p.swipe('up');p.phase('pumpQte');p.click('PULL BELL OUT');p.phase('pumpResult');assert.equal(p.audit().state.rescue,'pull');
 });
 test('short windows are deterministic at any step, and a rewound beat counts once in the tally',()=>{
  // A live beat caps the step at 50 ms, so the harness steps a prompt at 50 ms or finer.
@@ -476,7 +476,7 @@ test('the office intro is an arrival and a look around the desk: markers, keys, 
  assert.deepEqual(a.labels.map(l=>l.spot+' '+l.text),['file [1]','board [2]','log [3]','window [4]']);
  assert(a.labels.every(l=>l.x0>=0&&l.x1<a.columns&&l.y0>=0&&l.y0<a.rows),'four markers in the frame');
  assert.deepEqual(g.elements['.lc-actions'].children.map(b=>b.textContent),['[1] THE BELL FILE','[2] THE CASE BOARD','[3] THE DISPATCH LOG','[4] THE WINDOW']);
- assert.equal(g.elements['.lc-timer'].textContent,'LOOK AROUND');assert.equal(a.state.officeLooked,0);assert.equal(a.card,'');assert.equal(a.objective,'A MISSING LAMPLIGHTER');
+ assert.equal(g.elements['.lc-timer'].textContent,'TAP A [NUMBER]');assert.equal(a.state.officeLooked,0);assert.equal(a.card,'');assert.equal(a.objective,'A MISSING LAMPLIGHTER');
  assert(g.elements['.lc-caption'].textContent.startsWith('Bell\'s file came from Inspector Vale\'s office, stamped NO FURTHER ACTION.'));assert.deepEqual(a.route,[]);
  const cw=732/a.columns,ch=cw*1.72,inkAt=l=>g.frame().find(d=>d[0]==='['&&Math.round(d[1]/cw)===l.x0&&Math.round(d[2]/ch)===l.y0)[3];
  const unseen=inkAt(a.labels[1]);
@@ -485,7 +485,7 @@ test('the office intro is an arrival and a look around the desk: markers, keys, 
  assert(g.elements['.lc-caption'].textContent.startsWith('On the case board'));assert.equal(a.caption.chunks.length,2);assert.equal(a.caption.index,0);
  assert.equal(JSON.parse(g.storage.getItem('last-light/save/v1')).state.officeLooked,2,'a look is checkpointed');
  g.run(1);a=g.audit();assert.notDeepEqual(a.camera,camera,'the camera eases to the board');assert.equal(a.state.phase,'officeDesk');
- assert(g.elements['.lc-actions'].children[1].className.includes('lc-seen'));assert.equal(g.elements['.lc-timer'].textContent,'LOOK AROUND');
+ assert(g.elements['.lc-actions'].children[1].className.includes('lc-seen'));assert.equal(g.elements['.lc-timer'].textContent,'TAP A [NUMBER]');
  assert(g.audit().board.some(l=>l.startsWith('INSPECTOR VALE')),'the board look puts Vale on the persons of interest');
  g.key('ArrowLeft');g.key('ArrowDown');g.swipe('up');a=g.audit();assert.equal(a.state.phase,'officeDesk');assert.equal(a.state.officeLooked,2);assert.equal(a.state.rewinds,3);
  g.key('1');a=g.audit();assert.equal(a.state.officeLooked,3);assert.equal(a.spot,'file');assert.equal(g.elements['.lc-timer'].textContent,'YOUR MOVE');

@@ -241,9 +241,11 @@ const handCues={qte:{up:'person',down:'book'},pumpQte:{left:'valve',right:'pull'
 function promptInput(dir,event){
  if(!isQte()||state.paused||session.menu||transit)return;
  const d=phaseDef(),p=state.phase;
- if(d){const c=d.cues.find(c=>c.dir===dir);if(!c){if(!state.untimed)promptMiss();return;}react(event);c.act();enter(nextOf(d));return;}
+ // A direction the beat does not offer is ignored: a stray swipe or a key mashed in panic is not a move. Only running out
+ // of time, or picking the offered move that the danger punishes, costs anything.
+ if(d){const c=d.cues.find(c=>c.dir===dir);if(!c)return;react(event);c.act();enter(nextOf(d));return;}
  const id=handCues[p]?.[dir];
- if(!id){if(!state.untimed)promptMiss();return;}
+ if(!id)return;
  react(event);({qte:choose,pumpQte:rescue,clubQte:clubChoice,chaseQteA:chaseChoice,chaseQteB:chaseChoice,tunnelQte:tunnelChoice})[p](id);
 }
 // The miss: a death where the drawn danger kills, the worse story where it does not.
@@ -334,9 +336,13 @@ function roofActions(){
  button('[PURSUE VALE]',pursuit);button('[STAY WITH BELL]',stayWithBell);
 }
 // A live timed beat shows nothing under the picture: the cues are the interface. Untimed play keeps the caption and the buttons.
+// A live beat names its two moves under the picture as buttons that point the same way as their cues in it, so the
+// player always knows what the flashing targets mean; a button is a tap on its cue. Untimed play keeps the caption and
+// the numbered labels.
+const cueArrow={left:'<<',right:'>>',up:'^^',down:'vv'};
 function promptUI(caption,cues){
  el.caption.textContent=state.untimed?caption:'';
- if(state.untimed)for(const [label,dir] of cues)button(label,()=>promptInput(dir));
+ for(const [label,dir] of cues){const name=label.replace(/^\[\d\]\s*/,'').replace(/[\[\]]/g,'');button(state.untimed?label:dir==='right'?'['+name+' '+cueArrow[dir]+']':'['+cueArrow[dir]+' '+name+']',e=>promptInput(dir,e),'lc-cue');}
 }
 const deathCount=()=>[1,2,4,8,16,32].filter(bit=>state.deaths&bit).length;
 function caseUI(){
