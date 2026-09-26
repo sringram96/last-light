@@ -301,7 +301,7 @@ function ui(){
  el.phase.textContent=phases[state.phase];
  if(session.menu)menuUI();else switch(state.phase){
  case 'brief':
-  el.caption.textContent="Rook's case: find lamplighter Ivo Bell. He vanished at the closed station. Tonight, a stranger is carrying his lantern.";
+  el.caption.textContent='Rook: "Whoever has Bell\'s lantern knows where he went." He can close on it now, or watch how it moves first.';
   button('[FOLLOW THE LANTERN]',()=>enter('follow'));button('[WATCH FIRST / 8s]',()=>enter('watch'));break;
  case 'watch':
   el.caption.textContent='Rook watches from the curb. The stranger holds a dispatch book and keeps weight off one leg.';break;
@@ -318,10 +318,10 @@ function ui(){
   el.caption.textContent=state.choice==='person'?'Rook catches the courier. The book hits the wet street; ink begins to run.':state.choice==='book'?'Rook saves the book. The courier catches their balance and limps away toward the station.':'Rook reaches too late. The courier is down across the rail, and the red car comes back round the corner with its lights off. When it pulls away the rail is empty and the lantern is still burning in the gutter.';
   rewindActions();break;
  case 'evidence':
-  el.caption.textContent=state.choice==='person'?'Nell: "Bell is alive. Pump Room 4, below the station. Knock three times. I will take you."':state.choice==='book'?'The page is fresh: "00:17 / I. BELL / PUMP ROOM 4 / JOB OPEN." The station is still being used. The courier\'s lantern is stencilled BELL / DEPOT LOFT.':'The rain has erased the entries. The cover still reads "PUMP ROOM 4." The lantern is stencilled BELL / DEPOT LOFT, and its carrier is in the back of a red car.';
+  el.caption.textContent=state.choice==='person'?'The courier is Nell Marrow, Bell\'s apprentice. Nell: "Tonight I heard his knock, three short, from Pump Room 4. I will take you."':state.choice==='book'?'The entry is four nights old and still open: "00:17 / I. BELL / PUMP ROOM 4 / JOB OPEN." The courier\'s lantern is stencilled BELL / DEPOT LOFT.':'The rain has erased the entries. The cover still reads "PUMP ROOM 4." The lantern is stencilled BELL / DEPOT LOFT, and its carrier is in the back of a red car.';
   button('[CONNECT THE CLUE]',()=>enter('deduce'));break;
  case 'deduce':
-  el.caption.textContent=ladder.street>=2?'The hotel night clerk has never heard of Bell and says so twice. Rook has spent the kind of time a life is made of, and the water under the station has spent it with him.':state.wrong?'The hotel desk has no Bell and the tram is empty. The clue says PUMP ROOM 4, and pump rooms sit under the station. Rook has lost minutes; the water below has not.':'Bell is somewhere below. Where does the trail go first?';
+  el.caption.textContent=ladder.street>=2?'The hotel night clerk has never heard of Bell and says so twice. Rook has spent time the water under the station has not.':state.wrong?'The hotel desk has no Bell. The clue says PUMP ROOM 4, and pump rooms sit under the station. Rook has lost minutes; the water has not.':'Bell is somewhere below. Where does the trail go first?';
   button('[THE STATION SERVICE DOOR]',()=>deduce('station'));
   if(state.choice!=='person')button('[BELL\'S LOFT OVER THE DEPOT]',()=>deduce('loft'));
   if(ladder.street<2)button('[THE HOTEL ACROSS THE ROAD]',()=>deduce('hotel'));break;
