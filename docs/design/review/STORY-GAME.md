@@ -83,3 +83,64 @@ Game director's review of commit 9d08ad1 ("Tell the story"), read against `AGENT
     - `clubBooth` shown holds 21.2 s. Cut `He slides it back. ... You have countersigned a hundred of mine.` to `Least of all you, Rook.` (16.5 s), or keep the countersign line and drop `Signed.`
     - Carried over from before the pass: `theoryEvidence()` reads `signed by Vale and countersigned H.A. and a Board van`. Use `'order 7731, signed by Vale, countersigned H.A.'`.
     - When writing new lines, avoid a capital initial before a sentence end (`H.A. Bell:`). The chunker treats it as an initial and does not split there, which is how a 169- or 214-character single chunk gets made.
+
+## Sign-off
+
+Checked against commit 806a82d ("Answer the four reviews of the story pass"). I read `git show HEAD -- src/ tests/` and confirmed that `dist/game.js` is identical to a fresh build of HEAD. `node --test` passes, 39 of 39. Sources:
+- `fix-long.log`, the chase route in Chromium.
+- `signoff-board.log`, the wrong-theory (`board`) route in Chromium, played for this sign-off.
+- Harness replays of six routes with the caption queue logged chunk by chunk: long, Board theory, courier theory with Nell caught, courier theory with the book saved, the stay route with a stalled arrest, and the stay route with the courier missed.
+
+**The three BLOCKING findings**
+
+- **1, `pumpEntry`: RESOLVED.** Rook's line is now `Rook: "Bell first, and whatever he found, if the water lets me keep both."`. It names both stakes and neither cue, and it comes after the description, so nothing points at `>>` any more.
+- **2, `pumpFind`: RESOLVED.** Each of the five verdicts sits in chunk 0 with `The INLET wheel is beside Rook.` as the last sentence:
+
+  | Theory | Chunk 0 | Hold |
+  |---|---|---|
+  | vale | 147 characters | 12.8 s |
+  | board | 140 characters | 12.0 s |
+  | nell, Nell caught | 135 characters | 11.3 s |
+  | nell, book saved | 138 characters | 12.0 s |
+  | none | 132 characters | 11.5 s |
+
+  The chunk is fully typed about 3.3 s after `[GET BELL OUT]` appears. The Chromium board route shows the whole line, `...Not the Board: Vale's hand on the bolt. The INLET wheel is beside Rook.`, as the beat's first caption.
+- **3, `caseLine()` at `roomEntry` and `roomDeduce`: RESOLVED.** The line is now `...locked Bell in to keep it quiet. The warrant can carry only what Rook can prove.`, the same text whether or not Rook holds proof and whoever sits in the chair. It restates the deduction's rule and names no answer. `state.dead` and `roomName` still take precedence, and `roomVale` gets the same neutral line. The same line appeared on every route I replayed, and a test pins it.
+
+**Pacing**
+
+- The writer's figures reproduce. `fix-long.log` reaches `brief` (the first story choice) at 18.5 s against 40.5 s after the story pass, and `canalEnd` at 431.7 s against my 508.2 s baseline and 438.4 s before the pass. The board route reaches `canalEnd` at 438.9 s.
+- The cold open holds 14.0 s. Every windup and prompt caption is unchanged. `pumpFind` fell from 23.0-29.7 s to 11.3-12.8 s.
+
+Quiet beats still over the ~12 s budget:
+- **`stationTheory`: 18.0 s** on the long route. Chunk 0 is one 174-character sentence, over the 150-character limit, and the question arrives at 13.9 s. It is 15.5 s on the courier routes.
+- **`roofQuiet`: 15.9 s** when Nell is wary and **17.0 s** when the band is busy (11.8 s otherwise).
+- **`roofSignal`: 14.4 s.**
+- **`pumpTruth`: 13.6 s.**
+- Just over budget: `marketKeeper` 12.4 s, `tramRide` 12.4 s, `roomName` 12.0-13.1 s.
+
+Cutscenes: after the transition line, the entry cutscenes still hold 19-24 s against 6-8 s pictures:
+- `pumpEntry` 17.0 s, and 23.8-24.6 s on the wrong-theory routes
+- `roofEntry` 20.7 s, `tramEntry` 20.8 s, `marketEntry` 24.0 s, `clubEntry` 22.1 s, `chaseEntry` 22.6 s
+- `subEntry` 21.1 s, `subDock` 22.2 s, `roomEntry` 24.3 s
+
+They can be tapped through once read, and the total is back under the pre-pass figure. None of this blocks sign-off.
+
+**The two non-caption changes**
+
+- **`[NO THEORY]`:** safe. The saved value is still `theory: 'none'`, and no code or route script matches the old label. The three test expectations were updated. `DECISIONS.md` round three, item 4 still names `[NO THEORY. GO DOWN]`: stale documentation only.
+- **`home` now requires `!state.caught`:** safe. The endings still run in the same order and `dark` still catches everything, so every field combination lands on exactly one ending:
+  - A stay-route arrest with proof and no stall is still `board`.
+  - A stalled arrest now falls to `word`. Its closing uses the initials branch because `pursuing()` is false, and the case line no longer says "at large".
+  - A stay-route arrest without proof cannot happen, because `[ARREST HIM]` needs `ledgerHeld()`.
+
+  Records are keyed by ending id, the ids did not change, and `legacyEndings` is untouched. An existing record holding `home` from a stalled arrest stays valid, and the `stayArrest` discovery is unaffected.
+
+**SHOULD findings 4-17:** all confirmed as described in STORY.md's review round. Finding 5 is partly declined: the `pump>roof` revert conflicts with the atmosphere review's blocker 3. I accept that, because `roofQuiet` now argues both sides before the choice.
+
+**New findings (none blocking)**
+
+- **SHOULD, `stationTheory`:** split `theoryEvidence()`'s list into two sentences once it has three or more items. For example: `Rook has order 7731, with H.A. countersigned under Vale's name. He also has ...`. That keeps each chunk at 150 characters or fewer and brings the question forward.
+- **NIT:** update `DECISIONS.md`'s `[NO THEORY. GO DOWN]` to `[NO THEORY]`.
+
+**Final: APPROVE.**

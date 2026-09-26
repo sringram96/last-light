@@ -100,7 +100,7 @@ registerPhases('station',{
  // his evidence supports; going down without one is always open. Vale is right. Any other answer costs the minute it took,
  // and suspecting the courier costs what she would have said on the roof, or, with her gone, the band Rook fills with her.
  stationTheory:{kind:'quiet',title:'WHO PUT BELL DOWN THERE?',
-  caption:()=>{const has=theoryEvidence();return (has.length?'Rook has '+listed(has)+'.':'Rook has the knocking and nothing else.')+' Who does he think locked Bell down there?';},
+  caption:()=>{const has=theoryEvidence();return (has.length?'Rook has '+has.map((h,i)=>i?h[0].toUpperCase()+h.slice(1):h).join('. ')+'.':'Rook has the knocking and nothing else.')+' Who does he think locked Bell down there?';},
   buttons:b=>{
    const pick=who=>()=>{state.theory=who;if(who!=='vale')addClue(theoryClues[who]());enter('pumpEntry');};
    if(valeNamed())b('[INSPECTOR VALE]',pick('vale'));
@@ -109,7 +109,6 @@ registerPhases('station',{
    b('[NO THEORY]',pick('none'));
   }}
 });
-const listed=a=>a.length<2?a.join(''):a.slice(0,-1).join(', ')+' and '+a[a.length-1];
 function theoryEvidence(){
  const l=state.stationLooked,has=[];
  if(orderRead())has.push('order 7731, with H.A. countersigned under Vale\'s name');if(l&16)has.push('a cup beside it, still warm');

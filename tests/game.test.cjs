@@ -88,7 +88,7 @@ test('the maintenance desk has time for three looks, and the hatch wants a theor
  g.key('3');assert.equal(g.audit().state.stationLooked,11);assert.deepEqual(g.audit().labels.filter(l=>l.spot).map(l=>l.spot),['order','tape','board']);
  g.key('2');assert(g.elements['.lc-caption'].textContent.includes('CLOSE INLET FIRST'),'a look already taken re-reads for nothing');
  g.click('THE KNOCKING BELOW');g.phase('stationTheory');
- assert(g.elements['.lc-caption'].textContent.startsWith('Rook has order 7731, with H.A. countersigned under Vale\'s name and a Board van due at 01:30.'));
+ assert(g.elements['.lc-caption'].textContent.startsWith('Rook has order 7731, with H.A. countersigned under Vale\'s name. A Board van due at 01:30.'));
  assert.deepEqual(buttons(),['[INSPECTOR VALE]','[THE LUMEN BOARD]','[NO THEORY]'],'no call seen, so the courier is not on the list');
  // The wrong theory is a minute at the hatch: Bell says so, and the inlet loses the half second the tape bought.
  g.click('THE LUMEN BOARD');g.phase('pumpEntry');assert(g.elements['.lc-caption'].textContent.includes('the water has climbed a hand while Rook watched Bay 2'));
