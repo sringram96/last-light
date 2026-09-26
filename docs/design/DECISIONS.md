@@ -72,3 +72,23 @@ An outside review of the first playable build said the case was an interactive s
 4. **A theory at the hatch** (`stationTheory`, saved as `theory`). Who locked Bell under the station? Names are offered only when the evidence supports them: Vale from the order, the Division padlock or the case board; the courier from the forged call on the office log or Nell's note; the Board from the order's stamp or the departures board. `[NO THEORY]` is always there.
 5. **What it costs.** Vale is right and costs nothing. Every other answer is a minute at the hatch: the water is higher, Bell says so, and the inlet window loses 0.5 s. Suspecting the courier costs more: with Nell there, she hears the accusation and will not confess on the roof; with her gone, Rook's call for her fills the Division band, so the bridge operator never gets through and the pursuit runs without the radio's half second. A wrong theory also costs the `sharp` discovery. Bell's line at the platform answers the theory either way.
 6. **Not built, on purpose.** Evidence records with reliability and implications, an evidence-picking board, timestamp-based idle jobs and a reorganised checkpoint were proposed; the bitmasks already are evidence by id, and background tabs stop the clock by rule. If the slice plays well, the same three tools (turns, gated cues, a committed theory) go into the loft, substation and booth beats already designed in `INVESTIGATION.md`.
+
+# Round four: turning things over
+
+The studio head asked for investigation in the manner of *The Blood of Dawnwalker*: pick an object up, rotate it, and find what is on the side you were not looking at, alongside clicking things in the scene (which the look-arounds already do). This round adds that as a new beat kind, `examine`, and two objects.
+
+1. **The insert.** An examined object is shown alone in the dark, lit from above, as an insert shot inside the set it belongs to (no set change, so no exit beat). The player turns it by dragging, by the arrow keys or by three buttons; nothing is timed and a pause stops the turning.
+2. **Details live on faces.** Each detail is an engraving on one face of the object, drawn only while that face is turned toward the camera, and its marker shows only then. Finding a detail is turning the object until you can read it.
+3. **Bell's lantern** (Station Road, from the evidence beat, `[TURN THE LANTERN OVER]`): the stencil on the front (BELL / DEPOT LOFT), the lamplighters' knock scratched on the back, and under the base the Board's reserve cell stamped LOT 7731. The desk repays it: the first knock under the station floor is recognised as the mark on the lantern, and order 7731 is recognised as the lot number on its cell.
+4. **The padlock** (Pump Room 4, from the door spot, `[TURN THE PADLOCK OVER]`): NIGHT DIVISION on the face, K-14 stamped on the back (the office it was signed out to: Vale's), and underneath the stores mark OUT WED, the night Bell went missing.
+5. **Optional.** Both objects are optional and can be picked up again; the route line counts the details read. No discovery or ending depends on them yet. If the mechanic plays well, the next candidates are the Filament chip (lot numbers on its edge) and the Substation Nine manifest's seal.
+
+# Round five: what to press, and when
+
+The studio head: "It is not clear at all what I'm supposed to click and when. I'm just smashing the screen hoping something happens and I keep dying." Round two had stripped the live beat to the picture alone (no caption, no buttons, no clock) and made any direction not offered an instant miss; together with small two-glyph cues in a dense picture, that made mashing lethal and the target hard to find. This round reverses those three calls and keeps the timing.
+
+1. **Targets.** A cue is three arrows inside a solid cyan frame, drawn ahead of everything; the arrows flash as before, the frame stays lit between flashes, and the inside is cleared so it reads as a target. Its tap area is the frame.
+2. **Named moves.** The strip shows the two moves as outlined buttons pointing the way their cues do (`[<< CLOSE THE INLET]`, `[PULL BELL OUT >>]`). A button is a tap on its cue.
+3. **A clock.** `LIVE` carries a ten-cell bar that drains with the window.
+4. **No death by accident.** A direction the beat does not offer is ignored. The only misses are the window running out and the offered move the danger punishes (the jump with a gap open). Deaths, lamps and rewinds are unchanged.
+5. **Look-arounds.** Unexamined markers are drawn at full amber, and the status line reads `TAP A [NUMBER]` until the way out opens. An examined object's status reads `DRAG TO TURN`.
