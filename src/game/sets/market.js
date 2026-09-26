@@ -170,14 +170,14 @@ registerSet('market',{
 registerPhases('market',{
  marketEntry:{kind:'cutscene',title:'05a / THE NIGHT MARKET',duration:8,next:'marketAisle',
   enter:()=>{addClue('The night market runs on reserve cells stamped with Lumen Board serials. The stolen batteries are being sold by the cell.');},
-  caption:()=>'Rook: "The Filament is at the far end, and every face between here and there could be Vale\'s." Under the awnings every stall lamp is a reserve cell with a Lumen Board serial: the batteries missing from Bell\'s route, sold one at a time. At the aisle\'s end, The Filament\'s sign burns pink.'},
+  caption:()=>'Under the awnings every stall lamp is a reserve cell with a Lumen Board serial: Bell\'s batteries, sold one at a time. Rook: "The Filament is Vale\'s, and any face between here and there could be working for him."'},
  // The quiet beats before the windup carry the description the windup used to: who the big man is, and that he has seen Rook.
  marketAisle:{kind:'quiet',title:'A CART MARKED QUILL',
-  caption:()=>state.tail?'A woman sells cells from a cart marked QUILL. The black car from the road is parked under the arch, empty, and its driver, Krane, Vale\'s bodyguard, is coming through the crowd. Rook can ask where the cells come from, or push on before Krane finds him.':'A woman sells cells from a cart marked QUILL. Behind Rook, a big man is coming through the crowd without buying anything: Krane, Vale\'s bodyguard. Rook can ask where the cells come from, or push on.',
+  caption:()=>state.tail?'A woman sells cells from a cart marked QUILL. The black car\'s driver is coming through the crowd: Krane, Vale\'s bodyguard.':'A woman sells cells from a cart marked QUILL. A big man is coming through the crowd without buying anything: Krane, Vale\'s bodyguard.',
   buttons:b=>{b('[ASK THE STALL KEEPER]',()=>enter('marketKeeper'));b('[PUSH THROUGH TO THE CLUB]',()=>enter('marketDanger'));}},
  marketKeeper:{kind:'quiet',title:'MARTA QUILL',stinger:()=>['NOTED','hit',1.6],
   enter:()=>{state.keeper=true;addClue('Marta Quill, stall keeper: the cells come from Substation Nine on the canal basin, Thursdays, in a Lumen Board van. The racks in the hall are chained on the left, loose on the right.');},
-  caption:()=>'Marta Quill does not look up from her cells. "Nine, on the basin. Thursdays, Board van. They chain the racks on the left and leave the right loose, if you are thinking of going." Rook is, and Krane has seen him.',
+  caption:()=>'Marta Quill does not look up. "Substation Nine, on the basin, by Board van. They chain the racks on the left, not the right." Krane has seen Rook.',
   buttons:b=>{b('[PUSH THROUGH TO THE CLUB]',()=>enter('marketDanger'));}},
  marketDanger:{kind:'windup',title:'KRANE',next:'marketQte',
   caption:()=>'Krane sends a loaded cell-cart down the aisle. Get ready.'},

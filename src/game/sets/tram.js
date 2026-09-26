@@ -99,18 +99,18 @@ registerSet('tram',{
 });
 registerPhases('tram',{
  tramEntry:{kind:'cutscene',title:'04b / THE LAST TRAM',duration:8,next:'tramRide',
-  caption:()=>'Rook: "I left Bell on a roof to do this. Vale had better be where this tram is going." Rook drops from the service lift onto the last tram; below, lamps 14 to 19 on Bell\'s route stand dark. Dispatch will bring the patrol car to Market Arch.'},
+  caption:()=>'Rook drops from the service lift onto the last tram; below, lamps 14 to 19 on Bell\'s route stand dark. Rook: "I left Bell on a roof for this."'},
  // With the roof radio still open, Heddy's second line rides the quiet bridge: a witness with a dated book. No field; `radio`
  // and reached('tramRide') carry it into the case file.
  tramRide:{kind:'quiet',title:'ACROSS THE DARK DISTRICT',
   enter:()=>{if(state.radio)addClue('Heddy Lasko keeps a dated log of the red car crossing Lift Bridge Two at the same hour every week. A second witness with paper.');},
-  caption:()=>state.radio?'The tram crosses the dark district on its own reserve. Heddy on the channel, unasked: "Red car again. Same hour as last week. I write these down, detective." Behind the tram, one pair of headlights keeps the same speed on the road below, then goes dark.':'The tram crosses the dark district on its own reserve. Behind it, one pair of headlights keeps the same speed on the road below, then goes dark.',
+  caption:()=>state.radio?'Heddy Lasko of Lift Bridge Two, on the channel: "Red car again, same hour as last week. I write these down." Headlights on the road below go dark.':'The tram crosses the dark district. Behind it, one pair of headlights on the road below keeps pace, then goes dark.',
   buttons:b=>{b('[WATCH THE ROAD / 8s]',()=>enter('tramWatch'));b('[RIDE ON]',()=>enter('tramArrive'));}},
  tramWatch:{kind:'observe',title:'WATCHING THE ROAD',next:'tramSpotted',
   caption:()=>'Rook watches the road. The car with no lights holds its distance. A division plate, black body. It is not dispatch.'},
  tramSpotted:{kind:'quiet',title:'PLATE 41',stinger:()=>['NOTED','hit',1.6],
   enter:()=>{state.tail=true;addClue('A black Night Division car, plate 41, follows the tram with its lights off. Somebody in the division wants to know where Rook goes.');},
-  caption:()=>'Plate 41, a Night Division car, and it is following the tram. Whoever is driving it will be in the market before Rook is. He will see them coming.',
+  caption:()=>'Plate 41, a Night Division car, is following the tram. Whoever drives it will reach the market first.',
   buttons:b=>{b('[RIDE ON]',()=>enter('tramArrive'));}},
  tramArrive:{kind:'cutscene',title:'MARKET ARCH',duration:5,next:'marketEntry',
   caption:()=>'Market Arch. Stalls under the elevated road, lit by lamps that should be on the lamplighter\'s posts. The tram slows and Rook goes over the rail.'}

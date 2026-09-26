@@ -97,17 +97,17 @@ registerSet('loft',{
 registerPhases('loft',{
  loftEntry:{kind:'cutscene',title:'01b / THE DEPOT LOFT',duration:7,next:'loftTable',
   enter:()=>{state.loftSeen=true;},
-  caption:()=>'Rook: "Bell knew something, and I am spending his minutes to find out what." One room over the lamp depot, walled with route maps and battery tags. The kettle is warm; someone has been here since Bell vanished.'},
+  caption:()=>'One room over the lamp depot: a cot, a kettle still warm, route maps pinned with battery tags. Rook: "Bell kept his work up here, and I have two minutes."'},
  loftTable:{kind:'quiet',title:'THE TABLE UNDER THE LAMP',
-  caption:()=>'On the table, a folded note weighted with a lamp key. On the wall, Bell\'s route map: lamps 14 to 19 crossed out in red and tagged RESERVE PULLED / ORDER 7731 / A.V. Beside it, photographs.',
+  caption:()=>'On the table, a note under a lamp key. On the wall, Bell\'s route map: lamps 14 to 19 crossed out in red, tagged RESERVE PULLED / ORDER 7731 / A.V.',
   buttons:b=>{b('[READ THE NOTE]',()=>enter('loftNote'));b('[STUDY THE MAP AND PHOTOGRAPHS]',()=>enter('loftBoard'));}},
  loftNote:{kind:'quiet',title:'A NOTE SIGNED N.',stinger:()=>['NOTED','hit',1.6],
   enter:()=>{state.note=true;addClue('A note in Bell\'s loft, signed N.: the maintenance call that put Bell at the station was made by someone who wanted the Board to log him there.');},
-  caption:()=>'The note, in a quick hand: "Ivo. I called it in so the Board would have to log you at the station. I did not think. Forgive me. N." Rook folds it into the file.',
+  caption:()=>'The note, in a quick hand: "Ivo. I called it in so the Board would have to log you at the station. I did not think. Forgive me. N."',
   buttons:b=>{b('[STUDY THE MAP AND PHOTOGRAPHS]',()=>enter('loftBoard'));}},
  loftBoard:{kind:'quiet',title:'WHERE ARE THE BATTERIES GOING?',
   // The deduction ladder: the first wrong answer costs a lamp and marks the misread; the second removes both wrong buttons.
-  caption:()=>ladder.loft>=2?'Rook has now been wrong twice in a room with the answer pinned to the wall. The photographs are of the club, and the van is the Board\'s.':state.misread?'The depot and the station have nothing to hide; Bell would not photograph his own workplace. The club\'s back door and the Board\'s van are in the same frame. Rook has spent a rewind\'s worth of night getting it wrong.':'The photographs: a red car at a loading bay behind a neon sign, THE FILAMENT. A Lumen Board van. A man in a division coat who does not look at the camera. Where are the batteries going?',
+  caption:()=>ladder.loft>=2?'Rook has now been wrong twice in a room with the answer pinned to the wall. The photographs are of the club, and the van is the Board\'s.':state.misread?'Bell would not photograph his own depot or station. The club\'s back door and the Board\'s van are in the same frame, and Rook has spent a lamp getting it wrong.':'Bell\'s photographs: a red car behind THE FILAMENT, a Lumen Board van, and a man in a division coat who will not look at the camera. Where are the batteries going?',
   buttons:b=>{
    const wrong=()=>{ladder.loft++;if(!state.misread){state.misread=true;state.rewinds=Math.max(0,state.rewinds-1);}ui();};
    b('[UPTOWN, THROUGH THE FILAMENT]',()=>{addClue('Bell\'s photographs: reserve batteries leave by the Filament\'s back door into a Lumen Board van. The man in the division coat is Vale.');enter('loftStair');});
@@ -116,7 +116,7 @@ registerPhases('loft',{
  // Vale under the window. Facing him is texture, not a window: the save field `faced` picks the caption and the button on a
  // redraw, so a checkpoint taken after the stair resumes with Vale already met.
  loftStair:{kind:'quiet',title:'THE MAN UNDER THE WINDOW',
-  caption:()=>state.faced?'Vale does not step back from the stair. "Rook. You are on the wrong floor for this." He looks at Rook\'s coat where the photographs are, then at the station clock, then gets into the car.':'Below the window, under the depot lamp, a man in a Division greatcoat is looking up at the lit loft. Vale. His red car is at the kerb with the engine running.',
+  caption:()=>state.faced?'Vale does not step back. "Rook. You are on the wrong floor for this." He looks at Rook\'s coat, then at the station clock, and gets into the car.':'Below the window, under the depot lamp, a man in a Division greatcoat looks up at the loft: Vale, his red car idling at the kerb.',
   buttons:b=>{
    if(state.faced){b('[TAKE THE PHOTOGRAPHS AND GO]',()=>enter('loftLeave'));return;}
    b('[GO DOWN AND FACE HIM]',()=>{state.faced=true;addClue('Vale, at the depot at midnight: knows Rook is on the case and did not ask why. He looked at the station clock.');ui();});

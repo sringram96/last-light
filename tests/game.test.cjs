@@ -81,33 +81,37 @@ test('the maintenance desk has time for three looks, and the hatch wants a theor
  const g=game({reduced:true});toTheDesk(g);const title=()=>g.elements['.lc-phase'].textContent,buttons=()=>g.elements['.lc-actions'].children.map(b=>b.textContent);
  assert.equal(title(),'THE MAINTENANCE DESK / 3 LOOKS LEFT');
  g.key('2');let a=g.audit();assert(a.state.decoded,'the tape is read at the desk');assert(a.state.clues.some(l=>l.includes('close the INLET wheel')));
- assert(g.elements['.lc-caption'].textContent.includes('CLOSE INLET FIRST')&&g.elements['.lc-caption'].textContent.endsWith('three short, a rest, three short.'));
- g.key('4');g.key('1');assert.equal(title(),'THE MAINTENANCE DESK / NO TIME LEFT');assert(g.elements['.lc-caption'].textContent.endsWith('Rook has looked long enough.'));
+ assert(g.elements['.lc-caption'].textContent.includes('CLOSE INLET FIRST')&&g.elements['.lc-caption'].textContent.startsWith('Under the floor: three short, a rest, three short.'),'the knocking leads the look');
+ g.key('4');g.key('1');assert.equal(title(),'THE MAINTENANCE DESK / NO TIME LEFT');assert(g.elements['.lc-caption'].textContent.startsWith('The knocking stops. Then, weaker, it starts again.'));
  // Spent: the unexamined hatch and the cup (opened by the order) are closed, in the buttons, the keys and the picture.
  assert.deepEqual(buttons(),['[1] THE ORDER','[2] THE TAPE','[4] THE DEPARTURES BOARD','[THE KNOCKING BELOW]']);
  g.key('3');assert.equal(g.audit().state.stationLooked,11);assert.deepEqual(g.audit().labels.filter(l=>l.spot).map(l=>l.spot),['order','tape','board']);
  g.key('2');assert(g.elements['.lc-caption'].textContent.includes('CLOSE INLET FIRST'),'a look already taken re-reads for nothing');
  g.click('THE KNOCKING BELOW');g.phase('stationTheory');
- assert(g.elements['.lc-caption'].textContent.startsWith('Rook has order 7731, signed by Vale and countersigned H.A. and a Board van due at 01:30.'));
- assert.deepEqual(buttons(),['[INSPECTOR VALE]','[THE LUMEN BOARD]','[NO THEORY. GO DOWN]'],'no call seen, so the courier is not on the list');
+ assert(g.elements['.lc-caption'].textContent.startsWith('Rook has order 7731, with H.A. countersigned under Vale\'s name and a Board van due at 01:30.'));
+ assert.deepEqual(buttons(),['[INSPECTOR VALE]','[THE LUMEN BOARD]','[NO THEORY]'],'no call seen, so the courier is not on the list');
  // The wrong theory is a minute at the hatch: Bell says so, and the inlet loses the half second the tape bought.
- g.click('THE LUMEN BOARD');g.phase('pumpEntry');assert(g.elements['.lc-caption'].textContent.includes('a hand higher'));g.next();g.phase('pumpFind');
- assert(g.elements['.lc-caption'].textContent.includes('You took your time')&&g.elements['.lc-caption'].textContent.includes('Vale\'s own hand on the bolt'));
+ g.click('THE LUMEN BOARD');g.phase('pumpEntry');assert(g.elements['.lc-caption'].textContent.includes('the water has climbed a hand while Rook watched Bay 2'));
+ assert.equal(g.audit().board[0],'THE CASE: Rook thinks the Lumen Board put Bell under North Station.');g.next();g.phase('pumpFind');
+ assert(g.elements['.lc-caption'].textContent.includes('You took your time')&&g.audit().caption.chunks.length===1&&g.audit().caption.chunks[0].includes('Not the Board: Vale\'s hand on the bolt.')&&g.audit().caption.chunks[0].endsWith('The INLET wheel is beside Rook.'),'the verdict and the inlet line are in the first chunk');
  g.click('GET BELL');g.run(2.2);g.phase('pumpQte');assert.equal(g.audit().window,2.5,'2.5 s, plus the tape, less the minute');
  assert(g.audit().route.includes('Went down suspecting the Board'));
  // Nothing read that names anyone: only the way down is left.
  const n=game({reduced:true});toTheDesk(n);n.key('2');n.key('4');n.click('THE KNOCKING BELOW');n.phase('stationTheory');
- assert.deepEqual(n.elements['.lc-actions'].children.map(b=>b.textContent),['[THE LUMEN BOARD]','[NO THEORY. GO DOWN]']);
+ assert.deepEqual(n.elements['.lc-actions'].children.map(b=>b.textContent),['[THE LUMEN BOARD]','[NO THEORY]']);
+ n.click('NO THEORY');n.phase('pumpEntry');assert.equal(n.audit().board[0],'THE CASE: Bell is under North Station. Rook has no theory who put him there.');
+ assert(n.elements['.lc-caption'].textContent.includes('while Rook stood at the hatch without a name'));n.next();n.phase('pumpFind');assert(n.audit().caption.chunks[0].includes('Rook had no name; Bell has one.'));
 });
 test('suspecting the courier costs her confession, or, with her gone, the band',()=>{
  // Nell caught, and the forged call read on the office log: she is on the list, and she hears Rook accuse her.
  const g=game({reduced:true});toTheDesk(g,'31');g.key('1');g.key('3');g.click('THE KNOCKING BELOW');g.phase('stationTheory');
- assert.deepEqual(g.elements['.lc-actions'].children.map(b=>b.textContent),['[INSPECTOR VALE]','[NELL MARROW]','[THE LUMEN BOARD]','[NO THEORY. GO DOWN]']);
- g.click('NELL MARROW');g.phase('pumpEntry');g.next();g.phase('pumpFind');assert(g.elements['.lc-caption'].textContent.includes('Not the courier.'));
+ assert.deepEqual(g.elements['.lc-actions'].children.map(b=>b.textContent),['[INSPECTOR VALE]','[NELL MARROW]','[THE LUMEN BOARD]','[NO THEORY]']);
+ g.click('NELL MARROW');g.phase('pumpEntry');assert.equal(g.audit().board[0],'THE CASE: Rook thinks Nell Marrow locked Bell under North Station.','the case line names the person on the button');
+ g.next();g.phase('pumpFind');assert(g.audit().caption.chunks[0].includes('Not the courier: Bell clears Nell.'));
  g.click('GET BELL');g.run(2.2);g.phase('pumpQte');assert.equal(g.audit().window,2,'no tape, less the minute');g.key('ArrowLeft');g.next();throughPumpRoom(g);g.click('TAKE BELL');g.next();g.phase('roofQuiet');
- assert(g.elements['.lc-caption'].textContent.endsWith('Nell stands at the far parapet and does not come over.'));
+ assert(g.elements['.lc-caption'].textContent.includes('Nell keeps away from the man who accused her.'));
  g.click('LISTEN');g.run(8.3);g.phase('roofSignal');assert.deepEqual(g.elements['.lc-actions'].children.map(b=>b.textContent),['[PURSUE VALE]','[STAY WITH BELL]']);
- assert(g.elements['.lc-caption'].textContent.includes('she is not telling the man who accused her'));
+ assert(g.elements['.lc-caption'].textContent.includes('says nothing to the man who accused her'));
  // The book saved and the courier gone: Rook's call for her fills the band, and the bridge operator never gets through.
  const b=game({reduced:true});toTheDesk(b,'31','ArrowDown');assert.equal(b.audit().state.choice,'book');b.key('1');b.key('3');b.click('THE KNOCKING BELOW');b.phase('stationTheory');
  b.click('THE COURIER');b.phase('pumpEntry');b.next();b.click('GET BELL');b.run(2.2);b.phase('pumpQte');b.key('ArrowLeft');b.next();throughPumpRoom(b);b.click('TAKE BELL');b.next();b.phase('roofQuiet');
@@ -157,6 +161,7 @@ test('the long route: rescue, confession, the tram, the market, the club, the ro
  assert.deepEqual(a.records.endings,['board']);assert.deepEqual(a.records.discoveries,['witness','tape','ledger','band','confession','jump','chip','flawless','tail','keeper','vine','manifest','ashe','sharp']);assert.deepEqual(a.records.deaths,[]);
  assert(g.elements['.lc-outcome'].textContent.startsWith('ENDING: LIGHTS ON THE BOARD (1/7 found). Inputs 7/7, deaths 0, restarts 0, grade A.'));
  assert(a.board.some(l=>l.startsWith('HALDEN ASHE')&&l.includes('named on the warrant')));
+ assert.equal(a.board[0],'THE CASE: closed. Vale arrested; Halden Ashe of the Lumen Board named on the paper Rook kept dry.');
 });
 test('the loft branch: the note, the photographs and a rewind lost to a wrong reading',()=>{
  const g=game({reduced:true});g.click('NEW CASE');g.click('SKIP INTRO');g.click('FOLLOW');g.next();g.next();g.click('SAVE THE BOOK');g.next();g.click('CONNECT');
@@ -219,7 +224,7 @@ test('lamps: a wrong direction at the pump is a death, the night rewinds itself,
  assert(g.elements['.lc-caption'].textContent.startsWith('Night Division, morning. IVO BELL, lamplighter, is recovered from Pump Room 4'));
  assert.equal(g.elements['.lc-outcome'].textContent,'ENDING: THE CASE GOES COLD (1/7 found). Inputs 1/2, deaths 1, restarts 0, grade B. Bell did not come out of Pump Room 4. Vale signed the report. Deaths seen this case: 1.');
  assert.deepEqual(a.records,{endings:['cold'],discoveries:['witness','tape','sharp'],cases:0,cold:1,deaths:['drowned']});
- assert.deepEqual(a.route,['Followed at once','Caught the courier','Searched the maintenance desk (3/5)','Went down suspecting Vale','Read the tape','Case cold at the pump']);assert(a.board.some(l=>l.startsWith('IVO BELL, lamplighter: drowned')));
+ assert.deepEqual(a.route,['Followed at once','Caught the courier','Searched the maintenance desk (3/5)','Went down suspecting Vale','Read the tape','Case cold at the pump']);assert(a.board.some(l=>l.startsWith('IVO BELL, lamplighter: drowned')));assert.equal(a.board[0],'THE CASE: gone cold. Inspector Vale signed the report.');
  assert.deepEqual(g.elements['.lc-actions'].children.map(b=>b.textContent),['[RESTART THE CHAPTER]','[RETURN TO MENU]']);
  g.click('RESTART');g.phase('pumpEntry');a=g.audit();assert.equal(a.card,'PUMP ROOM 4');assert.deepEqual([a.state.rewinds,a.state.restarts,a.state.deaths,a.state.dead,a.state.endingSeen],[3,1,1,'',false]);
  assert(a.state.decoded&&a.state.choice==='person','fields earned in earlier sets stay');
@@ -250,13 +255,13 @@ test('a survivable miss plays its worse story and offers the night for a lamp, o
 test('the back booth: showing Vale the order costs half a second at the bottle and puts his words in the notebook',()=>{
  const c=game({reduced:true});c.click('CLUB','reel-actions');c.elements['.lc-timing'].click();c.next();c.phase('clubBooth');
  assert(c.elements['.lc-caption'].textContent.startsWith('Vale does not get up.'));assert.deepEqual(c.elements['.lc-actions'].children.map(b=>b.textContent),['[SHOW HIM ORDER 7731]','[SAY NOTHING]']);
- c.click('SHOW HIM');c.phase('clubBooth');assert(c.audit().state.shown);assert(c.elements['.lc-caption'].textContent.includes('"Reserve batteries. Signed. Nobody reads a maintenance order."'));
+ c.click('SHOW HIM');c.phase('clubBooth');assert(c.audit().state.shown);assert(c.elements['.lc-caption'].textContent.includes('"Nobody reads a maintenance order, Rook. You have countersigned a hundred of mine."'));
  assert(c.audit().state.clues.some(l=>l.startsWith('Vale, shown order 7731')));assert.deepEqual(c.elements['.lc-actions'].children.map(b=>b.textContent),['[STAND YOUR GROUND]']);
  c.click('STAND YOUR GROUND');c.phase('clubFace');assert.equal(c.elements['.lc-caption'].textContent,'The bottle leaves Krane\'s hand. Get ready.');c.run(2.2);c.phase('clubQte');assert.equal(c.audit().window,1.5,'2 s less the half second for Krane already up');
  // The bottle lands and Krane takes the ledger; Vale is caught over the gap and Krane pinned, so the case ends word against word, with the booth in the closing.
  c.key('ArrowLeft');c.phase('clubResult');c.click('CARRY ON');c.phase('chaseEntry');c.next();c.key('ArrowRight');c.phase('chaseBank');c.next();c.phase('chaseQteB');c.key('ArrowUp');c.phase('chaseFinish');assert(c.audit().state.caught);c.next();
  c.elements['.lc-timing'].click();throughHall(c,'DIVE CLEAR');throughRoom(c,'NOT ENOUGH');
- assert(c.elements['.lc-outcome'].textContent.startsWith('ENDING: WORD AGAINST WORD'));assert(c.elements['.lc-caption'].textContent.endsWith(', and Vale\'s own words about the order are in Rook\'s notebook. It will have to be enough.'));
+ assert(c.elements['.lc-outcome'].textContent.startsWith('ENDING: WORD AGAINST WORD'));assert(c.elements['.lc-caption'].textContent.endsWith(' Vale\'s own words about the order are in Rook\'s notebook. It will have to be enough.'));
  assert(c.audit().route.includes('Took the bottle'));
 });
 test('a tap on a cue is that cue, a swipe is its direction, and a tap elsewhere is nothing',()=>{
@@ -288,7 +293,9 @@ test('a death on the road stops flawless; the deduction ladder costs a lamp, the
  g.click('THE HOTEL');assert.equal(g.audit().state.rewinds,2);assert.equal(g.audit().card,'REWIND');assert(g.elements['.lc-caption'].textContent.startsWith('The hotel night clerk has never heard of Bell'));
  assert(!g.elements['.lc-actions'].children.some(b=>b.textContent.includes('HOTEL')));g.click('STATION SERVICE');g.next();g.next();throughDesk(g);g.next();
  assert(g.elements['.lc-caption'].textContent.includes('You took your time'));g.click('GET BELL');g.run(2.2);g.phase('pumpQte');assert.equal(g.audit().window,2,'the false lead costs half a second');g.key('ArrowRight');g.next();throughPumpRoom(g);g.click('TAKE BELL');g.next();
- g.click('STAY WITH');g.phase('roomEntry');g.next();g.phase('roomVale');g.click('LET HIM WALK');g.click('NOT ENOUGH');g.click('GO TO BELL');g.next();g.phase('canalEnd');
+ g.click('STAY WITH');g.phase('roomEntry');g.next();g.phase('roomVale');g.click('LET HIM WALK');g.phase('roomDeduce');
+ assert.equal(g.audit().board[0],'THE CASE: Vale sold the reserve batteries and locked Bell in to keep it quiet. The warrant can carry only what Rook can prove.','no answer to the deduction in the file');
+ assert(!/manifest|hall/.test(g.elements['.lc-caption'].textContent),'the stay route saw no hall and no manifest');g.click('NOT ENOUGH');g.click('GO TO BELL');g.next();g.phase('canalEnd');
  const a=g.audit();assert.deepEqual(a.records.endings,['home']);assert(!a.records.discoveries.includes('flawless'));assert(!a.records.discoveries.includes('sharp'));assert.deepEqual(a.reflex,{faced:2,landed:1,deaths:0,restarts:0,grade:'A'});
  // Vale in the chair: the second wrong answer stalls the interview and the Board's ending is lost.
  const r=game({reduced:true});r.click('INTERVIEW','reel-actions');r.next();r.phase('roomDeduce');r.click('VALE SIGNED ALONE');assert(r.audit().state.slip&&!r.audit().state.stalled);r.click('NOT ENOUGH');
@@ -318,7 +325,7 @@ test('title cards, stingers, reflex keys and the case file follow the story',()=
  assert.equal(g.audit().state.choice,'book');assert.equal(g.audit().card,'SAVED');
  assert.deepEqual(g.audit().route,['Watched first','Saved the book']);assert.deepEqual(g.audit().reflex,{faced:1,landed:1,deaths:0,restarts:0,grade:'A'});
  assert.match(g.audit().board[2],/missing/);g.next();g.phase('evidence');assert.match(g.audit().board[2],/last logged at Pump Room 4/);assert.match(g.audit().board[3],/limped away/);
- g.click('CONNECT');g.click('THE HOTEL');g.phase('deduce');assert(g.audit().route.includes('Chased a false lead'));
+ g.click('CONNECT');assert(!g.audit().board[0].includes('North Station'),'the file does not answer the street deduction');g.click('THE HOTEL');g.phase('deduce');assert(g.audit().route.includes('Chased a false lead'));
  g.click('STATION SERVICE');g.next();assert.equal(g.audit().scene,'station');assert.equal(g.audit().card,'NORTH STATION');
  assert.equal(g.elements['.lc-journal'].hidden,false);assert.equal(g.elements['.lc-score'].textContent,'REFLEX 1/1 // LAMPS ### // ');assert.equal(g.audit().objective,'FIND BELL');
  g.elements['.lc-menu'].click();assert.equal(g.audit().card,'LAST LIGHT');assert.equal(g.elements['.lc-records-box'].hidden,false);
@@ -407,19 +414,19 @@ test('a cutscene holds until its caption is read; a tap paces the chunks and nev
  g.elements['.lc-picture'].click();const shown=g.audit().caption.shown;g.elements['.lc-menu'].click();g.run(1);g.click('RESUME');assert.equal(g.audit().caption.shown,shown);
 });
 test('the transition line is chunk zero of the next phase and outlives the dissolve and the chapter card',()=>{
- const line='Rook takes the stairs down to Station Road, after the lantern.';
+ const line='Down to Station Road, where a stranger has Bell\'s lantern.';
  const g=game();g.click('NEW CASE');g.click('SKIP INTRO');
  let a=g.audit();assert.deepEqual(a.transit,{phase:'brief',t:0});assert(a.caption.line);assert.deepEqual(a.caption.chunks,[line]);
- g.run(1.7);g.phase('brief');a=g.audit();assert.equal(a.card,'STATION ROAD');// the harness's first frame carries no time; 62 characters take 1.38 s
+ g.run(1.7);g.phase('brief');a=g.audit();assert.equal(a.card,'STATION ROAD');// the harness's first frame carries no time; 58 characters take 1.29 s
  assert.equal(a.caption.index,0);assert.equal(a.caption.chunks[0],line);assert(a.caption.chunks.length>=2&&a.caption.chunks[1].startsWith('Rook: "Whoever has Bell\'s lantern'));assert(!a.caption.line);
  assert.equal(a.caption.visible,line,'typed through the glide and held past the cut');
  g.run(a.caption.holds[0]-1.6+.2);a=g.audit();assert.equal(a.caption.index,1);assert.equal(a.state.phase,'brief');
  // The cutscene after a transition holds for the line and for its own text (a timed prompt is answered by direction).
  g.click('FOLLOW');g.next();g.next();g.phase('qte');g.key('ArrowUp');g.phase('result');assert.equal(g.audit().state.choice,'person');g.next();g.click('CONNECT');g.click('STATION SERVICE');g.phase('arrival');g.next();g.phase('stationEntry');
- a=g.audit().caption;assert.equal(a.chunks[0],'Bell is under that station and Rook is going in, by three knocks or by his shoulder.');assert.equal(a.index,0);assert(a.hold>7);
+ a=g.audit().caption;assert.equal(a.chunks[0],'Three knocks at the service hatch, and Nell knows the knock.');assert.equal(a.index,0);assert(a.hold>7);
  g.run(7.5);g.phase('stationEntry');g.next();g.phase('stationDesk');
  // Reduced motion cuts directly; the line then plays as a chunk with its own reading hold.
- const r=game({reduced:true});r.click('NEW CASE');r.click('SKIP INTRO');r.phase('brief');a=r.audit().caption;assert.equal(a.chunks[0],line);assert.equal(a.visible,line);assert.equal(a.holds[0],11*.3+.8);
+ const r=game({reduced:true});r.click('NEW CASE');r.click('SKIP INTRO');r.phase('brief');a=r.audit().caption;assert.equal(a.chunks[0],line);assert.equal(a.visible,line);assert.equal(a.holds[0],10*.3+.8);
 });
 // The intro's look-around: four examine markers in the picture and four buttons under it, a tap on a marker's rectangle or
 // its number key examines the spot (its bit, its clue, its caption, its camera), the stairs open at two, arrows do nothing.
@@ -431,7 +438,7 @@ test('the office intro is an arrival and a look around the desk: markers, keys, 
  assert(a.labels.every(l=>l.x0>=0&&l.x1<a.columns&&l.y0>=0&&l.y0<a.rows),'four markers in the frame');
  assert.deepEqual(g.elements['.lc-actions'].children.map(b=>b.textContent),['[1] THE BELL FILE','[2] THE CASE BOARD','[3] THE DISPATCH LOG','[4] THE WINDOW']);
  assert.equal(g.elements['.lc-timer'].textContent,'LOOK AROUND');assert.equal(a.state.officeLooked,0);assert.equal(a.card,'');assert.equal(a.objective,'A MISSING LAMPLIGHTER');
- assert(g.elements['.lc-caption'].textContent.startsWith('The file, the case board'));assert.deepEqual(a.route,[]);
+ assert(g.elements['.lc-caption'].textContent.startsWith('Bell\'s file came from Inspector Vale\'s office, stamped NO FURTHER ACTION.'));assert.deepEqual(a.route,[]);
  const cw=732/a.columns,ch=cw*1.72,inkAt=l=>g.frame().find(d=>d[0]==='['&&Math.round(d[1]/cw)===l.x0&&Math.round(d[2]/ch)===l.y0)[3];
  const unseen=inkAt(a.labels[1]);
  const camera={...a.camera},[x,y]=g.spotCentre('board');g.tap(x+12,y);a=g.audit();
@@ -449,7 +456,7 @@ test('the office intro is an arrival and a look around the desk: markers, keys, 
  g.key('2');a=g.audit();assert.equal(a.state.officeLooked,3);assert.equal(a.spot,'board');assert.equal(a.caption.index,0);assert.equal(a.state.clues.length,1);
  // A resume keeps the bits and opens on the beat's own line, with the stairs already open.
  const r=game({width:732,storage:g.storage});r.click('CONTINUE CASE');r.phase('officeDesk');a=r.audit();assert.equal(a.state.officeLooked,3);assert.equal(a.spot,'');
- assert(r.elements['.lc-caption'].textContent.startsWith('The file, the case board'));assert(r.elements['.lc-actions'].children.some(b=>b.textContent==='[TAKE THE STAIRS]'));
+ assert(r.elements['.lc-caption'].textContent.startsWith('Bell\'s file came from Inspector Vale\'s office'));assert(r.elements['.lc-actions'].children.some(b=>b.textContent==='[TAKE THE STAIRS]'));
  g.click('TAKE THE STAIRS');assert.deepEqual(g.audit().transit,{phase:'brief',t:0});g.next();g.phase('brief');assert.equal(g.audit().scene,'street');assert.equal(g.audit().card,'STATION ROAD');
  // SKIP INTRO from the arrival still goes straight to the street; a checkpoint at a removed office beat resumes at the desk.
  const s=game({reduced:true});s.click('NEW CASE');s.click('SKIP INTRO');s.phase('brief');assert.deepEqual(s.audit().route,[]);
@@ -494,4 +501,24 @@ test('the case file leads with the case as Rook currently understands it',()=>{
  g.next();g.phase('pumpFind');g.click('GET BELL');g.next();g.phase('pumpQte');g.click('CLOSE THE INLET');g.next();throughPumpRoom(g);
  assert.equal(g.audit().board[0],'THE CASE: Vale sold the reserve batteries and locked Bell in to keep it quiet.');
  assert(g.audit().board.slice(1).every(l=>!l.startsWith('THE CASE')),'one case line, above the persons of interest');
+});
+// The voice rule: every set's entry caption carries one line of Rook's, and no chunk splits a speech from its speaker.
+// The cold open stays short enough to read in about fifteen seconds.
+test('every entry caption carries one Rook line, speeches stay whole in a chunk, and the cold open is short',()=>{
+ for(const label of ['STREET','LOFT','STATION','FLOOD','ROOFTOP','TRAM','MARKET','CLUB','CHASE','UNDERCITY','SUBSTATION','INTERVIEW','DAWN']){
+  const g=game();g.click(label,'reel-actions');const c=g.audit().caption;
+  assert.equal((c.text.match(/Rook: "/g)||[]).length,1,label+': '+c.text);
+  for(const t of c.chunks)assert(t.length<=150&&(t.match(/"/g)||[]).length%2===0,label+' chunk: '+t);
+ }
+ const o=game();o.click('NEW CASE');o.phase('officeEntry');const c=o.audit().caption;
+ assert(c.hold<=15,'cold open holds '+c.hold.toFixed(1)+' s');assert(/lamplighter/.test(c.text)&&/Ivo Bell/.test(c.text));
+});
+// A stay-route arrest that stalls is word against word, not the lamplighter home: Vale is in custody, the name above him
+// was never read on this route, and the case file does not call him at large.
+test('a stalled arrest in Vale\'s own building ends word against word, with initials and not a name',()=>{
+ const s=game({reduced:true});s.click('ROOFTOP','reel-actions');s.next();s.click('STAY WITH');s.next();s.phase('roomVale');s.click('ARREST HIM');s.click('SIT HIM DOWN');s.phase('roomDeduce');
+ s.click('VALE SIGNED ALONE');assert(s.elements['.lc-caption'].textContent.includes('the same initials, H.A.'),'no manifest on the stay route');assert(!s.elements['.lc-caption'].textContent.includes('ASHE'));
+ s.click('NOT ENOUGH');assert(s.audit().state.stalled);s.click('WRITE THE WARRANT');s.click('GO TO BELL');s.next();s.phase('canalEnd');
+ assert(s.elements['.lc-outcome'].textContent.startsWith('ENDING: WORD AGAINST WORD'));assert(s.elements['.lc-caption'].textContent.includes('still a set of initials'));
+ assert(!s.audit().board[0].includes('at large'));assert(!/Halden|Ashe/.test(s.elements['.lc-caption'].textContent));
 });

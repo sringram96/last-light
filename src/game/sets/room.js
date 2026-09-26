@@ -118,16 +118,16 @@ registerSet('room',{
 });
 registerPhases('room',{
  roomEntry:{kind:'cutscene',title:'09 / NIGHT DIVISION, DAWN',duration:7,next:()=>state.pursuit==='stay'?'roomVale':'roomDeduce',
-  caption:()=>{const who=roomSitter();return 'Rook: "Whatever I write in this room, I write against my own floor." '+(who==='vale'?'Night Division, 05:50. Vale sits across the table in the room next to his own office. He has asked for nothing. '+(state.faced?'It is the second time tonight they have looked at each other across something, and this time the table is Rook\'s.':'He is waiting to see what Rook has.'):who==='krane'?'Night Division, 05:50. Krane sits across the table, leg in a splint, a division sergeant\'s card in his wallet. He worked here too. He waits to see what Rook has.':who==='bell'?'Night Division, 05:50. Bell gives his statement with the medic\'s blanket on his shoulders. Nobody has gone to Vale\'s office yet. Rook has Bell\'s word and the desk order.':'Night Division, 05:50. The room is empty except for Rook and the file. Vale\'s office across the corridor is dark and has been cleared out.');}},
+  caption:()=>{const who=roomSitter();return (who==='vale'?(state.faced?'Night Division, 05:50: Vale sits across a table from Rook for the second time tonight, and this time the table is Rook\'s.':'Night Division, 05:50: Vale sits across the table in the room next to his own office, waiting to see what Rook has.'):who==='krane'?'Night Division, 05:50: Krane sits across the table in a splint, a division sergeant\'s card in his wallet.':who==='bell'?'Night Division, 05:50: Bell gives his statement with the medic\'s blanket on his shoulders.':'Night Division, 05:50: the room is empty, and Vale\'s office across the corridor has been cleared out.')+' Rook: "Whatever I write in this room, I write against my own floor."';}},
  // The stay route's choice: Vale walks in on Bell. With the dry ledger Rook can arrest him in his own building (`caught`, so
  // the deduction and the warrant run with Vale in the chair, and the canal uses its caught caption); without it Vale walks.
  roomVale:{kind:'quiet',title:'THE WRONG FLOOR',
   enter:()=>{roomValeSeen='';},
   caption:()=>{
    const seen=roomValeSeen||(state.caught?'arrest':'');
-   if(seen==='arrest')return 'Rook puts the dry ledger on the table with Vale\'s signature up. Vale looks at it for a long time, then at Bell, then holds out his wrists, because he knows what the floor will say if he runs.';
-   if(seen==='walk')return 'Vale looks at Bell. "A lamplighter found in a pump room by a detective who was sent there by a forged order. Bring the paper, Rook." He walks. Nobody on the floor stops him.';
-   return '05:55. Vale comes down the corridor to clear his office and finds the light on in Interview 2. Ivo Bell is alive across the table, a blanket on his shoulders. He stops in the door. "Rook. You are on the wrong floor for this."';
+   if(seen==='arrest')return 'Rook puts the dry ledger on the table, Vale\'s signature up. Vale looks at it, then at Bell, and holds out his wrists.';
+   if(seen==='walk')return 'Vale looks at Bell. "A lamplighter, a forged order, and no paper. Bring the paper, Rook." He walks, and nobody on the floor stops him.';
+   return '05:55. Vale comes to clear his office and finds Bell alive in Interview 2. "Rook. You are on the wrong floor for this."';
   },
   buttons:b=>{
    const seen=roomValeSeen||(state.caught?'arrest':'');
@@ -144,10 +144,10 @@ registerPhases('room',{
    const proof=proofHeld(),pick=state.roomPick,who=roomSitter();
    if(state.stalled)return who==='krane'?'Krane stops talking. "You want Vale? I want a name off the ledger. Mine." Rook does not have a ledger to take a name off.':'Vale asks for his lawyer, politely, and the recorder stops. Whatever Rook has, he has to write it without Vale in the room.';
    if(who==='bell'&&ladder.room>=2)return 'Bell waits. "You have my word and a piece of paper with his name on it. Say what the paper says."';
-   if(!pick)return proof?'Order 7731. Rook lays out what he has. Vale\'s name is on every page, and there is a second hand on the paper. Who signed the order?':'Order 7731. Rook lays out what he has: Bell\'s word, the desk order, what he saw in the hall. Vale\'s name is on the order. Who signed it?';
-   if(pick==='alone')return proof?(who==='vale'&&state.shown?'Vale almost smiles, the way he did at the booth.':'Vale almost smiles.')+' Rook has shown his hand. The initials on every ledger page and the name on the manifest are the same: H. ASHE. Vale does not run the Board; the Board runs Vale.':'Vale almost smiles; the empty chair would too. A liaison does not commission reserve transfers. Somebody above him did, and Rook cannot yet say who.';
-   if(pick==='above')return 'Rook believes it, and he cannot show it. The ledger is at the bottom of Pump Room 4 and the manifest is ash. Say what the paper says, not what Rook knows.';
-   return 'There is enough. Rook looks again at the initials under Vale\'s signature, page after page: H.A. The manifest spells them out. Rook knows who signed.';
+   if(!pick)return proof?'Order 7731. Rook lays out what he has. Vale\'s name is on every page, and there is a second hand on the paper. Who signed the order?':'Order 7731. Rook lays out what he has: Bell\'s word, the desk order'+(pursuing()?', what he saw in the hall':'')+'. Vale\'s name is on the order. Who signed it?';
+   if(pick==='alone')return proof?(who==='vale'&&state.shown?'Vale almost smiles, the way he did at the booth.':'Vale almost smiles.')+(pursuing()?' Rook has shown his hand. The initials under Vale\'s name and the name on the manifest are the same: H. ASHE. Vale does not run the Board; the Board runs Vale.':' Rook has shown his hand: the same initials, H.A., sit under every ledger page, and Vale does not sign for himself.'):'Vale almost smiles; the empty chair would too. A liaison does not commission reserve transfers. Somebody above him did, and Rook cannot yet say who.';
+   if(pick==='above')return 'Rook believes it, and he cannot show it. '+(state.rescue==='valve'?'The ledger went out of The Filament in Krane\'s jacket':'The ledger is at the bottom of Pump Room 4')+(pursuing()?' and the manifest is ash.':'.')+' Say what the paper says, not what Rook knows.';
+   return pursuing()?'There is enough. The initials under Vale\'s signature are H.A., and the manifest spells them out. Rook knows who signed.':'There is enough. The initials under Vale\'s signature, page after page, are H.A., and Rook has seen that hand on his own wall.';
   },
   buttons:b=>{
    const proof=proofHeld(),who=roomSitter(),sitter=who==='vale'||who==='krane';
@@ -160,12 +160,13 @@ registerPhases('room',{
   enter:()=>{addClue(state.stalled&&roomSitter()==='vale'?'Deduction: Vale signed for someone on the Board. Vale stalled the interview before the name went on paper.':proofHeld()&&!state.stalled?'Deduction: order 7731 was commissioned by Halden Ashe, Lumen Board Commissioner of Reserve. Vale signed for him. The warrant names both.':'Deduction: Vale signed for someone on the Board. Without the ledger or the manifest, the case file cannot name who.');},
   caption:()=>{
    const proof=proofHeld()&&!state.stalled;
-   if(proof&&state.caught)return '"Halden Ashe," Rook says, and for the first time Vale looks at the door instead of at Rook. Rook writes the name on the warrant under Vale\'s.';
-   if(proof)return 'Rook writes the name on the warrant: Halden Ashe, Commissioner of Reserve, and under it Aurel Vale. Two men to find. The paper will outlast the night.';
+   const commendation='Rook sends for the commendation off his own board: the same H.A., typed out beneath as HALDEN ASHE, COMMISSIONER OF RESERVE.';
+   if(proof&&state.caught)return pursuing()?'"Halden Ashe," Rook says, and for the first time Vale looks at the door instead of at Rook. Rook writes the name on the warrant under Vale\'s.':commendation+' For the first time Vale looks at the door instead of at Rook.';
+   if(proof)return pursuing()?'Rook writes the name on the warrant: Halden Ashe, Commissioner of Reserve, and under it Aurel Vale. Two men to find. The paper will outlast the night.':commendation+' Rook writes it on the warrant above Vale\'s name.';
    if(state.caught)return 'Vale says nothing, which is what his lawyer will tell him to say. Rook has Bell\'s word and Vale in the chair. The name above Vale stays off the paper.';
    if(kranePinned())return 'Krane says the Board\'s man never came to the hall in person and he never learned a name. Rook believes him. Vale\'s name goes on the warrant alone, for now.';
    if(state.pursuit==='stay')return 'Bell signs his statement. Vale\'s name goes on the warrant on Bell\'s word and the desk order. Whoever is above Vale will have to wait for daylight.';
-   return 'Rook closes the file on Vale\'s name and a blank line under it. The batteries are gone, the hall is burned, and whoever signed is a set of initials.';
+   return 'Rook closes the file on Vale\'s name and a blank line under it. The batteries are gone, the hall is burned, and Ashe\'s name is something Rook read, not something he holds.';
   },
   buttons:b=>{b('[GO TO BELL]',()=>enter('canalEntry'));}}
 });
