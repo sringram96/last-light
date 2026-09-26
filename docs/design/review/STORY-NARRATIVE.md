@@ -83,3 +83,23 @@ Narrative Director on commit `9d08ad1` ("Tell the story"). Read against `STORY.m
 - `clubBooth` (shown): `He slides it back. "Least of all you, Rook. You have countersigned a hundred of mine."`
 - `subDock`: `"There is no theft here. There is allocation: the light goes where it is paid for, and your division signed for every lot."` (the clause I compress in finding 13 is the frame around it, not this line; keep its substance)
 - `tramEntry`: `Rook: "I left Bell on a roof to do this. Vale had better be where this tram is going."`
+
+## Sign-off
+
+Checked against `806a82d` ("Answer the four reviews of the story pass"): the `src/` diff, STORY.md's "Review round", the chase log `fix-long.log`, and a fresh stay-route log `signoff-stay.log`. The stay route plays through to LIGHTS ON THE BOARD with no console errors. The cold open now holds 13.8 s before the first input, so the route script no longer stalls on it.
+
+| # | Result | Evidence |
+|---|---|---|
+| 1 | RESOLVED | `roofQuiet` now gives the reason for the chase before the player can choose it, next to `[PURSUE VALE]`: `Rook: "Once Vale is uptown, nobody on our floor brings him back, and Bell is my only witness."` It shows on both routes. |
+| 2 | RESOLVED | The flaw and the Vale seed are now in `officeDesk`'s own line, which every run through the office shows: `Bell's file came from Inspector Vale's office, stamped NO FURTHER ACTION. Rook has signed under that stamp a hundred times without reading it.` |
+| 3 | RESOLVED | On the stay route the name now comes from the commendation: `Rook sends for the commendation off his own board: the same H.A., typed out beneath as HALDEN ASHE...`. `roomDeduce` cites a manifest only when `pursuing()`, and the file's line at `roomEntry` no longer gives the answer away. |
+| 4 | RESOLVED | `word` says `Rook has read Ashe's name` on chase routes and keeps "initials" only off them. `dark` says `the name Rook read on the manifest burned with it`, and I confirmed it is reachable only by chase. The last `roomName` branch says `something Rook read, not something he holds`. |
+| 5 | RESOLVED | `home` now branches: Nell is named only when `person && !wary`. A missed courier reads `The courier who carried his lantern is still missing.`, and every other case reads `Bell will light the street himself tomorrow.` |
+
+**Skipping the intro.** A player who presses `[SKIP INTRO]` misses the premise and the flaw together, because the button jumps straight to `brief`. I accept that: skipping is the player's own choice, and anyone who does it has chosen not to be told the setup. The things the plot needs come back later on every route: Bell names Vale at `pumpFind`, and Vale's "Go back to your desk and stamp something" or "You have countersigned a hundred of mine" at the booth names the flaw back to Rook. The endings no longer lean on the flaw either ("read it back" is gone). The one thing I would have wanted instead is to offer SKIP INTRO only once a case has been played, but that is a mechanic, not a caption, and it does not block.
+
+**What the cuts took (follow-ups, not blocking):**
+- The cold open lost its subject. `Halvard rations its power` no longer says who does the rationing. Nothing on screen now says the Lumen Board is the grid authority, and "uptown" survives only in an optional window spot and in Rook's roof line. That leaves Ashe's pin and the Board van with less weight than they should carry. The fix costs four words: `The Lumen Board rations Halvard's power, so lamplighters keep the low streets lit by hand, one battery to a lamp.`
+- Ashe on the dock is down to `"The light goes where it is paid for."` That keeps the core of the allocation line, which I asked to keep, but drops `your division signed for every lot`, the line that tied the Board to Rook's floor. If it fits the chunk, restore it: `"You are standing in my rain, detective. The light goes where it is paid for, and your division signed for it."`
+
+**Final: APPROVE.**
