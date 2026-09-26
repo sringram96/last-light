@@ -43,6 +43,8 @@ function investigateUI(d){
  el.caption.textContent=(pressure?pressure+' ':'')+(seen?seen.look():d.caption?d.caption():'');
  if(d.turns)el.phase.textContent=d.title+' / '+(left?left+(left===1?' LOOK':' LOOKS')+' LEFT':'NO TIME LEFT');
  for(const s of d.spots)if(spotOpen(d,s))button(typeof s.label==='function'?s.label():s.label,()=>investigate(s),spotSeen(d,s)?'lc-seen':'');
+ // A spot with an object on it offers to pick the object up while it is selected (an examine beat; see examine.js).
+ if(seen&&seen.pick)button(seen.pick.label,()=>enter(seen.pick.phase));
  if(investigateOpen(d))button(d.exit.label,()=>enter(nextOf(d.exit)));
  if(d.exit.early&&d.exit.early.when())button(d.exit.early.label,()=>enter(nextOf(d.exit.early)));
 }
@@ -77,11 +79,12 @@ const knockLines=['','Under the floor: three short, a rest, three short.','The k
 registerPhases('station',{
  stationDesk:{kind:'investigate',title:'THE MAINTENANCE DESK',field:'stationLooked',need:2,turns:3,step:'Searched the maintenance desk',
   caption:()=>'The desk is still lit, and under the floor someone is striking a pipe. Rook has time for three looks here, not all of them.',
-  pressure:()=>knockLines[popcount(state.stationLooked)]||'',
+  // The first knock is the mark scratched on Bell's lantern, for a Rook who turned it over.
+  pressure:()=>(knockLines[popcount(state.stationLooked)]||'')+(popcount(state.stationLooked)===1&&state.lanternLooked&2?' The mark on Bell\'s lantern.':''),
   spots:[
    {id:'order',bit:1,at:()=>[.4,1.7,19.3],label:'[1] THE ORDER',ease:3,shot:()=>look(-.2,1.9,17.6,.4,1.25,19.3),
     clue:'Maintenance desk: order 7731, RESERVE BATTERIES, signed INSPECTOR VALE, countersigned H.A., stamped by the Lumen Board. Dated tonight.',
-    look:()=>state.loftLooked&2?'A fresh order on the desk: RESERVE BATTERIES / ORDER 7731 / INSPECTOR VALE, the number from Bell\'s map. Countersigned in a second hand, H.A., and dated tonight.':'A fresh order on the desk: RESERVE BATTERIES / ORDER 7731 / INSPECTOR VALE. Countersigned in a second hand, H.A., and stamped by the Lumen Board. Dated tonight.'},
+    look:()=>(state.loftLooked&2?'A fresh order on the desk: RESERVE BATTERIES / ORDER 7731 / INSPECTOR VALE, the number from Bell\'s map. Countersigned in a second hand, H.A., and dated tonight.':'A fresh order on the desk: RESERVE BATTERIES / ORDER 7731 / INSPECTOR VALE. Countersigned in a second hand, H.A., and stamped by the Lumen Board. Dated tonight.')+(state.lanternLooked&4?' The same number is stamped on the cell in Bell\'s lantern.':'')},
    {id:'tape',bit:2,at:()=>[0,2.7,19.75],label:'[2] THE TAPE',ease:3,shot:()=>look(-1.2,1.9,17.4,0,2.05,19.6),enter:()=>{state.decoded=true;},
     clue:'The maintenance tape says: close the INLET wheel before pulling someone off the flooded platform.',
     look:()=>'A maintenance tape, still turning, its leader marked FLOOD PROCEDURE / PUMP ROOMS. Rook runs it back to the one line that matters: FLOOD RESCUE, CLOSE INLET FIRST.'},
@@ -138,7 +141,7 @@ registerPhases('pump',{
  pumpRoom:{kind:'investigate',title:'THE ROOM BELL WAS LOCKED IN',field:'pumpLooked',need:2,step:'Searched Pump Room 4',
   caption:()=>state.rescue==='valve'?'The inlet is shut and the water is falling. Rook has a minute, and he uses it to look at the room.':'The water is at the walkway\'s edge. Rook has less than a minute, and he uses it to look at the room.',
   spots:[
-   {id:'door',bit:1,at:()=>[0,4.4,33.5],label:'[1] THE DOOR',ease:4,shot:()=>look(1.2,2.2,24,0,1.8,33.8),
+   {id:'door',bit:1,at:()=>[0,4.4,33.5],label:'[1] THE DOOR',ease:4,shot:()=>look(1.2,2.2,24,0,1.8,33.8),pick:{label:'[TURN THE PADLOCK OVER]',phase:'pumpPadlock'},
     clue:'Pump Room 4\'s platform door was bolted from outside and padlocked with Division issue. Someone locked Bell in.',
     look:()=>state.stationLooked&4?'The platform door, bolted from the outside. On the bolt a Division padlock, closed, the twin of the open one upstairs. The same hand locked both.':'The platform door, bolted from the outside. On the bolt a Division padlock, closed, keyed like the one on the concourse hatch. Bell did not lock himself in.'},
    {id:'ledger',bit:2,at:()=>state.rescue==='valve'?[2.5,.7,15.4]:[5.1,.3,17.7],label:()=>state.rescue==='valve'?'[2] THE LEDGER':'[2] THE SATCHEL',ease:3,
@@ -215,7 +218,7 @@ function caseEnter(phase){
  if(isWindup(phase))windupSeconds=reduce||state.untimed?2:1.5+hash(Math.floor(state.t*1000),3);
  if(phase==='deduce')ladder.street=state.wrong?1:0;if(phase==='loftBoard')ladder.loft=state.misread?1:0;if(phase==='roomDeduce')ladder.room=state.slip?1:0;
  spotId='';spotPrev='';// an investigate beat opens on its own line with nothing selected; its examined bits are the checkpoint's
- const d=phaseDef(phase);if(d){if(d.kind==='death'){if(state.rewinds>0)state.rewinds--;state.deaths|=d.bit;}if(d.enter)d.enter();return;}
+ const d=phaseDef(phase);if(d){if(d.kind==='examine')examineReset(d);if(d.kind==='death'){if(state.rewinds>0)state.rewinds--;state.deaths|=d.bit;}if(d.enter)d.enter();return;}
  if(phase==='tunnelQte')tunnelFork=state.distance+30;
  if(phase==='stationQuiet')addClue('Maintenance desk: order 7731, RESERVE BATTERIES, signed INSPECTOR VALE. The same number Bell tagged on his route map.');
  if(phase==='stationReady'){state.decoded=true;addClue('The maintenance tape says: close the INLET wheel before pulling someone off the flooded platform.');}
@@ -238,9 +241,11 @@ const handCues={qte:{up:'person',down:'book'},pumpQte:{left:'valve',right:'pull'
 function promptInput(dir,event){
  if(!isQte()||state.paused||session.menu||transit)return;
  const d=phaseDef(),p=state.phase;
- if(d){const c=d.cues.find(c=>c.dir===dir);if(!c){if(!state.untimed)promptMiss();return;}react(event);c.act();enter(nextOf(d));return;}
+ // A direction the beat does not offer is ignored: a stray swipe or a key mashed in panic is not a move. Only running out
+ // of time, or picking the offered move that the danger punishes, costs anything.
+ if(d){const c=d.cues.find(c=>c.dir===dir);if(!c)return;react(event);c.act();enter(nextOf(d));return;}
  const id=handCues[p]?.[dir];
- if(!id){if(!state.untimed)promptMiss();return;}
+ if(!id)return;
  react(event);({qte:choose,pumpQte:rescue,clubQte:clubChoice,chaseQteA:chaseChoice,chaseQteB:chaseChoice,tunnelQte:tunnelChoice})[p](id);
 }
 // The miss: a death where the drawn danger kills, the worse story where it does not.
@@ -281,7 +286,8 @@ function caseAdvance(dt){
  const done=(s)=>e>=holdFor(reduce&&s>2?1:s);
  const c=cutsceneEnd();if(c){if(done(c.duration))enter(c.next);return;}
  if(d){
-  if(d.kind==='observe'&&e>=8)enter(nextOf(d));
+  if(d.kind==='examine')examineTick(dt);
+  else if(d.kind==='observe'&&e>=8)enter(nextOf(d));
   else if(d.kind==='windup'&&e>=windupSeconds)enter(nextOf(d));
   else if(d.kind==='prompt'&&!state.untimed&&e>=caseDuration())promptMiss();
   else if(d.kind==='result'&&done(d.duration||4)&&!canRewind())enter(nextOf(d));
@@ -330,9 +336,13 @@ function roofActions(){
  button('[PURSUE VALE]',pursuit);button('[STAY WITH BELL]',stayWithBell);
 }
 // A live timed beat shows nothing under the picture: the cues are the interface. Untimed play keeps the caption and the buttons.
+// A live beat names its two moves under the picture as buttons that point the same way as their cues in it, so the
+// player always knows what the flashing targets mean; a button is a tap on its cue. Untimed play keeps the caption and
+// the numbered labels.
+const cueArrow={left:'<<',right:'>>',up:'^^',down:'vv'};
 function promptUI(caption,cues){
  el.caption.textContent=state.untimed?caption:'';
- if(state.untimed)for(const [label,dir] of cues)button(label,()=>promptInput(dir));
+ for(const [label,dir] of cues){const name=label.replace(/^\[\d\]\s*/,'').replace(/[\[\]]/g,'');button(state.untimed?label:dir==='right'?'['+name+' '+cueArrow[dir]+']':'['+cueArrow[dir]+' '+name+']',e=>promptInput(dir,e),'lc-cue');}
 }
 const deathCount=()=>[1,2,4,8,16,32].filter(bit=>state.deaths&bit).length;
 function caseUI(){
@@ -340,6 +350,7 @@ function caseUI(){
  if(d){
   el.phase.textContent=d.title||'THE LAST LIGHT';el.caption.textContent=d.caption?d.caption():'';
   if(d.kind==='investigate')investigateUI(d);
+  if(d.kind==='examine')examineUI(d);
   if(d.kind==='prompt')promptUI(el.caption.textContent,d.cues.map(c=>[c.label,c.dir]));
   if(d.buttons)d.buttons(button);
   if(d.kind==='result')rewindActions();
