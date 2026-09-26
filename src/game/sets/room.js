@@ -118,7 +118,7 @@ registerSet('room',{
 });
 registerPhases('room',{
  roomEntry:{kind:'cutscene',title:'09 / NIGHT DIVISION, DAWN',duration:7,next:()=>state.pursuit==='stay'?'roomVale':'roomDeduce',
-  caption:()=>{const who=roomSitter();return who==='vale'?'Night Division, 05:50. Vale sits across the table in the room next to his own office. He has asked for nothing. '+(state.faced?'It is the second time tonight they have looked at each other across something, and this time the table is Rook\'s.':'He is waiting to see what Rook has.'):who==='krane'?'Night Division, 05:50. Krane sits across the table, leg in a splint, a division sergeant\'s card in his wallet. He worked here too. He waits to see what Rook has.':who==='bell'?'Night Division, 05:50. Bell gives his statement with the medic\'s blanket on his shoulders. Nobody has gone to Vale\'s office yet. Rook has Bell\'s word and the desk order.':'Night Division, 05:50. The room is empty except for Rook and the file. Vale\'s office across the corridor is dark and has been cleared out.';}},
+  caption:()=>{const who=roomSitter();return 'Rook: "Whatever I write in this room, I write against my own floor." '+(who==='vale'?'Night Division, 05:50. Vale sits across the table in the room next to his own office. He has asked for nothing. '+(state.faced?'It is the second time tonight they have looked at each other across something, and this time the table is Rook\'s.':'He is waiting to see what Rook has.'):who==='krane'?'Night Division, 05:50. Krane sits across the table, leg in a splint, a division sergeant\'s card in his wallet. He worked here too. He waits to see what Rook has.':who==='bell'?'Night Division, 05:50. Bell gives his statement with the medic\'s blanket on his shoulders. Nobody has gone to Vale\'s office yet. Rook has Bell\'s word and the desk order.':'Night Division, 05:50. The room is empty except for Rook and the file. Vale\'s office across the corridor is dark and has been cleared out.');}},
  // The stay route's choice: Vale walks in on Bell. With the dry ledger Rook can arrest him in his own building (`caught`, so
  // the deduction and the warrant run with Vale in the chair, and the canal uses its caught caption); without it Vale walks.
  roomVale:{kind:'quiet',title:'THE WRONG FLOOR',
@@ -127,7 +127,7 @@ registerPhases('room',{
    const seen=roomValeSeen||(state.caught?'arrest':'');
    if(seen==='arrest')return 'Rook puts the dry ledger on the table with Vale\'s signature up. Vale looks at it for a long time, then at Bell, then holds out his wrists, because he knows what the floor will say if he runs.';
    if(seen==='walk')return 'Vale looks at Bell. "A lamplighter found in a pump room by a detective who was sent there by a forged order. Bring the paper, Rook." He walks. Nobody on the floor stops him.';
-   return '05:55. Vale comes down the corridor to clear his office and finds the light on in Interview 2, and Ivo Bell alive across the table with a blanket on his shoulders. He stops in the door. "Rook. You are on the wrong floor for this."';
+   return '05:55. Vale comes down the corridor to clear his office and finds the light on in Interview 2. Ivo Bell is alive across the table, a blanket on his shoulders. He stops in the door. "Rook. You are on the wrong floor for this."';
   },
   buttons:b=>{
    const seen=roomValeSeen||(state.caught?'arrest':'');

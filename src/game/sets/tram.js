@@ -99,7 +99,7 @@ registerSet('tram',{
 });
 registerPhases('tram',{
  tramEntry:{kind:'cutscene',title:'04b / THE LAST TRAM',duration:8,next:'tramRide',
-  caption:()=>'Rook drops from the service lift onto the roof of the last tram. Below, lamps 14 to 19 stand dark. Dispatch will bring the patrol car to Market Arch.'},
+  caption:()=>'Rook: "I left Bell on a roof to do this. Vale had better be where this tram is going." Rook drops from the service lift onto the last tram; below, lamps 14 to 19 on Bell\'s route stand dark. Dispatch will bring the patrol car to Market Arch.'},
  // With the roof radio still open, Heddy's second line rides the quiet bridge: a witness with a dated book. No field; `radio`
  // and reached('tramRide') carry it into the case file.
  tramRide:{kind:'quiet',title:'ACROSS THE DARK DISTRICT',

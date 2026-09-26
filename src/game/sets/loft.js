@@ -97,7 +97,7 @@ registerSet('loft',{
 registerPhases('loft',{
  loftEntry:{kind:'cutscene',title:'01b / THE DEPOT LOFT',duration:7,next:'loftTable',
   enter:()=>{state.loftSeen=true;},
-  caption:()=>'One room over the lamp depot. A cot, a kettle, a wall of route maps pinned with battery tags. Someone has been here since Bell vanished: the kettle is warm.'},
+  caption:()=>'Rook: "Bell knew something, and I am spending his minutes to find out what." One room over the lamp depot, walled with route maps and battery tags. The kettle is warm; someone has been here since Bell vanished.'},
  loftTable:{kind:'quiet',title:'THE TABLE UNDER THE LAMP',
   caption:()=>'On the table, a folded note weighted with a lamp key. On the wall, Bell\'s route map: lamps 14 to 19 crossed out in red and tagged RESERVE PULLED / ORDER 7731 / A.V. Beside it, photographs.',
   buttons:b=>{b('[READ THE NOTE]',()=>enter('loftNote'));b('[STUDY THE MAP AND PHOTOGRAPHS]',()=>enter('loftBoard'));}},

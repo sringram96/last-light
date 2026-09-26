@@ -317,7 +317,7 @@ test('title cards, stingers, reflex keys and the case file follow the story',()=
  g.key('ArrowRight');g.phase('qte','a wrong direction is ignored in untimed play');g.key('ArrowDown');g.phase('result');
  assert.equal(g.audit().state.choice,'book');assert.equal(g.audit().card,'SAVED');
  assert.deepEqual(g.audit().route,['Watched first','Saved the book']);assert.deepEqual(g.audit().reflex,{faced:1,landed:1,deaths:0,restarts:0,grade:'A'});
- assert.match(g.audit().board[1],/missing/);g.next();g.phase('evidence');assert.match(g.audit().board[1],/last logged at Pump Room 4/);assert.match(g.audit().board[2],/limped away/);
+ assert.match(g.audit().board[2],/missing/);g.next();g.phase('evidence');assert.match(g.audit().board[2],/last logged at Pump Room 4/);assert.match(g.audit().board[3],/limped away/);
  g.click('CONNECT');g.click('THE HOTEL');g.phase('deduce');assert(g.audit().route.includes('Chased a false lead'));
  g.click('STATION SERVICE');g.next();assert.equal(g.audit().scene,'station');assert.equal(g.audit().card,'NORTH STATION');
  assert.equal(g.elements['.lc-journal'].hidden,false);assert.equal(g.elements['.lc-score'].textContent,'REFLEX 1/1 // LAMPS ### // ');assert.equal(g.audit().objective,'FIND BELL');
@@ -407,19 +407,19 @@ test('a cutscene holds until its caption is read; a tap paces the chunks and nev
  g.elements['.lc-picture'].click();const shown=g.audit().caption.shown;g.elements['.lc-menu'].click();g.run(1);g.click('RESUME');assert.equal(g.audit().caption.shown,shown);
 });
 test('the transition line is chunk zero of the next phase and outlives the dissolve and the chapter card',()=>{
- const line='Rook takes the stairs down to Station Road. The rain has not let up.';
+ const line='Rook takes the stairs down to Station Road, after the lantern.';
  const g=game();g.click('NEW CASE');g.click('SKIP INTRO');
  let a=g.audit();assert.deepEqual(a.transit,{phase:'brief',t:0});assert(a.caption.line);assert.deepEqual(a.caption.chunks,[line]);
- g.run(1.7);g.phase('brief');a=g.audit();assert.equal(a.card,'STATION ROAD');// the harness's first frame carries no time; 68 characters take 1.51 s
- assert.equal(a.caption.index,0);assert.equal(a.caption.chunks[0],line);assert(a.caption.chunks.length>=2&&a.caption.chunks[1].startsWith("Rook's case"));assert(!a.caption.line);
+ g.run(1.7);g.phase('brief');a=g.audit();assert.equal(a.card,'STATION ROAD');// the harness's first frame carries no time; 62 characters take 1.38 s
+ assert.equal(a.caption.index,0);assert.equal(a.caption.chunks[0],line);assert(a.caption.chunks.length>=2&&a.caption.chunks[1].startsWith('Rook: "Whoever has Bell\'s lantern'));assert(!a.caption.line);
  assert.equal(a.caption.visible,line,'typed through the glide and held past the cut');
  g.run(a.caption.holds[0]-1.6+.2);a=g.audit();assert.equal(a.caption.index,1);assert.equal(a.state.phase,'brief');
  // The cutscene after a transition holds for the line and for its own text (a timed prompt is answered by direction).
  g.click('FOLLOW');g.next();g.next();g.phase('qte');g.key('ArrowUp');g.phase('result');assert.equal(g.audit().state.choice,'person');g.next();g.click('CONNECT');g.click('STATION SERVICE');g.phase('arrival');g.next();g.phase('stationEntry');
- a=g.audit().caption;assert.equal(a.chunks[0],'Three knocks, or a shoulder. Either way, the hatch gives.');assert.equal(a.index,0);assert(a.hold>7);
+ a=g.audit().caption;assert.equal(a.chunks[0],'Bell is under that station and Rook is going in, by three knocks or by his shoulder.');assert.equal(a.index,0);assert(a.hold>7);
  g.run(7.5);g.phase('stationEntry');g.next();g.phase('stationDesk');
  // Reduced motion cuts directly; the line then plays as a chunk with its own reading hold.
- const r=game({reduced:true});r.click('NEW CASE');r.click('SKIP INTRO');r.phase('brief');a=r.audit().caption;assert.equal(a.chunks[0],line);assert.equal(a.visible,line);assert.equal(a.holds[0],14*.3+.8);
+ const r=game({reduced:true});r.click('NEW CASE');r.click('SKIP INTRO');r.phase('brief');a=r.audit().caption;assert.equal(a.chunks[0],line);assert.equal(a.visible,line);assert.equal(a.holds[0],11*.3+.8);
 });
 // The intro's look-around: four examine markers in the picture and four buttons under it, a tap on a marker's rectangle or
 // its number key examines the spot (its bit, its clue, its caption, its camera), the stairs open at two, arrows do nothing.
@@ -482,4 +482,16 @@ test('the case file drawer replaces the picture, pauses the game and freezes a d
  g.key('p');assert(g.audit().state.paused);g.elements['.lc-file'].click();g.elements['.lc-file'].click();assert(g.audit().state.paused);g.key('Escape');assert(!g.audit().state.paused);
  assert(g.elements['.lc-timing'].hidden&&g.elements['.lc-mono'].hidden&&g.elements['.lc-sound'].hidden&&g.elements['.lc-full'].hidden);
  g.elements['.lc-menu'].click();assert(!g.elements['.lc-timing'].hidden&&!g.elements['.lc-mono'].hidden&&!g.elements['.lc-sound'].hidden);
+});
+// The case file opens on the case as Rook understands it, and that line moves with the story: a lamplighter missing before
+// the desk, the theory Rook took down the ladder, then what Bell says Vale did.
+test('the case file leads with the case as Rook currently understands it',()=>{
+ const g=game({reduced:true});g.click('NEW CASE');g.phase('officeEntry');
+ assert.equal(g.audit().board[0],'THE CASE: A lamplighter is missing and his street is dark.');
+ g.click('SKIP INTRO');g.phase('brief');assert.equal(g.audit().board[0],'THE CASE: Ivo Bell is missing, and a stranger is carrying his lantern.');
+ g.click('FOLLOW');g.next();g.next();g.phase('qte');g.click('CATCH');g.next();g.click('CONNECT');g.click('STATION SERVICE');g.next();g.phase('stationEntry');g.next();throughDesk(g,'13');
+ assert.equal(g.audit().board[0],'THE CASE: Rook thinks Inspector Vale locked Bell under North Station.');
+ g.next();g.phase('pumpFind');g.click('GET BELL');g.next();g.phase('pumpQte');g.click('CLOSE THE INLET');g.next();throughPumpRoom(g);
+ assert.equal(g.audit().board[0],'THE CASE: Vale sold the reserve batteries and locked Bell in to keep it quiet.');
+ assert(g.audit().board.slice(1).every(l=>!l.startsWith('THE CASE')),'one case line, above the persons of interest');
 });

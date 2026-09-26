@@ -552,22 +552,22 @@ function exitShot(name){
 }
 function transitionLine(from,to){
  return {
-  'office>street':'Rook takes the stairs down to Station Road. The rain has not let up.',
-  'street>loft':'Two doors back, up the iron stair over the lamp depot. The window is lit.',
-  'street>station':'Three knocks, or a shoulder. Either way, the hatch gives.',
-  'loft>station':'Down the stair with the photographs in his coat. The station clock says Bell\'s job is still open.',
-  'station>pump':'Down the service ladder, toward the knocking.',
-  'pump>roof':'Up the service stair, Bell\'s arm over Rook\'s shoulder.',
-  'roof>tram':'Down the service lift to the tram stop. The last tram of the night is already slowing.',
-  'roof>room':'Rook stays. The medic\'s van takes them both to Night Division to put it on paper before the canal.',
-  'tram>market':'Over the tram rail and down into the light under the arch.',
-  'market>club':'Through the last of the stalls. The Filament\'s sign is loud enough to feel.',
-  'club>chase':'Out the back door and into the patrol car. Vale\'s tail lights are already moving.',
-  'chase>tunnel':'The service ramp drops away beneath the road.',
-  'chase>substation':'Across the basin, every window of Substation Nine is lit, and it is one in the morning.',
-  'tunnel>substation':'The outfall opens onto the basin. Substation Nine is lit end to end.',
-  'substation>room':state.caught?'Vale watches from the back of the patrol car. Night Division, before the floor wakes up.':'Back across the city with the sky going grey. Night Division, the room next to Vale\'s office.',
-  'room>canal':'Down to the canal, where Bell is waiting. First light.'
+  'office>street':'Rook takes the stairs down to Station Road, after the lantern.',
+  'street>loft':'Two doors back and up the iron stair to Bell\'s lit window, to learn what he knew before he went under.',
+  'street>station':'Bell is under that station and Rook is going in, by three knocks or by his shoulder.',
+  'loft>station':'Down the stair with Bell\'s photographs in his coat, to the station where Bell\'s job is still open.',
+  'station>pump':'Down the service ladder toward the knocking, because whoever is striking that pipe is still alive.',
+  'pump>roof':'Up the service stair with Bell\'s arm over Rook\'s shoulder, out of the water and up to where a medic can reach him.',
+  'roof>tram':'Vale\'s car went west, and the last tram of the night is going the same way.',
+  'roof>room':'Rook stays, and the medic\'s van takes them both to Night Division, to get Bell\'s word on paper while he can still give it.',
+  'tram>market':'Over the tram rail and down into the market, the way the red car went.',
+  'market>club':'Through the last of the stalls to The Filament, whose sign is loud enough to feel, and to Vale.',
+  'club>chase':'Out the back door and into the patrol car, with Vale\'s tail lights already moving.',
+  'chase>tunnel':'The service ramp drops beneath the road, into drains that all run down to the basin where Vale is going.',
+  'chase>substation':'Across the basin every window of Substation Nine is lit at one in the morning, and Rook goes to see who is paying for it.',
+  'tunnel>substation':'The outfall opens onto the basin, and Rook walks toward the one building on it lit end to end: Substation Nine.',
+  'substation>room':state.caught?'Vale rides in the back of the patrol car to Night Division, where Rook means to ask him who signs above him.':'Back across the city as the sky goes grey, to Night Division and the room next to Vale\'s office, to put the night on paper.',
+  'room>canal':'Down to the canal at first light, where Bell is waiting to hear what his four nights bought.'
  }[from+'>'+to]||'';
 }
 // The fork is fixed where the prompt began, so the pier does not move when the finish phase resets the phase distance.

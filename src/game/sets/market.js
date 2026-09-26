@@ -170,7 +170,7 @@ registerSet('market',{
 registerPhases('market',{
  marketEntry:{kind:'cutscene',title:'05a / THE NIGHT MARKET',duration:8,next:'marketAisle',
   enter:()=>{addClue('The night market runs on reserve cells stamped with Lumen Board serials. The stolen batteries are being sold by the cell.');},
-  caption:()=>'Stalls, awnings, a crowd that does not part, and every stall lamp a reserve cell with a Lumen Board serial. At the aisle\'s end, The Filament\'s sign burns pink.'},
+  caption:()=>'Rook: "The Filament is at the far end, and every face between here and there could be Vale\'s." Under the awnings every stall lamp is a reserve cell with a Lumen Board serial: the batteries missing from Bell\'s route, sold one at a time. At the aisle\'s end, The Filament\'s sign burns pink.'},
  // The quiet beats before the windup carry the description the windup used to: who the big man is, and that he has seen Rook.
  marketAisle:{kind:'quiet',title:'A CART MARKED QUILL',
   caption:()=>state.tail?'A woman sells cells from a cart marked QUILL. The black car from the road is parked under the arch, empty, and its driver, Krane, Vale\'s bodyguard, is coming through the crowd. Rook can ask where the cells come from, or push on before Krane finds him.':'A woman sells cells from a cart marked QUILL. Behind Rook, a big man is coming through the crowd without buying anything: Krane, Vale\'s bodyguard. Rook can ask where the cells come from, or push on.',

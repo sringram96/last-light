@@ -193,11 +193,11 @@ registerSet('substation',{
 registerPhases('substation',{
  subEntry:{kind:'cutscene',title:'08 / SUBSTATION NINE',duration:8,next:'subDock',
   enter:()=>{addClue('Substation Nine, the Lumen Board\'s reserve battery hall on the canal basin: the batteries are being loaded into a Board van by Vale\'s buyers, on the Board\'s own premises.');},
-  caption:()=>state.caught?'Rook leaves Vale cuffed in the patrol car. The battery hall of Substation Nine is lit end to end, a Lumen Board van backed up to the loading door.':'Vale\'s car is not here. The loading is. The battery hall of Substation Nine is lit end to end, a Lumen Board van backed up to the loading door.'},
+  caption:()=>'Rook: "This is where Bell\'s batteries go. I want the name above Vale\'s, and there is one of me." '+(state.caught?'Rook leaves Vale cuffed in the patrol car. The battery hall of Substation Nine is lit end to end, a Lumen Board van backed up to the loading door.':'Vale\'s car is not here. The loading is. The battery hall of Substation Nine is lit end to end, a Lumen Board van backed up to the loading door.')},
  // The man on the dock: seen, one line, gone. The manifest names him a moment later.
  subDock:{kind:'cutscene',title:'THE MAN ON THE DOCK',duration:5,next:'subManifest',
   enter:()=>{addClue('Seen on the dock at Substation Nine: a Lumen Board man in grey, dry under an umbrella, watching the loading. He left when he saw Rook. He was not hurrying.');},
-  caption:()=>'On the dock beyond the van, out of the rain under an umbrella that has not closed all night, a man in a grey coat with a lit Board pin watches the loading. He sees Rook, says "Detective. You are standing in my rain," and walks, unhurried, out of the light.'},
+  caption:()=>'On the dock beyond the van, dry under an umbrella that has not closed all night, a man in a grey coat with a lit Board pin watches the loading. He sees Rook. "Detective. You are standing in my rain. There is no theft here. There is allocation: the light goes where it is paid for, and your division signed for every lot." He walks, unhurried, out of the light.'},
  subManifest:{kind:'cutscene',title:'THE MANIFEST',duration:6,next:'subDanger',
   enter:()=>{addClue('Seen on the rack: the loading manifest is countersigned H. ASHE, Commissioner of Reserve, Lumen Board. Vale is not the top of this.');},
   caption:()=>'The loaders are not Board engineers. On the nearest loose rack, a manifest: ORDER 7731 / A. VALE, and under it H. ASHE, COMMISSIONER OF RESERVE. Krane has seen Rook.'},

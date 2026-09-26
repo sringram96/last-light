@@ -49,22 +49,22 @@ function investigateUI(d){
 const officeSpotShot=()=>look(3.2,2,-.5,-3,1.25,8);// from the front corner: the board left, the desk and the window right
 registerPhases('office',{
  officeEntry:{kind:'cutscene',title:'00 / NIGHT DIVISION',duration:6,next:'officeDesk',
-  caption:()=>'Night Division, 23:40. Nine days of rain. Rook\'s desk lamp is the only light still burning on the floor.',
+  caption:()=>'Halvard, 23:40, the ninth night of rain. The Lumen Board rations the city\'s power, and the towers uptown buy most of it. The low streets stay lit only because lamplighters walk them each night, switching every lamp on by hand from its own reserve battery. Ivo Bell, senior lamplighter of the station route, has been missing four nights, and his street is going dark. Missing persons is Rook\'s desk at Night Division, and his lamp is the last one burning on the floor.',
   buttons:b=>b('[SKIP INTRO]',()=>enter('brief'))},
  officeDesk:{kind:'investigate',title:'THE DESK',field:'officeLooked',need:2,step:'Looked over the desk',shot:officeSpotShot,
   caption:()=>'The file, the case board, the dispatch log and the window. Rook looks the desk over before he takes the stairs.',
   spots:[
    {id:'file',bit:1,at:()=>[-.45,2,8.2],label:'[1] THE BELL FILE',ease:5,shot:()=>look(2.3,1.45,6.4,-1.6,1.2,8.8),
-    look:()=>'The file: IVO BELL, lamplighter, missing four nights. Last seen at the closed North Station. Attached, a report that someone is walking his route with his lantern.'},
+    look:()=>'The Bell file came down from across the corridor already stamped NO FURTHER ACTION. Last seen at the closed North Station; since then a stranger has been walking his route with his lantern. Rook has countersigned that stamp on a hundred files without asking whose it was. Rook: "Not this one."'},
    // The board: three seconds on the two photographs, then a glance out through the open door across the corridor to Vale's dark door.
    {id:'board',bit:2,at:()=>[-7.55,3.55,5.6],label:'[2] THE CASE BOARD',ease:3,
     shot:()=>{const a=look(-2.4,1.8,3.6,-7.9,2.7,5.8);return state.event<3||reduce?a:blendShot(a,look(-6.6,1.6,-6.6,-14,1.5,-10.5),smooth(clamp((state.event-3)/2,0,1)));},
     clue:'Case board: Inspector Aurel Vale of Night Division is the Lumen Board\'s grid security liaison. His office is next to Rook\'s.',
-    look:()=>'On the case board, beside Bell\'s photograph, a commendation: INSPECTOR A. VALE, GRID SECURITY LIAISON, LUMEN BOARD. His office is the dark one across the corridor.'},
+    look:()=>'On the case board, beside Bell\'s photograph, a Lumen Board commendation for INSPECTOR A. VALE, GRID SECURITY LIAISON, initialled H.A. at the foot. His office is the dark one across the corridor. Rook: "Vale signs his name like a man who has never been asked to read it back."'},
    {id:'log',bit:4,at:()=>[-2.05,1.5,8.45],label:'[3] THE DISPATCH LOG',ease:4,shot:()=>look(-1,2.1,6,-2.05,1.15,8.45),
     look:()=>'The dispatch log: a maintenance call at 00:17 for Pump Room 4, logged to I. BELL. The hand is not Bell\'s.'},
    {id:'window',bit:8,at:()=>[0,2.9,15.9],label:'[4] THE WINDOW',ease:6,shot:()=>look(-2.2,2.2,6,0,2.4,16),
-    look:()=>'Rook takes his coat. Below the window the city runs on power it cannot account for, and one street on the lamplighter\'s route has gone dark.'}
+    look:()=>'Uptown the towers burn all night. Below the window Station Road is down to a few lamps, and one lantern is moving between them, lighting the rest. Rook takes his coat.'}
   ],
   exit:{label:'[TAKE THE STAIRS]',next:'brief'}}
 });
@@ -345,7 +345,7 @@ function caseUI(){
  }
  el.phase.textContent=caseTitles[state.phase]||'THE LAST LIGHT';
  switch(state.phase){
- case 'stationEntry':el.caption.textContent=state.choice==='person'?'Nell opens the service door with three taps. Footsteps echo through the empty concourse.':'The service latch gives under Rook\'s shoulder. Inside, a maintenance desk glows in an otherwise empty station.';break;
+ case 'stationEntry':el.caption.textContent='Rook: "Every minute I spend up here is one Bell spends down there." '+(state.choice==='person'?'Nell opens the service door with three taps. Footsteps echo through the empty concourse.':'The service latch gives under Rook\'s shoulder. Inside, a maintenance desk glows in an otherwise empty station.');break;
  case 'stationQuiet':
   el.caption.textContent='Below the floor, someone strikes a pipe: three short, a rest, three short. The tape is still turning.';
   button('[READ THE TAPE / 8s]',()=>enter('stationListen'));button('[FOLLOW THE KNOCKING]',()=>enter('pumpEntry'));break;
@@ -353,9 +353,9 @@ function caseUI(){
  case 'stationReady':
   el.caption.textContent='The tape warns: "FLOOD RESCUE: CLOSE INLET FIRST." Rook knows which wheel to reach for. Extra reaction time earned.';
   button('[FOLLOW THE KNOCKING]',()=>enter('pumpEntry'));break;
- case 'pumpEntry':el.caption.textContent='Under the station, pumps tower above black water. A man on the far platform is tapping a wrench against a pipe'+(lateDown()?', and the water is a hand higher than it was a minute ago.':'.');break;
+ case 'pumpEntry':el.caption.textContent='Rook: "Get him out first. Questions after, if the water leaves us time." Under the station, pumps tower above black water. A man on the far platform is tapping a wrench against a pipe'+(lateDown()?', and the water is a hand higher than it was a minute ago.':'.');break;
  case 'pumpFind':
-  el.caption.textContent=(state.wrong||lateDown()?'Bell: "Vale took the reserve batteries. I found his ledger, so he locked me down here." The water is at his knees. "You took your time. That pipe will not hold much longer."':'Bell: "Vale took the reserve batteries. I found his ledger, so he locked me down here. That pipe will not hold much longer."')+' '+(theoryVerdicts[state.theory]?.()||'')+'The INLET wheel is beside Rook.';
+  el.caption.textContent=(state.wrong||lateDown()?'Bell: "Vale is selling the reserve batteries off my route, and every one he sells is a lamp that stays dark. I found his ledger, so he locked me down here." The water is at his knees. "You took your time. That pipe will not hold much longer."':'Bell: "Vale is selling the reserve batteries off my route, and every one he sells is a lamp that stays dark. I found his ledger, so he locked me down here. That pipe will not hold much longer."')+' '+(theoryVerdicts[state.theory]?.()||'')+'The INLET wheel is beside Rook.';
   button('[GET BELL OUT]',()=>enter('pumpDanger'));break;
  case 'pumpDanger':el.caption.textContent='A joint splits. Water surges under the platform. Get ready.';break;
  case 'pumpQte':
@@ -363,9 +363,9 @@ function caseUI(){
  case 'pumpResult':
   el.caption.textContent=state.rescue==='valve'?'Rook shuts the inlet, then helps Bell across. His satchel stays above the water.':state.rescue==='pull'?'Rook pulls Bell onto the walkway. His satchel drops into the torrent.':state.choice==='person'?'Nell throws a line. Rook and Nell haul Bell clear, but the water takes his satchel.':'Bell leaps as the platform breaks. Rook catches his sleeve. His satchel vanishes into the flood.';rewindActions();break;
  case 'pumpTruth':
-  el.caption.textContent=state.rescue==='valve'?(state.officeLooked&2?'The dry ledger bears Vale\'s signature, and under every entry a second set of initials Bell does not know. Rook does: H.A., from the memo on his own case board. The locked room was meant to silence him.':'The dry ledger bears Vale\'s signature, and under every entry a second set of initials Bell does not know: H.A. The city\'s emergency batteries were sold. The locked room was meant to silence him.'):'Bell: "Vale sold the emergency batteries. When I confronted him, he locked me in. The proof was in that satchel. I will say it in court."';
+  el.caption.textContent=(state.rescue==='valve'?(state.officeLooked&2?'The dry ledger carries Vale\'s signature, and under every entry initials Bell does not know. Rook does: H.A., from the commendation on his own case board. ':'The dry ledger carries Vale\'s signature, and under every entry a second set of initials, H.A., that Bell does not know. ')+'Bell: "Forty years on this route. I know which lamps were never meant to come back on. I kept this instead of bringing it to your floor, because I did not know which desk up there was safe."':'Bell: "Forty years on this route. I know which lamps were never meant to come back on. Vale sold them, and when I faced him with it he locked me in. The ledger was in that satchel; I kept it off your floor because I did not know which desk was safe. I will say it in court."');
   button('[TAKE BELL TO THE ROOF]',()=>enter('roofEntry'));break;
- case 'roofEntry':el.caption.textContent='Rook brings Bell up the service stair. The city opens beneath them. Flying traffic passes between the towers; a medic answers the roof radio.';break;
+ case 'roofEntry':el.caption.textContent='Rook: "Bell is breathing, and Vale does not know it yet, but that will not last the hour." On the roof the city opens beneath them: the towers uptown blazing, the low streets dark. Ines Okafor, a city medic, is waiting by the roof radio with a blanket.';break;
  case 'roofQuiet':
   el.caption.textContent='Bell is safe with the medic. Far below, a red car pulls away from the station forecourt and heads west under the elevated road, toward the market and the Filament\'s sign. The last tram of the night is crossing the dark district the same way.'+(bandBusy()?' The roof radio is full of Rook\'s own call for the courier; nothing else is getting through.':nellWary()?' Nell stands at the far parapet and does not come over.':'');
   roofActions();break;
@@ -375,13 +375,13 @@ function caseUI(){
   if(state.choice==='person'&&!nellWary())button('[ASK NELL ABOUT THE ORDER]',()=>enter('roofConfession'));
   roofActions();break;
  case 'roofConfession':
-  el.caption.textContent='Nell: "I forged the maintenance call. Bell was the only person who could prove the batteries were missing. I wanted Vale exposed. I did not know he would trap him." Rook records the confession.';
+  el.caption.textContent='Nell: "I wrote the maintenance call myself. Nobody reads a lamplighter\'s complaint, but a job logged at the station puts Bell\'s name beside Vale\'s order. I wanted Vale on paper. I did not think about the water." Rook writes it down.';
   roofActions();break;
- case 'clubEntry':el.caption.textContent=state.market==='cut'?'Vale\'s red car sits in Vine Alley. Inside: neon, velvet, a stage, a bar, and nobody looks up. Rook comes in by the back; Krane is already at the booth.':'Vale\'s red car sits outside The Filament. Inside: neon and velvet, a stage, a long bar, and tables full of people who do not look up.';break;
+ case 'clubEntry':el.caption.textContent='Rook: "Vale is in there, spending what Bell\'s lamps were worth. I go in alone, and every table is his." '+(state.market==='cut'?'Vale\'s red car sits in Vine Alley. Inside: neon, velvet, a stage, a bar, and nobody looks up. Rook comes in by the back; Krane is already at the booth.':'Vale\'s red car sits outside The Filament. Inside: neon and velvet, a stage, a long bar, and tables full of people who do not look up.');break;
  // The back booth: Vale has a face and a line before the bottle. Showing him the order is texture with a price (half a second
  // at the bottle, Krane already up); his answer is typed here, where it is said, and the windup keeps its ten words.
  case 'clubBooth':
-  el.caption.textContent=state.shown?'Rook puts order 7731 on the table. Vale reads his own signature and does not deny it. "Reserve batteries. Signed. Nobody reads a maintenance order." Krane is already on his feet.':state.faced?'Vale does not get up. "Twice in one night, Rook. You are still on the wrong floor." Krane\'s hand is on a bottle.':'Vale does not get up. "Rook. You are on the wrong floor for this." Krane\'s hand is on a bottle.';
+  el.caption.textContent=state.shown?'Rook puts order 7731 on the table. Vale reads his own signature and does not deny it. "Reserve batteries. Signed. Nobody reads a maintenance order." He slides it back. "Least of all you, Rook. You have countersigned a hundred of mine." Krane is already on his feet.':state.faced?'Vale does not get up. "Twice in one night, Rook. You are still on the wrong floor. Go back to your desk and stamp something." Krane\'s hand is on a bottle.':'Vale does not get up. "Rook. You are on the wrong floor for this. Go back to your desk and stamp something." Krane\'s hand is on a bottle.';
   if(state.shown)button('[STAND YOUR GROUND]',()=>enter('clubFace'));
   else{if(orderRead())button('[SHOW HIM ORDER 7731]',()=>{state.shown=true;addClue('Vale, shown order 7731 at The Filament, did not deny signing it. His words: "Nobody reads a maintenance order."');ui();});button('[SAY NOTHING]',()=>enter('clubFace'));}
   break;
@@ -390,7 +390,7 @@ function caseUI(){
   promptUI('Duck under the bottle, or vault the bar and cut Krane off.',[['[1] DUCK','down'],['[2] VAULT THE BAR','up']]);break;
  case 'clubResult':
   el.caption.textContent=state.club==='duck'?'The bottle bursts on the neon behind Rook. Vale is already through the back door and into his car.':state.club==='vault'?'Rook goes over the bar and lands between Krane and the booth. Vale\'s chip case spills across the table. Rook pockets one chip and follows him out.':state.rescue==='valve'?'The bottle takes Rook on the temple and the carpet comes up to meet him. Krane goes through his coat, says "Sit down, detective. The set is not over," and follows Vale out with Bell\'s ledger in his jacket.':'The bottle takes Rook on the temple and the carpet comes up to meet him. Krane stands over him long enough to say "Sit down, detective. The set is not over," and follows Vale out.';rewindActions();break;
- case 'chaseEntry':el.caption.textContent='The patrol car is in Vine Alley with the keys in, as dispatch promised. Vale\'s red tail lights race ahead. The empty street gives way to dense elevated traffic.';break;
+ case 'chaseEntry':el.caption.textContent='Rook: "If Vale reaches the towers tonight, nobody on our floor will ever bring him back down." The patrol car is in Vine Alley with the keys in, as dispatch promised. Vale\'s red tail lights race ahead into the elevated traffic.';break;
  case 'chaseQteA':
   promptUI('Freight in the lane. Brake and lose ground, or dive right.',[['[1] BRAKE','down'],['[2] DIVE RIGHT','right']]);break;
  case 'chaseBank':el.caption.textContent=state.firstMove==='dodge'?'Rook swings right and surges past the carrier. Vale is still within reach.':state.firstMove==='brake'?'The patrol car falls back under braking. Rook needs an interception route.':'The patrol car clips the carrier and fishtails. Rook recovers, but Vale has opened a long gap.';rewindActions();break;
@@ -399,12 +399,12 @@ function caseUI(){
   promptUI(state.gap===0?'The bridge is lifting. Follow Vale over, or take the lower ramp.':(state.radio?'Heddy on the channel: "Whoever you are chasing, do not follow him over my gap." ':'The bridge is lifting. ')+'Vale is too far ahead. Take the ramp.',[['[1] TAKE THE LOWER RAMP','left'],['[2] FOLLOW OVER THE GAP','up']]);break;
  case 'chaseFinish':
   el.caption.textContent=state.caught?'The patrol car clears the gap. Rook forces Vale to stop at the basin exit, under the lit windows of Substation Nine.':state.pursuit==='late'?'Rook stands on the brakes and the patrol car meets the rising deck at walking pace. Vale\'s lights cross the far span and drop toward the basin. Rook goes down to Substation Nine on foot, under the lit windows across the water.':'The gap is already too wide. Rook aborts the jump and brakes hard. Vale gets away toward the basin, where Substation Nine is lit at one in the morning.';rewindActions();break;
- case 'tunnelEntry':el.caption.textContent='The service ramp drops below the road into the storm drains. Vale\'s tail lights bounce off wet brick, and the sound of two engines fills the tunnel.';break;
+ case 'tunnelEntry':el.caption.textContent='Rook: "Lose him down here and he comes up anywhere he likes." The service ramp drops below the road into the storm drains. Vale\'s tail lights bounce off wet brick, and the sound of two engines fills the tunnel.';break;
  case 'tunnelQte':
   promptUI(state.radio?'Heddy said the left channel reaches the basin first. Vale goes right.':'The drain forks. Vale goes right, under the canal gate.',[['[1] FOLLOW RIGHT','right'],['[2] CUT LEFT','left']]);break;
  case 'tunnelFinish':
   el.caption.textContent=state.caught?(state.tunnel==='left'?'Rook takes the maintenance channel and bursts from the basin outfall ahead of Vale. The red car stops with nowhere left to go, under the lit windows of Substation Nine.':'Rook stays on Vale\'s lights through the right branch and forces him against the canal gate. Across the basin, Substation Nine is lit at one in the morning.'):state.tunnel==='late'?'Rook brakes at the fork. Both branches are dark. Vale is gone, but every drain here ends at the basin, and the basin is lit by Substation Nine.':state.tunnel==='left'?'The maintenance channel ends at a locked gate. By the time Rook backs out, Vale is gone. The outfall beyond opens onto the basin and Substation Nine\'s lit windows.':'Vale has too much road. His lights vanish under the canal gate, toward the basin and the lit windows of Substation Nine.';rewindActions();break;
- case 'canalEntry':el.caption.textContent=state.pursuit==='stay'?'Rook stayed with Bell and escorted him to the canal-side medics. Dawn catches the windows across the water.':state.caught?'Vale is in custody. Rook returns to Bell as the first light reaches the canal.':'Vale escaped tonight. Rook returns to Bell, who is waiting beside the canal with the medics.';break;
+ case 'canalEntry':el.caption.textContent='Rook: "I went out for one missing man. Whatever else tonight cost, he is coming home." '+(state.pursuit==='stay'?'Rook stayed with Bell and escorted him to the canal-side medics. Dawn catches the windows across the water.':state.caught?'Vale is in custody. Rook returns to Bell as the first light reaches the canal.':'Vale escaped tonight. Rook returns to Bell, who is waiting beside the canal with the medics.');break;
  case 'canalEnd':{
   const ending=endingFor();
   el.caption.textContent=typeof ending.closing==='function'?ending.closing():ending.closing;

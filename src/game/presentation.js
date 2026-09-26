@@ -101,9 +101,24 @@ function routeSteps(){
  if(state.dead)steps.push(coldSteps[state.dead]);
  return steps.filter(Boolean);
 }
-// Persons of interest: the first line whose condition holds, in the beat sheet's order.
+// The case as Rook understands it at this point in the night: the file's first line, derived from how far the story has come.
+function caseLine(){
+ const at=reached,chase=pursuing(),named=proofHeld()&&!state.stalled;
+ if(state.dead)return 'THE CASE: gone cold. Inspector Vale signed the report.';
+ if(at('canalEnd'))return 'THE CASE: closed. '+endingFor().summary;
+ if(at('roomName'))return named?'THE CASE: Vale sold the station route\'s batteries for Halden Ashe of the Lumen Board. Both names are on the warrant.':'THE CASE: Vale sold the station route\'s batteries for someone on the Board. Only Vale\'s name is on the warrant.';
+ if(at('roomEntry'))return 'THE CASE: Vale sold the reserve batteries for the Board and locked Bell in to keep it quiet. Who signed above him?';
+ if(chase&&at('subManifest'))return 'THE CASE: Vale sold the reserve batteries for the Board. The manifest names Commissioner Halden Ashe above him.';
+ if(at('pumpTruth'))return 'THE CASE: Vale sold the reserve batteries and locked Bell in to keep it quiet.';
+ if(at('pumpFind'))return 'THE CASE: Bell is alive. He says Inspector Vale locked him in.';
+ if(state.theory)return {vale:'THE CASE: Rook thinks Inspector Vale locked Bell under North Station.',nell:'THE CASE: Rook thinks the courier locked Bell under North Station.',board:'THE CASE: Rook thinks the Lumen Board put Bell under North Station.',none:'THE CASE: Bell is under North Station. Rook has no theory who put him there.'}[state.theory];
+ if(at('evidence'))return state.choice==='person'?'THE CASE: Bell is alive in Pump Room 4, under the closed North Station.':'THE CASE: Bell was last logged at Pump Room 4, under the closed North Station.';
+ if(at('brief'))return 'THE CASE: Ivo Bell is missing, and a stranger is carrying his lantern.';
+ return 'THE CASE: A lamplighter is missing and his street is dark.';
+}
+// Persons of interest: the first line whose condition holds, in the beat sheet's order, under the case line.
 function boardEntries(){
- const at=reached,entries=[];
+ const at=reached,entries=[caseLine()];
  if(state.dead){
   entries.push(state.dead==='pump'?'DETECTIVE ROOK, Night Division: found Bell alive, and could not keep him that way.':'DETECTIVE ROOK, Night Division: killed on duty. Report signed by Inspector Vale.');
   entries.push(state.dead==='pump'?'IVO BELL, lamplighter: drowned in Pump Room 4. Report signed by Inspector Vale.':at('roofEntry')?'IVO BELL, lamplighter: safe with the medic.':'IVO BELL, lamplighter: found alive in Pump Room 4.');
@@ -147,13 +162,13 @@ function reflexes(){
 // the Board's ending stands above the stay route so an arrest in Vale's own building with the dry ledger reaches it.
 const endings=[
  {id:'cold',name:'THE CASE GOES COLD',when:()=>state.dead!=='',closing:'',summary:'The case went cold. Vale signed the report.'},
- {id:'board',name:'LIGHTS ON THE BOARD',when:()=>state.caught&&proofHeld()&&!state.stalled,closing:'Bell is alive. Vale is in custody, and the name above his is on the warrant. As the station lamps go dark, this time it is only because morning has arrived.',summary:'Vale arrested; Halden Ashe of the Lumen Board named on the paper Rook kept dry.'},
- {id:'home',name:'THE LAMPLIGHTER HOME',when:()=>state.pursuit==='stay',closing:'Bell is alive, and his testimony is on record. Vale walked out of his own building at dawn with Rook\'s eyes on his back. Rook brought the missing man home, and the street will be lit tomorrow because Nell knows the route.',summary:'Rook stayed with Bell. Vale is at large; the search is a warrant now.'},
+ {id:'board',name:'LIGHTS ON THE BOARD',when:()=>state.caught&&proofHeld()&&!state.stalled,closing:'Bell is alive. Vale is in custody, and the name above his is on the warrant, in ink that stayed dry. The station route gets its batteries back. As the lamps go dark along the canal, this time it is only because morning has arrived.',summary:'Vale arrested; Halden Ashe of the Lumen Board named on the paper Rook kept dry.'},
+ {id:'home',name:'THE LAMPLIGHTER HOME',when:()=>state.pursuit==='stay',closing:'Bell is alive, and his testimony is on record. Vale walked out of his own building at dawn with Rook\'s eyes on his back. Rook brought the missing man home: the first file in years he has closed by reading it. The street will be lit tomorrow because Nell knows the route.',summary:'Rook stayed with Bell. Vale is at large; the search is a warrant now.'},
  // Closings that vary with the night are functions: the booth's words in Rook's notebook, Krane's silence, the courier taken.
- {id:'word',name:'WORD AGAINST WORD',when:()=>state.caught,closing:()=>'Bell is alive. Vale is in custody, and it is Bell\'s word against a Night Division inspector\'s. The lamps go out along the canal because the sun is up'+(state.shown?', and Vale\'s own words about the order are in Rook\'s notebook. It will have to be enough.':'. It will have to be enough.'),summary:'Vale arrested on Bell\'s testimony. Nothing on paper names the Board.'},
- {id:'krane',name:'THE BODYGUARD TALKS',when:()=>!state.caught&&kranePinned(),closing:()=>state.stalled?'Bell is alive. Vale is gone, and Krane, in a splint in the room next to Vale\'s office, has stopped talking until somebody offers him a deal. The lamps go dark along the canal; morning has come.':'Bell is alive. Vale is gone, but his bodyguard is in a splint in the room next to Vale\'s office, and Krane has begun to talk. The lamps go dark along the canal; morning has come.',summary:'Vale escaped. Krane arrested at Substation Nine; his statement opens the Board.'},
- {id:'paper',name:'THE PAPER TRAIL',when:()=>!state.caught&&proofHeld(),closing:'Bell is alive. Vale is at large, but the paper is dry and it names the Board. The warrant has two names on it, and the lamps go dark because it is morning.',summary:'Vale escaped. The signed paper names Vale and Ashe; the warrant is out.'},
- {id:'dark',name:'A VOICE IN THE DARK',when:()=>true,closing:()=>state.choice==='missed'?'Bell is alive. Nell Marrow is not found. Vale remains at large, the hall is burned, and the man who signed for him is a set of initials. One missing-person case is closed and another is open; the warrant is just beginning.':'Bell is alive. Vale remains at large, the hall is burned, and the man who signed for him is a set of initials. The missing-person case is closed; the warrant is just beginning.',summary:'Vale escaped with everything but Bell. Only Bell\'s voice remains.'}
+ {id:'word',name:'WORD AGAINST WORD',when:()=>state.caught,closing:()=>'Bell is alive. Vale is in custody, and it is Bell\'s word against a Night Division inspector\'s. The name above Vale\'s is still a set of initials, and the batteries are still uptown. The lamps go out along the canal because the sun is up'+(state.shown?', and Vale\'s own words about the order are in Rook\'s notebook. It will have to be enough.':'. It will have to be enough.'),summary:'Vale arrested on Bell\'s testimony. Nothing on paper names the Board.'},
+ {id:'krane',name:'THE BODYGUARD TALKS',when:()=>!state.caught&&kranePinned(),closing:()=>state.stalled?'Bell is alive. Vale is gone, and Krane, in a splint in the room next to Vale\'s office, has stopped talking until somebody offers him a deal. The man who turned the key on Bell will name who paid for it, at a price. The lamps go dark along the canal; morning has come.':'Bell is alive. Vale is gone, but his bodyguard is in a splint in the room next to Vale\'s office, and Krane has begun to talk. The man who turned the key on Bell is naming who paid for it. The lamps go dark along the canal; morning has come.',summary:'Vale escaped. Krane arrested at Substation Nine; his statement opens the Board.'},
+ {id:'paper',name:'THE PAPER TRAIL',when:()=>!state.caught&&proofHeld(),closing:'Bell is alive. Vale is at large, but the paper is dry and it names the Board: Vale signed it, and this time somebody read it back. The warrant has two names on it, and the lamps go dark because it is morning.',summary:'Vale escaped. The signed paper names Vale and Ashe; the warrant is out.'},
+ {id:'dark',name:'A VOICE IN THE DARK',when:()=>true,closing:()=>state.choice==='missed'?'Bell is alive. Nell Marrow is not found. Vale remains at large, the hall is burned, and the man who signed for him is a set of initials. The low streets will be dark again tonight. One missing-person case is closed and another is open; the warrant is just beginning.':'Bell is alive. Vale remains at large, the hall is burned, and the man who signed for him is a set of initials. The low streets will be dark again tonight, and Rook will read every page that crosses his desk. The missing-person case is closed; the warrant is just beginning.',summary:'Vale escaped with everything but Bell. Only Bell\'s voice remains.'}
 ];
 function endingFor(){return endings.find(e=>e.when());}
 function endingId(){return endingFor().id;}
