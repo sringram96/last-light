@@ -8,11 +8,17 @@ function memoryStorage(){const values=new Map();return{values,getItem:key=>value
 // {width,height} (the picture area's clientWidth/clientHeight) make layout() run the fill rule instead; without them the
 // harness has no stage and resize() keeps the original rule.
 function game({width=320,reduced=false,storage=memoryStorage(),script,innerWidth,innerHeight,stage}={}){
- let callback,clock=0,layoutCb=()=>{},draws=[];
+ let callback,clock=0,layoutCb=()=>{};
+ // The canvas as the game leaves it: glyphs indexed by row, so a rectangle clears what is under it and a glyph drawn on
+ // a cell replaces what was there, as on a real canvas that is not cleared between frames.
+ let rows=new Map();
+ const paintCell=d=>{let r=rows.get(d[2]);if(!r){r=new Map();rows.set(d[2],r);}r.set(d[1],d);};
+ const clearRect=(x,y,w,h)=>{const e=.001;for(const [ry,r] of rows){if(ry<y-e||ry>=y+h-e)continue;for(const rx of r.keys())if(rx>=x-e&&rx<x+w-e)r.delete(rx);}};
+ const drawsNow=()=>{const out=[];for(const r of rows.values())for(const d of r.values())out.push(d);return out;};
  // Every listener registered for an event runs, in order, so the runtime's separate keydown and pointer listeners coexist.
  const listen=function(k,f){const l=this.listeners[k]||(this.listeners[k]=Object.assign(e=>{for(const g of l.fns.slice())g(e);},{fns:[]}));l.fns.push(f);};
  const element=()=>({style:{},attrs:{},listeners:{},children:[],disabled:false,hidden:false,textContent:'',setAttribute(k,v){this.attrs[k]=v},getAttribute(k){return this.attrs[k]},addEventListener:listen,replaceChildren(){this.children=[]},appendChild(e){this.children.push(e)},click(){if(!this.disabled)this.listeners.click?.({timeStamp:clock})},focus(){},contains(){return true}});
- const context={font:'',fillStyle:'',setTransform(){},fillRect(){draws=[]},fillText(g,x,y){const w=parseFloat(this.font)*.6;for(let i=0;i<g.length;i++)draws.push([g[i],x+i*w,y,this.fillStyle,this.font])}};
+ const context={font:'',fillStyle:'',setTransform(){},fillRect(x,y,w,h){clearRect(x,y,w,h)},fillText(g,x,y){const w=parseFloat(this.font)*.6;for(let i=0;i<g.length;i++)if(g[i]!==' ')paintCell([g[i],x+i*w,y,this.fillStyle,this.font])}};
  // The canvas reports a client rectangle at the origin, so pointer coordinates are CSS pixels of the picture (dpr 1).
  const canvas={...element(),clientWidth:width,width,height:0,getContext:()=>context,getBoundingClientRect(){return{left:0,top:0,width:this.clientWidth,height:this.height};}};
  const names=['actions','caption','phase','timer','pause','timing','mono','journal','clues','outcome','chapter','reel-actions','reel','menu','card','said','route','board','records','records-box','score','sound','picture','card-slot','file','full','drawer','more'];
@@ -24,7 +30,9 @@ function game({width=320,reduced=false,storage=memoryStorage(),script,innerWidth
  const document={getElementById:()=>root,createElement:element,hidden:false,listeners:{},addEventListener:listen};
  const window={matchMedia:()=>({matches:reduced}),devicePixelRatio:1};
  if(innerWidth!==undefined)window.innerWidth=innerWidth;if(innerHeight!==undefined)window.innerHeight=innerHeight;
- const environment={document,localStorage:storage,window,requestAnimationFrame:f=>{callback=f},ResizeObserver:class{constructor(f){layoutCb=f}observe(){layoutCb()}},console};
+ // The game's clock is the harness clock, so frame pacing never depends on how fast this machine renders: a run is the
+ // same frames every time.
+ const environment={document,localStorage:storage,window,performance:{now:()=>clock},requestAnimationFrame:f=>{callback=f},ResizeObserver:class{constructor(f){layoutCb=f}observe(){layoutCb()}},console};
  vm.runInNewContext(script||fs.readFileSync(path.join(__dirname,'../dist/game.js'),'utf8'),environment);
  const audit=()=>JSON.parse(JSON.stringify(root.cinemaAudit()));
  const click=(part,group='actions')=>{const button=elements['.lc-'+group].children.find(b=>b.textContent.includes(part));assert(button,`Missing ${group} action: ${part}`);button.click();};
@@ -42,6 +50,6 @@ function game({width=320,reduced=false,storage=memoryStorage(),script,innerWidth
  const cueCentre=dir=>{const l=audit().labels.find(r=>r.dir===dir);assert(l,`No ${dir} cue in the frame`);return centre(l);};
  // The centre of an examine marker's rectangle in a look-around, by the spot's id.
  const spotCentre=id=>{const l=audit().labels.find(r=>r.spot===id);assert(l,`No ${id} marker in the frame`);return centre(l);};
- return{audit,click,run,next,key,pointer,tap,swipe,cueCentre,spotCentre,storage,canvas,root,document,window,elements,frame:()=>JSON.parse(JSON.stringify(draws)),resize:w=>{canvas.clientWidth=w;layoutCb()},layout:(w,h)=>{const p=elements['.lc-picture'];if(w)p.clientWidth=w;if(h)p.clientHeight=h;layoutCb()},phase:p=>assert.equal(audit().state.phase,p)};
+ return{audit,click,run,next,key,pointer,tap,swipe,cueCentre,spotCentre,storage,canvas,root,document,window,elements,frame:()=>JSON.parse(JSON.stringify(drawsNow())),resize:w=>{canvas.clientWidth=w;layoutCb()},layout:(w,h)=>{const p=elements['.lc-picture'];if(w)p.clientWidth=w;if(h)p.clientHeight=h;layoutCb()},phase:p=>assert.equal(audit().state.phase,p)};
 }
 module.exports={game,memoryStorage};

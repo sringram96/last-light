@@ -3,7 +3,7 @@
 const root=document.getElementById('last-light-cinema'), canvas=root.querySelector('canvas'), ctx=canvas.getContext('2d');
 const el=Object.fromEntries(['actions','caption','phase','timer','pause','timing','mono','journal','clues','outcome'].map(k=>[k,root.querySelector('.lc-'+k)]));
 const reduce=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-let W=168,H=66,cw=4.2,ch=7.2,dpr=1,fx=100,fy=60,zbuf,chars,ink,frame=0,lastFrame=0,lastTime=0,visible=true;
+let W=168,H=66,cw=4.2,ch=7.2,dpr=1,fx=100,fy=60,zbuf,chars,ink,owner,zexact,frame=0,lastFrame=0,lastTime=0,visible=true;
 const camera={x:-.8,y:2.05,z:-5,yaw:.035,pitch:.085};
 const state={t:0,paused:false,mono:false,travel:0,moving:false,phase:'brief',event:0,watched:false,choice:'',untimed:reduce,clues:[],wrong:false};
 let keys=[],transitionFrom={...camera};
@@ -17,6 +17,9 @@ const mix=(a,b,t)=>a+(b-a)*t;
 const smooth=t=>t*t*(3-2*t);
 const glyphs='.,:;=+xX%#@';
 const surfaces=[],lamps=[];
+// The lamps whose pools could light something in front of the camera this frame (render() fills it); shading loops over
+// these instead of every lamp in the set.
+let litLamps=lamps;
 function quad(a,b,c,d,mat,n){surfaces.push({v:[a,b,c,d],mat,n});}
 function box(x0,y0,z0,x1,y1,z1,mat){
 quad([x0,y0,z0],[x1,y0,z0],[x1,y1,z0],[x0,y1,z0],mat,[0,0,-1]);
@@ -66,7 +69,7 @@ function shade(mat,n,x,y,z,depth){
    if(kind==='paving'){lum=.5+grain*.15;g=(fract(x*1.7)<.08||fract(z*1.2)<.08)?'=':'.';}
    if(kind==='road'&&(Math.abs(Math.abs(x)-1.0)<.055||Math.abs(Math.abs(x)-2.4)<.055)){hue=6;lum=.95;g='|';}
    if(kind==='road'&&Math.abs(z-7)<1.25&&Math.abs(x)<4.5&&fract(x*.7)<.42){hue=6;lum=.68;g='=';}
-   for(let i=0;i<lamps.length;i++){const l=lamps[i],d=(x-l[0])**2+(z-l[1])**2;if(d<30){const a=(1-d/30);if(a>.28){hue=2;lum=Math.max(lum,.32+a*.53);if(grain>.65)g='=';}}}
+   for(let i=0;i<litLamps.length;i++){const l=litLamps[i],d=(x-l[0])**2+(z-l[1])**2;if(d<30){const a=(1-d/30);if(a>.28){hue=2;lum=Math.max(lum,.32+a*.53);if(grain>.65)g='=';}}}
    if(kind==='road'){
      const ripple=.3*Math.sin(z*4.2+x*3.5+state.t*.75),stripe=Math.sin(x*2.7+z*.38+ripple);
      if(stripe>.2&&Math.abs(x)>2.6&&Math.abs(x)<4.6){hue=x<0?1:4;lum=.42+.37*stripe;g=grain>.55?'=':'-';}
@@ -109,17 +112,20 @@ function shade(mat,n,x,y,z,depth){
  const level=clamp(Math.round(lum*14),0,19);
  return[g,hue*20+level];
 }
-function triangle(a,b,c,mat,n){
+// A cell remembers which surface drew it (its index in the set) and that surface's exact depth, so a surface drawn out of
+// the set's order settles a near tie exactly as the in-order draw would have (a later surface wins only if it is nearer
+// than the stored single-precision depth).
+function triangle(a,b,c,mat,n,id=0){
  const area=(b.x-a.x)*(c.y-a.y)-(b.y-a.y)*(c.x-a.x);if(Math.abs(area)<.0001)return;
  const minX=clamp(Math.floor(Math.min(a.x,b.x,c.x)),0,W-1),maxX=clamp(Math.ceil(Math.max(a.x,b.x,c.x)),0,W-1),minY=clamp(Math.floor(Math.min(a.y,b.y,c.y)),0,H-1),maxY=clamp(Math.ceil(Math.max(a.y,b.y,c.y)),0,H-1);
  const ia=1/a.z,ib=1/b.z,ic=1/c.z;
  for(let y=minY;y<=maxY;y++)for(let x=minX;x<=maxX;x++){
    const xx=x+.5,yy=y+.5,u=((b.x-xx)*(c.y-yy)-(b.y-yy)*(c.x-xx))/area,v=((c.x-xx)*(a.y-yy)-(c.y-yy)*(a.x-xx))/area,w=1-u-v;
    if(u<-.00001||v<-.00001||w<-.00001)continue;
-   const inv=u*ia+v*ib+w*ic,depth=1/inv,idx=y*W+x;if(depth>=zbuf[idx])continue;
+   const inv=u*ia+v*ib+w*ic,depth=1/inv,idx=y*W+x,o=owner[idx];if(o!==0x7fffffff&&(id>=o?depth>=zbuf[idx]:zexact[idx]<Math.fround(depth)))continue;
    const aa=u*ia*depth,bb=v*ib*depth,cc=w*ic*depth;
    const p0=a.w[0]*aa+b.w[0]*bb+c.w[0]*cc,p1=a.w[1]*aa+b.w[1]*bb+c.w[1]*cc,p2=a.w[2]*aa+b.w[2]*bb+c.w[2]*cc;
-   const s=shade(mat,n,p0,p1,p2,depth);if(!s)continue;zbuf[idx]=depth;chars[idx]=s[0];ink[idx]=s[1];
+   const s=shade(mat,n,p0,p1,p2,depth);if(!s)continue;zbuf[idx]=depth;zexact[idx]=depth;owner[idx]=id;chars[idx]=s[0];ink[idx]=s[1];
  }
 }
 function pixel(x,y,z,g,k){x=Math.round(x);y=Math.round(y);if(x<0||x>=W||y<0||y>=H)return;const i=y*W+x;if(z<zbuf[i]){zbuf[i]=z;chars[i]=g;ink[i]=k;}}
