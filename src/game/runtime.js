@@ -207,10 +207,15 @@ function stillKey(){
 // picture is glyph for glyph what the cell-by-cell draw made. (Drawing a row one colour at a time, spaces between, was
 // measured slower: the canvas pays per character, spaces included.)
 let shownChars=null,shownInk=null,shownKey='',paintedFull=0;
+const repaintAll=()=>{shownChars=null;};
+canvas.addEventListener?.('contextrestored',repaintAll);document.addEventListener('visibilitychange',repaintAll);
 function paint(){
  const colors=state.mono?gray:palettes,font=(cw/.6)+'px "Liberation Mono",Consolas,monospace';
  const key=font+'|'+W+'x'+H+'|'+canvas.width+'|'+(state.mono?1:0);
- const full=key!==shownKey||!shownChars||frame-paintedFull>=60;
+ // A canvas that was resized (either side: a phone's address bar changes only the height), lost its backing while the
+ // tab was hidden, or was restored after a context loss is blank and back on its default text settings, whatever the
+ // key says; its baseline is the tell, since the paint always leaves it at 'top'.
+ const full=key!==shownKey||!shownChars||frame-paintedFull>=60||ctx.textBaseline!=='top';
  if(full){shownKey=key;paintedFull=frame;shownChars=new Array(W*H);shownInk=new Uint16Array(W*H);ctx.font=font;ctx.textBaseline='top';ctx.fillStyle='#03070b';ctx.fillRect(0,0,canvas.width/dpr,canvas.height/dpr);}
  let current=-1;
  const draw=(y,from,to)=>{
