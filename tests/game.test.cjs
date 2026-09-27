@@ -21,6 +21,13 @@ test('approved street render remains identical outside the character sprites at 
  }
 });
 const eyesInside=(g,width,r)=>{const a=g.audit(),cw=width/a.columns,ch=cw*1.72;return g.frame().filter(d=>d[0]==='o').map(d=>[Math.round(d[1]/cw),Math.round(d[2]/ch)]).filter(([x,y])=>x>=r.x0&&x<=r.x1&&y>=r.y0&&y<=r.y1).length;};
+// The canvas keeps the last frame and only changed cells are painted, so a canvas that the browser wiped (a resize of
+// either side, such as a phone's address bar sliding away, which also resets its text settings) must be repainted whole.
+test('a canvas wiped by a resize is repainted whole on the next frame',()=>{
+ const g=game({width:732});g.click('STREET','reel-actions');g.run(1);const whole=g.frame().length;assert(whole>1000);
+ const ctx=g.canvas.getContext('2d');ctx.fillRect(0,0,1e5,1e5);ctx.textBaseline='alphabetic';assert.equal(g.frame().length,0);
+ g.run(.2);assert(g.frame().length>whole*.95,`only ${g.frame().length} of ${whole} cells came back`);assert.equal(ctx.textBaseline,'top');
+});
 test('close-up characters keep exactly the eyes their sheet draws',()=>{
  for(const width of [320,732]){
   const g=game({width,reduced:true});g.click('NEW CASE');g.click('SKIP INTRO');g.click('FOLLOW');g.next();g.next();g.phase('qte');
