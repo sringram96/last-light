@@ -23,6 +23,8 @@ npm test         # Save-system, story-route and renderer regression checks
 
 `dist/index.html` also opens directly in a browser. Progress saving depends on the browser allowing local storage; use the local server for a consistent origin. There is no runtime backend or external asset dependency.
 
+Every push to `main` builds, tests and publishes `dist/` to GitHub Pages (`.github/workflows/pages.yml`) at `https://sringram96.github.io/last-light/`, once the repository's **Settings → Pages → Source** is set to **GitHub Actions**. Saves stay in each player's browser.
+
 ## Play
 
 - The menu opens on Rook at a rooftop ledge over the city, a cigarette going, a billboard cycling, neon flickering and a chase in the sky; it plays for as long as you take. Choose **New Case**, or **Continue Case** to load your saved checkpoint. The game fills the window; **Full Screen** (or `f`) takes the whole display.
