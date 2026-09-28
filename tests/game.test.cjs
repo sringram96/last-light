@@ -476,6 +476,15 @@ test('the picture fills the stage by the vertical field-of-view rule and keeps t
  const phone=street(game({width:375,innerWidth:375,innerHeight:812,stage:{width:375,height:599}})).audit(),phoneRef=street(game({width:375})).audit();
  assert.deepEqual([phone.grid.W,phone.grid.H],[89,70]);assert.equal(phone.grid.fx,phoneRef.grid.fx);assert.equal(phone.grid.cw,phoneRef.grid.cw);assert.equal(phoneRef.grid.H,60);
 });
+// A device that cannot draw the menu's dense grid in time leaves it within a second, straight for the grid it can draw
+// rather than a step at a time, and remembers it: the next visit on that device starts there. A fast one keeps it.
+test('a slow device leaves the dense menu grid at once and starts there next time',()=>{
+ const phone={width:375,innerWidth:375,innerHeight:812,stage:{width:375,height:599}};
+ const g=game({...phone,frameMs:150});assert.equal(g.audit().grid.density,2);
+ g.run(1);assert.equal(g.audit().grid.density,1);assert.equal(JSON.parse(g.storage.getItem('last-light/device/v1')).ceil,1);
+ assert.equal(game({...phone,storage:g.storage}).audit().grid.density,1,'the second visit starts on the grid it settled on');
+ const fast=game(phone);fast.run(3);assert.equal(fast.audit().grid.density,2);assert.equal(fast.storage.getItem('last-light/device/v1'),null);
+});
 // The menu tableau asks for a denser grid (density 2): twice the rows in the same stage height at the same field of view,
 // Rook from his portrait sheet; a story set returns to the 70-row grid, and the harness without a stage keeps the fixed rule.
 test('the menu set draws on its dense grid and a story set returns to 70 rows',()=>{

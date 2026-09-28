@@ -1,6 +1,6 @@
 // Save data is independent of the renderer and validated before it reaches the game.
 function createSaveStore(storage, validPhases) {
- const SAVE='last-light/save/v1', SETTINGS='last-light/settings/v1', RECORDS='last-light/records/v1', LEGACY='the-last-light-case-v2';
+ const SAVE='last-light/save/v1', SETTINGS='last-light/settings/v1', RECORDS='last-light/records/v1', DENSITY='last-light/device/v1', LEGACY='the-last-light-case-v2';
  const phases=new Set(validPhases);
  const booleans=['watched','wrong','decoded','radio','twist','caught','endingSeen','note','loftSeen','misread','tail','keeper','slip','stalled','faced','shown'];
  // The late values stay valid for old checkpoints; nothing new writes them. dead is the death that closed a cold case.
@@ -49,6 +49,9 @@ function createSaveStore(storage, validPhases) {
   return Object.fromEntries(Object.keys(defaults).map(key=>[key,typeof raw?.[key]==='boolean'?raw[key]:defaults[key]]));
  }
  function saveSettings(value){settingsMemory=Object.fromEntries(Object.keys(value).map(key=>[key,!!value[key]]));return put(SETTINGS,settingsMemory);}
+ // The grid density this device can draw in time, remembered apart from settings and checkpoints: 1 or 1.5, or no ceiling.
+ function readDensity(){const raw=parse(get(DENSITY));return raw?.version===1&&(raw.ceil===1||raw.ceil===1.5)?raw.ceil:Infinity;}
+ function saveDensity(ceil){return put(DENSITY,{version:1,ceil:ceil===1||ceil===1.5?ceil:null});}
  // Records outlive individual cases: which endings, discoveries and deaths the player has seen, how many cases were closed
  // and how many went cold. Keys absent from older records default to empty.
  const ids=value=>Array.isArray(value)&&value.length<=64&&value.every(s=>typeof s==='string'&&s.length>0&&s.length<=40)?[...new Set(value)]:null;
@@ -68,6 +71,6 @@ function createSaveStore(storage, validPhases) {
   put(RECORDS,{version:1,...recordsMemory});
   return copy(recordsMemory);
  }
- return{load,save,clear,readSettings,saveSettings,readRecords,record,isDurable:()=>durable};
+ return{load,save,clear,readSettings,saveSettings,readDensity,saveDensity,readRecords,record,isDurable:()=>durable};
 }
 if(typeof module!=='undefined'&&module.exports)module.exports={createSaveStore};
