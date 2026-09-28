@@ -25,7 +25,7 @@
 //  spots:[{id, bit, at:()=>[x,y,z] the marker's world point, label:'[1] THE BELL FILE', look:()=>caption when examined,
 //  shot?:()=>look(...) the camera while it is selected, ease?:seconds, clue?:string|()=>string added on the first look,
 //  enter?:()=>void on the first look, after?:bit of another spot that must be examined before this one shows}],
-//  need: examined spots before the exit shows, step:'Looked over the desk' for the route line,
+//  need: examined spots before the exit shows, gate?: a spot's bit the exit also waits on, step:'Looked over the desk' for the route line,
 //  exit:{label:'[TAKE THE STAIRS]', next:'brief', early?:{label, next, when:()=>bool} an exit offered while when() holds}).
 // examine (untimed; an object turned over in an insert shot, see examine.js: field, step, back:'<phase to return to>',
 //  model(solid,ellipsoid), marks and details [{id, bit, label, at, normal, lines, look, clue?}] read only while their face
@@ -43,3 +43,7 @@ const chipHeld=()=>state.club==='vault';
 const proofHeld=()=>ledgerHeld()||manifestHeld();
 const kranePinned=()=>state.hall==='dive';
 const pursuing=()=>state.pursuit!==''&&state.pursuit!=='stay';
+// The warrant: whom Rook named at dawn. A checkpoint from before the accusation existed ('') keeps the old reading, where
+// the name above Vale went on the paper unless the interview stalled.
+const namedAbove=()=>state.accused==='ashe'||state.accused===''&&!state.stalled;
+const namedCourier=()=>state.accused==='nell';

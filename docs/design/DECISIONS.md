@@ -92,3 +92,26 @@ The studio head: "It is not clear at all what I'm supposed to click and when. I'
 3. **A clock.** `LIVE` carries a ten-cell bar that drains with the window.
 4. **No death by accident.** A direction the beat does not offer is ignored. The only misses are the window running out and the offered move the danger punishes (the jump with a gap open). Deaths, lamps and rewinds are unchanged.
 5. **Look-arounds.** Unexamined markers are drawn at full amber, and the status line reads `TAP A [NUMBER]` until the way out opens. An examined object's status reads `DRAG TO TURN`.
+
+# Round six: the middle of the case, the warrant, and the station sharpened
+
+The studio head asked for the three things round five's list put first. All three reuse the look-around and turn-it-over mechanics.
+
+1. **Investigating in the middle of the case.** The three beats `INVESTIGATION.md` designed are built as look-arounds.
+   - **The loft:** `loftRoom` replaces the table and note beats. It has five spots, and the exit waits on the photographs (a new `gate` field on the kind), because the deduction that follows is about them.
+   - **The hall:** `subHall` comes after the rack falls. It holds the result's settled frame and has five spots.
+   - **Vale's booth:** `clubTable` runs after the vault, before the chase. It has four spots and needs one look.
+   - **Two objects to turn over.** A Filament chip (`chipExamine`) carries the club's face, `RESERVE / LOT 7731` on its back, and `PAY BEARER ONE CELL` on its rim. The manifest (`manifestExamine`, breaker route only) carries the order on its face, both signatures on its last page, and `SUBSTATION 9` on its clip.
+   - **Callbacks.** What these turn up pays off elsewhere: the lantern's lot at the map and the chip, the padlock's `K-14` at the chains, the signatures and the chip at dawn.
+2. **The warrant.** The dawn interview is no longer a quiz with a retry. Rook sees everything the night left on the table and writes the warrant once (`accused`):
+   - **Vale alone.**
+   - **Vale for Halden Ashe.** With the ledger or manifest, the Board goes on the warrant. Without them, Vale or Krane in the chair stalls the interview, or the duty magistrate strikes the name through.
+   - **Vale and the courier who forged the call.** This is offered only when the forgery is known. The Board's lawyers make the forgery the whole case, which gives the long-unreachable `A VOICE IN THE DARK` its route.
+
+   `board` needs the Board named with proof. `sharp` needs the right warrant. A checkpoint from before this round (`accused` empty) keeps the old reading.
+3. **The station, sharpened.**
+   - **Two looks, not three.** The knocking slows and stops.
+   - **The evidence points two ways.** With Nell at Rook's side, "a courier who knew the knock and the room" is on the table and she is on the theory list.
+   - **A wrong theory is drawn.** The water stands half a unit higher, lapping the walkway.
+   - **Without the tape, an `OUTLET` wheel over the inlet is a live cue.** Turning it drowns Bell. With the tape it is not a move.
+4. **Also.** The case-board look in Rook's office holds on the board instead of panning to the corridor. The departures board's marker moved onto the board so it stays in frame on landscape screens. The route line lists each search after the action it follows.

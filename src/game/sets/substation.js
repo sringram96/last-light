@@ -82,6 +82,7 @@ registerSet('substation',{
  },
  start(){return look(0,8.5,-9.6,0,2,20);},
  shot(p){
+  if(p==='subHall')return look(-1.2,5.6,29.6,1.4,1,40.5);
   if(p==='subDeath')p='subResult';
   // The dock beat holds the end of the entry crane: the door, the van and the man on the dock beyond it.
   if(p==='subEntry'||p==='subDock')return look(.4,5.5,2,0,1,44);
@@ -97,6 +98,8 @@ registerSet('substation',{
  },
  ease(p){return {subEntry:8,subDock:.5,subManifest:1.2,subDanger:.5,subResult:1.5,subDeath:1.5,subDawn:5}[p]||1.2;},
  blocking(p){
+  // The hall after the rack: the result's last frame held still, Rook on his feet to look it over.
+  if(p==='subHall'){const b=hallSettled(()=>this.blocking('subResult'));b.rook={x:-1,z:36,pose:'watch'};return b;}
   // The death is the rack's late picture (no hall value is written, so the result branches below fall through to Rook
   // under the rack) with Krane at the fallen rack's near corner for two seconds, looking down, before he goes to the van.
   const dead=p==='subDeath';if(dead)p='subResult';
@@ -138,6 +141,7 @@ registerSet('substation',{
   return{rook,courier:null,others};
  },
  geometry(p){
+  if(p==='subHall'){hallSettled(()=>this.geometry('subResult'));box(4.08,0,43.88,4.34,.09,44.14,mat('metal',2));return;}
   const dead=p==='subDeath';if(dead)p='subResult';
   state.dawn=p==='subDawn'?span(5)*.35:0;
   const dark=state.hall==='breaker'&&(p==='subResult'||p==='subDawn'),a=subLean(p),flat=a>=Math.PI/2-1e-6;
@@ -173,6 +177,7 @@ registerSet('substation',{
   if(state.caught)car(-4.4,58,1,-1.2);
  },
  labels(p){
+  if(p==='subHall')return hallSettled(()=>this.labels('subResult'));
   const dead=p==='subDeath';if(dead)p='subResult';
   // The hall's name rides the first gantry's rail (the far wall sits behind the second gantry from the entry camera);
   // LOADING is painted on the roller door, below that gantry's walkway.
@@ -190,6 +195,9 @@ registerSet('substation',{
  exit(){return [0,1.5,50];},
  preview(){Object.assign(state,{pursuit:'ramp',tunnel:'right',caught:true,keeper:true,radio:true});return 'subEntry';}
 });
+// The hall beat holds the result's settled frame: its clock is read as long past, so the rack lies flat, the van is gone
+// and the loaders have run.
+function hallSettled(f){const e=state.event;state.event=99;try{return f();}finally{state.event=e;}}
 registerPhases('substation',{
  subEntry:{kind:'cutscene',title:'08 / SUBSTATION NINE',duration:8,next:'subDock',
   enter:()=>{addClue('Substation Nine, the Lumen Board\'s reserve battery hall on the canal basin: the batteries are being loaded into a Board van by Vale\'s buyers, on the Board\'s own premises.');},
@@ -209,7 +217,7 @@ registerPhases('substation',{
  subDeath:{kind:'death',title:'UNDER THE RACK',duration:4,dead:'rack',bit:32,back:'subDanger',reset:()=>{state.hall='';},
   stinger:()=>['CRUSHED','miss',4],
   caption:()=>'The rack comes down across Rook and the cells split around him. Krane looks over the top of it once, then goes to the van.'},
- subResult:{kind:'result',title:'IN THE HALL',duration:5,next:'subDawn',
+ subResult:{kind:'result',title:'IN THE HALL',duration:5,next:'subHall',
   stinger:()=>state.hall==='dive'?['PINNED','hit']:state.hall==='breaker'?['LIGHTS OUT','hit']:['CRUSHED','miss'],
   enter:()=>{
    if(state.hall==='breaker')addClue('Recovered: the Substation Nine loading manifest, countersigned H. ASHE, Commissioner of Reserve. Written proof that the Board signed above Vale.');
@@ -218,6 +226,29 @@ registerPhases('substation',{
   },
   // The dive lands Krane's confession about Pump Room 4 while he is pinned: the seed of the krane ending.
   caption:()=>state.hall==='dive'?'Rook goes left, and the rack takes Krane\'s leg. From under it, to nobody: "I locked the door. He said the pumps would run."':state.hall==='breaker'?'Rook throws the breaker. The hall goes black and the rack lands dead, the manifest in his fist. When the emergency lamps come up, the van and Krane are gone.':'The rack takes Rook across the legs. Cells arc; the manifest is ash before he reaches it. The van\'s doors slam. When Rook drags himself clear, the hall is empty.'},
+ // The hall, looked over before the basin: what the Board left behind in its own building.
+ subHall:{kind:'investigate',title:'THE HALL',field:'subLooked',need:2,step:'Searched the hall',
+  caption:()=>state.hall==='breaker'?'The hall is dark under the red strips and the van is gone. Rook has the manifest and a minute before the Board\'s engineers arrive.':'Krane is pinned and swearing, the manifest is burning, and the loaders are gone. Rook has a minute before the Board\'s engineers arrive.',
+  spots:[
+   {id:'manifest',bit:1,at:()=>state.hall==='breaker'?[.55,1.9,36.1]:[-.45,2.6,37.1],label:()=>state.hall==='breaker'?'[1] THE MANIFEST':'[1] THE ASH',ease:3,
+    shot:()=>state.hall==='breaker'?look(-.4,1.6,34.6,.55,1.4,36.1):look(-1.8,2.4,35,-.45,2.1,37.1),
+    pick:{get label(){return state.hall==='breaker'?'[TURN THE MANIFEST OVER]':'';},phase:'manifestExamine'},
+    clue:()=>state.hall==='breaker'?'':'The manifest\'s letterhead survived the fire: LUMEN BOARD / RESERVE TRANSFER / ORDER 7731. The signatures did not.',
+    look:()=>state.hall==='breaker'?'The manifest, in Rook\'s fist. RESERVE TRANSFER / ORDER 7731, Bay 2 at 01:30. The Board\'s own paper, from the Board\'s own hall.':'What is left of the manifest on the fallen rack. The Board\'s letterhead survives in one corner, and the order number. The signatures are ash. Rook read them first.'},
+   {id:'dock',bit:2,at:()=>[-2.5,-.6,56],label:'[2] THE DOCK',ease:4,shot:()=>look(0,2.4,44,-2.5,-1,56),
+    clue:'On the dock: the van\'s tracks and a dry patch where the grey man stood under his umbrella through the whole loading.',
+    look:()=>'The dock. Twin tyre tracks where the van stood, and beside them a dry rectangle of concrete the size of an umbrella. He stood here all night and never got wet.'},
+   {id:'chains',bit:4,at:()=>[-1.9,2.2,39],label:'[3] THE CHAINS',ease:3,shot:()=>look(-.4,1.7,35.5,-1.9,1.5,39),
+    clue:()=>state.pumpLooked&1||state.padlockLooked&1?'The Substation Nine chains carry Division padlocks of the pattern used on Pump Room 4\'s door.':'',
+    look:()=>state.padlockLooked&1?'The padlocks on the left rows are Division issue, stamped K-14, like the one Rook turned over in Pump Room 4. Vale\'s office chained the Board\'s racks.':state.pumpLooked&1?'The padlocks on the left rows are Division issue, the pattern from Pump Room 4. Whoever chained the Board\'s racks is the man who locked Bell in.':'The left rows are chained and padlocked. The right rows are loose. What is chained stays the Board\'s; what is loose was sold tonight.'},
+   {id:'tin',bit:8,at:()=>[4.2,.6,44],label:'[4] THE TIN',ease:3,shot:()=>look(2,1.6,40.5,4.2,.2,44),
+    clue:'Krane\'s tin: eleven Filament chips, one lot number each, kept as insurance against Vale.',
+    look:()=>'A tobacco tin, dropped where Krane stood. Inside, eleven Filament chips, each stamped with a lot number, each a night\'s work. Somebody was keeping evidence against somebody.'},
+   {id:'breaker',bit:16,at:()=>[1.2,4.05,35.6],label:'[5] THE BREAKER',ease:3,shot:()=>look(-.2,1.8,33.6,1.2,2.2,35.6),
+    clue:'Substation Nine\'s breaker log: reserve draw every Thursday at 01:30, eleven weeks, signed A.V.',
+    look:()=>'The breaker\'s tally plate: reserve drawn every Thursday at 01:30 for eleven weeks, signed A.V. The dark streets were on a schedule.'}
+  ],
+  exit:{label:'[OUT TO THE DOCK]',next:'subDawn'}},
  subDawn:{kind:'cutscene',title:'THE BASIN',duration:5,next:'roomEntry',
   caption:()=>state.caught?'Rook walks out through the loading door. Vale watches him from the back of the patrol car. Over the basin the sky is going grey.':'Rook walks out through the loading door. The basin is empty and the sky over it is going grey. What is left of tonight will be said at Night Division.'}
 });

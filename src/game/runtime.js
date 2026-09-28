@@ -289,7 +289,7 @@ function renderInner(){
  timer();
 }
 function qteDuration(){return caseDuration();}
-function addClue(text){if(!state.clues.includes(text))state.clues.push(text);}
+function addClue(text){if(text&&!state.clues.includes(text))state.clues.push(text);}
 function button(text,fn,className=''){
  const b=document.createElement('button');b.type='button';b.className='cursor-interaction'+(className?' '+className:'');b.textContent=text;b.disabled=state.paused;
  const action=e=>{if(!state.paused&&!b.disabled)fn(e);};b.addEventListener('click',action);el.actions.appendChild(b);keys.push(action);
@@ -347,7 +347,7 @@ function deduce(where){
  state.wrong=true;ui();
 }
 function reset(){
- Object.assign(state,{t:0,paused:false,mono:state.mono,travel:0,moving:false,phase:'brief',event:0,watched:false,choice:'',untimed:state.untimed,clues:[],wrong:false,decoded:false,radio:false,twist:false,rescue:'',gap:0,pursuit:'',caught:false,distance:20,endingSeen:false,firstMove:'',phaseDistance:20,club:'',tunnel:'',reaction:0,rewinds:3,note:false,loftSeen:false,misread:false,tail:false,keeper:false,market:'',hall:'',slip:false,roomPick:'',dawn:0,deaths:0,restarts:0,dead:'',stalled:false,faced:false,shown:false,rewound:false,theory:'',officeLooked:0,lanternLooked:0,padlockLooked:0,stationLooked:0,pumpLooked:0,loftLooked:0,subLooked:0,clubLooked:0});
+ Object.assign(state,{t:0,paused:false,mono:state.mono,travel:0,moving:false,phase:'brief',event:0,watched:false,choice:'',untimed:state.untimed,clues:[],wrong:false,decoded:false,radio:false,twist:false,rescue:'',gap:0,pursuit:'',caught:false,distance:20,endingSeen:false,firstMove:'',phaseDistance:20,club:'',tunnel:'',reaction:0,rewinds:3,note:false,loftSeen:false,misread:false,tail:false,keeper:false,market:'',hall:'',slip:false,roomPick:'',dawn:0,deaths:0,restarts:0,dead:'',stalled:false,faced:false,shown:false,rewound:false,theory:'',accused:'',officeLooked:0,lanternLooked:0,padlockLooked:0,chipLooked:0,manifestLooked:0,stationLooked:0,pumpLooked:0,loftLooked:0,subLooked:0,clubLooked:0});
  transit=null;fade=1;fadeIn=0;
  setScene('street');
  Object.assign(camera,startShot);transitionFrom={...startShot};el.journal.open=false;lastTime=0;ui();render();

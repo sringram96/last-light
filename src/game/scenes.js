@@ -386,6 +386,8 @@ function caseBlocking(){
   // In the result Vale goes out through the open back door to his car and Krane follows, clearing the doorway.
   const vale=p==='clubResult'?{x:mix(9,12.6,v),z:mix(14,18.4,v),pose:'walk',who:'vale'}:{x:9,z:14,pose:'stand',who:'vale'};
   const guard=late?(le<2?{x:2,z:9.5,pose:'stand',who:'krane'}:{x:mix(2,11.4,lw),z:mix(9.5,18.2,lw),pose:'walk',who:'krane'}):['clubFace','clubQte'].includes(p)?{x:6.5,z:11,pose:'throw',who:'krane'}:p==='clubResult'?{x:mix(6.5,10.2,v),z:mix(11.5,17.2,v),pose:'walk',who:'krane'}:{x:6.5,z:11.5,pose:'stand',who:'krane'};
+  // The booth after the vault: Vale and Krane are through the back door; Rook stands at the booth, or reads where he looks.
+  if(p==='clubTable'){const s=investigateSpot()?.id;rook=s==='door'?{x:9.6,z:15,pose:'watch'}:{x:7.4,z:12.4,pose:s?'read':'watch'};others.push({x:-5,z:5.5,pose:'stand',hue:4,who:'patron'},{x:-2.5,z:10.5,pose:'stand',hue:0,who:'patron'},{x:2.6,z:7.5,pose:'stand',hue:4,who:'patron'},{x:0,y:.8,z:18.5,pose:'stage',who:'performer'});return{rook,courier,book:null,others};}
   others.push(vale,guard,{x:-5,z:5.5,pose:'stand',hue:4,who:'patron'},{x:-2.5,z:10.5,pose:'stand',hue:0,who:'patron'},{x:2.6,z:7.5,pose:'stand',hue:4,who:'patron'},{x:0,y:.8,z:18.5,pose:'stage',who:'performer'});
  }
  return{rook,courier,book:null,others};
@@ -409,6 +411,9 @@ function caseGeometry(){
   const x=-1.25,z=11.88,y=1.35;
   for(let i=0;i<12;i++){const a=i*Math.PI/6+spin,b=(i+1)*Math.PI/6+spin;quad([x+Math.cos(a)*.6,y+Math.sin(a)*.6,z],[x+Math.cos(b)*.6,y+Math.sin(b)*.6,z],[x+Math.cos(b)*.43,y+Math.sin(b)*.43,z],[x+Math.cos(a)*.43,y+Math.sin(a)*.43,z],mat('lamp',2),[0,0,-1]);}
   box(-1.3,1.29,11.85,-1.2,1.41,12,mat('metal'));
+  // The OUTLET wheel on a riser over the console: the same size, unlit, the one the tape says not to touch.
+  box(-1.33,2.3,12.05,-1.17,3.4,12.2,mat('pipe',2));
+  for(let i=0;i<12;i++){const a=i*Math.PI/6,b=(i+1)*Math.PI/6,oy=2.95;quad([x+Math.cos(a)*.5,oy+Math.sin(a)*.5,z],[x+Math.cos(b)*.5,oy+Math.sin(b)*.5,z],[x+Math.cos(b)*.36,oy+Math.sin(b)*.36,z],[x+Math.cos(a)*.36,oy+Math.sin(a)*.36,z],mat('metal',0),[0,0,-1]);}
   const valve=state.rescue==='valve',v=p==='pumpResult'&&!reduce?span(4):['pumpTruth','pumpRoom'].includes(p)?1:0;
   // The joint splits in the windup: the pipe section drops 0.6 and water pours from it until the inlet is closed.
   const jd=p==='pumpDanger'?span(2)*.6:['pumpQte','pumpResult','pumpTruth','pumpRoom','pumpDeath'].includes(p)?.6:0;
@@ -429,8 +434,10 @@ function caseGeometry(){
   else if(p!=='pumpTruth'){const fy=mix(1.95,-1.2,clamp(state.event/1.5,0,1));if(fy>-1)box(4.95,fy,17.7,5.3,fy+.45,17.85,mat('wood',2));}
   // The ledger open on the walkway between them once the story reaches it dry, and the water dropping as the inlet closes.
   if(p==='pumpTruth'&&valve)box(2.2,0,15.2,2.8,.2,15.6,mat('dispatch',6));
-  const drop=valve?v*.4:0,w0=sceneCache.pump.surfaces[0];
-  surfaces[0]=drop>0?{...w0,v:w0.v.map(q=>[q[0],q[1]-drop,q[2]])}:w0;
+  // A wrong theory at the hatch cost a minute: until the rescue the water stands half a unit higher, lapping the walkway.
+  const rise=lateDown()&&['pumpEntry','pumpFind','pumpDanger','pumpQte','pumpDeath'].includes(p)?.5:0;
+  const drop=(valve?v*.4:0)-rise,w0=sceneCache.pump.surfaces[0];
+  surfaces[0]=drop!==0?{...w0,v:w0.v.map(q=>[q[0],q[1]-drop,q[2]])}:w0;
   // The death: the platform drops below the water in the first 0.8 s; with Nell on the walkway her line runs from her hand to where Bell went under.
   const cache=sceneCache.pump.surfaces,sink=p==='pumpDeath'?2*smooth(clamp(pictureClock(1.2)/.8,0,1)):0;
   for(let i=0;i<5;i++){const s=cache[pumpPlatformIdx+i];surfaces[pumpPlatformIdx+i]=sink>0?{...s,v:s.v.map(q=>[q[0],q[1]-sink,q[2]])}:s;}
@@ -537,10 +544,10 @@ function caseGeometry(){
   // The bottle crosses the room during the prompt and bursts on the neon if it is not answered.
   const p=picturePhase();
   if(p==='clubQte'){const u=clamp(state.event/caseDuration(),0,1),x=mix(6,.8,u),y=1.4+Math.sin(u*Math.PI)*2.3,z=mix(11,9.4,u);box(x-.12,y-.2,z-.12,x+.12,y+.2,z+.12,mat('glass',1));}
-  if(p==='clubResult'&&state.club==='vault')for(let i=0;i<4;i++)box(7.4+i*.5,1,12.9+hash(i,2)*.6,7.7+i*.5,1.08,13.2+hash(i,2)*.6,mat('lamp',2));
+  if((p==='clubResult'||p==='clubTable')&&state.club==='vault')for(let i=0;i<4;i++)box(7.4+i*.5,1,12.9+hash(i,2)*.6,7.7+i*.5,1.08,13.2+hash(i,2)*.6,mat('lamp',2));
   // The back door: closed until the result, when it stands open on Vine Alley and Vale's red car beyond it.
   const w=sceneCache.club.surfaces[clubWallIdx];
-  if(p==='clubResult'){
+  if(p==='clubResult'||p==='clubTable'){
    surfaces[clubWallIdx]={...w,v:[[12,0,-4],[12,0,17],[12,6,17],[12,6,-4]]};quad([12,0,19],[12,0,22],[12,6,22],[12,6,19],mat('brick'),[-1,0,0]);quad([12,3.6,17],[12,3.6,19],[12,6,19],[12,6,17],mat('brick'),[-1,0,0]);
    box(12.05,0,18.9,14.3,3.6,19.2,mat('door',2));quad([12,0,13],[16.5,0,13],[16.5,0,23],[12,0,23],mat('road',7),[0,1,0]);
    quad([16.5,0,23],[16.5,0,12],[16.5,6,12],[16.5,6,23],mat('gap',4),[-1,0,0]);car(14.3,18.6,3,0);
@@ -597,7 +604,7 @@ function caseLabels(){
  const set=sets[sceneName],p=picturePhase();if(set){if(set.labels)set.labels(p);return;}
  if(sceneName==='station'&&p!=='stationDesk'){worldLabel([0,6.3,43.2],'PUMP ROOM 4',2);worldLabel([0,2.9,19.1],'MAINTENANCE',2);}
  // The cues: the wheel (left) and Bell (right), unlit through the windup's cuts and live on the wide prompt frame.
- if(sceneName==='pump'){if(p!=='pumpRoom')worldLabel([-2.1,1.6,12.2],'INLET',2);if(!['pumpResult','pumpTruth','pumpRoom'].includes(p))worldLabel([4.8,3.9,17.7],'BELL',2);if(p==='pumpDanger'||p==='pumpQte'){cueLabel([-1.25,2.15,11.8],'left',1);cueLabel([4.8,4.5,17.7],'right',2,!inletFirst());}}
+ if(sceneName==='pump'){if(p!=='pumpRoom'){worldLabel([-2.1,1.6,12.2],'INLET',2);worldLabel([-2.1,3.2,12.2],'OUTLET',0);}if(!['pumpResult','pumpTruth','pumpRoom'].includes(p))worldLabel([4.8,3.9,17.7],'BELL',2);if(p==='pumpDanger'||p==='pumpQte'){cueLabel([-1.25,2.15,11.8],'left',1);cueLabel([4.8,4.5,17.7],'right',2,!inletFirst());if(!state.decoded)cueLabel([-1.25,3.75,11.8],'up',3);}}
  if(sceneName==='roof'){worldLabel([0,3.2,17],'RADIO',2);if(p==='roofQuiet')worldLabel([-30,-6.9,58],'THE FILAMENT',3);}
  if(sceneName==='chase'){
   const v=chasePos.vale,f=chasePos.freight;
@@ -614,7 +621,7 @@ function caseLabels(){
  if(sceneName==='office'){const spot=investigateSpot()?.id;worldLabel([-7.4,4.5,7],'CASE BOARD',2);worldLabel([0,4.6,16.2],'NIGHT DIVISION',1);if(p!=='officeEntry')worldLabel([-.4,1.55,8.3],'I. BELL',6);if(spot==='board'){worldLabel([-7.55,2.2,5],'I. BELL',6);worldLabel([-7.55,2.0,6.2],'A. VALE',3);worldLabel([-12.8,3.9,-10.6],'VALE',0);}}
  if(sceneName==='club'){
   worldLabel([0,5.5,16],'THE FILAMENT',3);worldLabel([11.6,5.3,16.5],'NO EXIT',3);
-  if(!['clubEntry','clubQte'].includes(p)){worldLabel([9,3.4,14],'VALE',3);worldLabel([6.5,3.25,11.5],'KRANE',0);}
+  if(!['clubEntry','clubQte','clubTable'].includes(p)){worldLabel([9,3.4,14],'VALE',3);worldLabel([6.5,3.25,11.5],'KRANE',0);}
   // The cues: duck (down) at Rook's mark, vault (up) over the bar top.
   if(p==='clubFace'||p==='clubQte'){cueLabel([.5,1.85,9],'down',1);cueLabel([8.3,2,10.5],'up',2);}
  }

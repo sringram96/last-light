@@ -145,3 +145,62 @@ registerPhases('pump',{
     look:()=>'Underneath, the stores mark: OUT WED. Wednesday. Four nights ago, the night Bell went missing. Somebody drew this lock for this door.'}
   ]}
 });
+
+// 05 / THE FILAMENT. The back booth after the vault: thirty seconds while Vale's car starts in the alley. Registered here
+// beside the chip it offers. A booth that is not looked at costs nothing; the chase's first line has Vale ahead either way.
+registerPhases('club',{
+ clubTable:{kind:'investigate',title:'THE BACK BOOTH',field:'clubLooked',need:1,step:'Searched Vale\'s booth',shot:()=>look(2,2.3,8,9.5,1.3,16),
+  caption:()=>'Vale\'s car is starting in Vine Alley and the patrol car is at the kerb. Rook gives the booth thirty seconds.',
+  spots:[
+   {id:'case',bit:1,at:()=>[8.7,1.5,13.3],label:'[1] THE CHIP CASE',ease:3,shot:()=>look(6.8,1.8,11.2,8.7,1,13.3),pick:{label:'[TURN A CHIP OVER]',phase:'chipExamine'},
+    look:()=>'Vale\'s chip case, spilled across the booth. The Filament\'s chips, dozens of them, still warm from his hand.'},
+   {id:'glasses',bit:2,at:()=>[9.8,2.1,13.6],label:'[2] THE GLASSES',ease:3,shot:()=>look(7.6,1.7,11.6,9.6,1,13.6),
+    clue:'A second glass at Vale\'s booth, lipstick on the rim. Someone left the booth before Rook came in.',
+    look:()=>'Two glasses. One is Vale\'s. The other has lipstick on the rim and has not been touched since the set began. Vale was not drinking alone tonight.'},
+   {id:'phone',bit:4,at:()=>[8.2,1.2,14.6],label:'[3] THE PHONE',ease:3,shot:()=>look(6.6,1.6,12.4,8.2,.7,14.6),
+    clue:'The booth phone holds one number: the Lumen Board\'s Reserve exchange.',
+    look:()=>'A club phone under the table, one number in its memory: a Lumen Board exchange, Reserve. Rook writes it down.'},
+   {id:'door',bit:8,at:()=>[11.6,4.6,18],label:'[4] THE BACK DOOR',ease:3,shot:()=>look(8,2,12,11.85,1.8,18),
+    look:()=>'The door marked NO EXIT stands open on Vine Alley and rain. Vale\'s tail lights are already turning for the ramp.'}
+  ],
+  exit:{label:'[GO AFTER HIM]',next:'chaseEntry'}},
+ // A Filament chip turned over: the club's face, the lot on its back, and on its rim what it really pays.
+ chipExamine:{kind:'examine',title:'A FILAMENT CHIP',field:'chipLooked',step:'Turned a Filament chip over',back:'clubTable',radius:3.2,
+  caption:()=>'Rook takes one chip from the spill and turns it under the booth light.',
+  model(solid,ellipsoid){
+   ellipsoid(0,0,0,1.25,1.25,.17,{kind:'metal',hue:3});// the chip
+   ellipsoid(0,0,0,.8,.8,.2,{kind:'metal',hue:2});// its inlaid centre
+  },
+  marks:[{at:[0,.02,-.21],normal:[0,0,-1],lines:['THE','FILAMENT','100'],hue:3,level:17}],
+  details:[
+   {id:'lot',bit:2,label:'THE BACK',at:[0,0,.21],normal:[0,0,1],lines:['RESERVE','LOT 7731'],hue:6,
+    clue:'The Filament chip is stamped RESERVE / LOT 7731 on its back. The club\'s stakes are battery lots.',
+    look:()=>'On the back, stamped into the inlay: RESERVE / LOT 7731. The club does not pay out in money. It pays in the station route\'s light.'+(state.lanternLooked&4?' The same lot as the cell in Bell\'s lantern.':'')},
+   {id:'rim',bit:4,label:'THE RIM',at:[0,1.26,0],normal:[0,1,0],lines:['PAY BEARER','ONE CELL'],hue:6,marker:[0,0,-.7],
+    clue:'The chip\'s rim reads PAY BEARER ONE CELL: every chip redeems for a reserve battery.',
+    look:()=>'Around the rim, small enough to miss: PAY BEARER ONE CELL. Every chip on that table is a battery somebody\'s street went without.'}
+  ]}
+});
+// 08 / SUBSTATION NINE. The manifest turned over: the Board's header on its face, the two signatures on its last page,
+// and the hall's name stamped on its clip.
+registerPhases('substation',{
+ manifestExamine:{kind:'examine',title:'THE MANIFEST',field:'manifestLooked',step:'Turned the manifest over',back:'subHall',radius:3.6,
+  caption:()=>'Rook turns the manifest over under his torch. The hall is dark and the paper is the only dry thing in it.',
+  model(solid){
+   solid(-.85,-1.15,-.04,.85,1.15,.04,{kind:'wood',hue:2});// the board
+   solid(-.75,-1.05,-.08,.75,1.02,-.04,{kind:'paper',hue:6});solid(-.75,-1.05,.04,.75,1.02,.08,{kind:'paper',hue:6});// the first and last pages
+   solid(-.35,1.02,-.12,.35,1.26,.12,{kind:'metal',hue:0});// the clip
+  },
+  marks:[{at:[0,.62,-.09],normal:[0,0,-1],lines:['LUMEN BOARD','RESERVE TRANSFER'],hue:4,level:15}],
+  details:[
+   {id:'order',bit:1,label:'THE ORDER',at:[0,-.25,-.09],normal:[0,0,-1],lines:['ORDER 7731','BAY 2  01:30'],hue:6,
+    clue:'The Substation Nine manifest: RESERVE TRANSFER, ORDER 7731, loaded at Bay 2 at 01:30.',
+    look:()=>'The first page: RESERVE TRANSFER / ORDER 7731 / BAY 2, 01:30. The number from the station desk, loaded tonight from the Board\'s own dock.'},
+   {id:'signatures',bit:2,label:'THE SIGNATURES',at:[0,-.2,.09],normal:[0,0,1],lines:['A. VALE','H. ASHE'],hue:6,
+    clue:'The manifest\'s last page carries both signatures in ink: A. VALE, and under it H. ASHE.',
+    look:()=>'The last page, in ink, two hands: A. VALE, and under it, larger, H. ASHE, COMMISSIONER OF RESERVE. The man on the dock signed for his own light.'},
+   {id:'clip',bit:4,label:'THE CLIP',at:[0,1.27,0],normal:[0,1,0],lines:['SUBSTATION 9'],hue:6,marker:[0,0,-.55],
+    clue:'The manifest\'s clip is stamped SUBSTATION 9: the paper never left the Board\'s hall.',
+    look:()=>'Stamped on the clip: SUBSTATION 9. Hall property. This paper was never meant to leave the building.'}
+  ]}
+});

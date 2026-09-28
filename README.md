@@ -32,7 +32,7 @@ npm test         # Save-system, story-route and renderer regression checks
 - **Text under the picture means think; a flash in the picture means move.** At an action beat two framed targets (`<<<`, `>>>`, `^^^`, `vvv`) flash on the things Rook can act on, the two moves are named under the picture as buttons pointing the same way, and a bar beside `LIVE` drains with the time left. Press that arrow key (or WASD), swipe that way on the picture, tap the target or tap its button, within a window of 1.5 to 3 seconds. A direction the beat does not offer is ignored; running out of time is the miss.
 - Three **lamps** per case. Six misses are lethal: the death plays, a lamp goes out, and the night rewinds to the moment. Three are survivable with a worse story, and rewinding them costs a lamp. With no lamp left the case goes cold; restart the chapter or return to the menu.
 - **Theories.** At the hatch Rook names who he thinks locked Bell in, from the names his evidence supports. The right name costs nothing; a wrong one, or none, costs the minute it took, and suspecting the courier costs more.
-- Deductions cost a lamp on the second wrong answer, and Vale can stall the interview.
+- The street and loft deductions cost a lamp on the second wrong answer. At dawn Rook writes the warrant once: Vale alone, Vale for the man above him, or Vale and the courier who forged the call. A name the paper cannot carry is struck through or stalls the interview, and naming the courier sinks the case.
 - The header keeps the lamps and a **REFLEX** tally. The closing report names the ending, the inputs landed, deaths, restarts and a grade.
 - **Case File** shows the route taken, the persons of interest and the evidence gathered.
 - **Case Records** on the menu lists endings found (of seven), discoveries (of twenty-two) and deaths seen (of six). Records survive new cases.
@@ -49,17 +49,17 @@ A missing lamplighter, a city running on stolen reserve power, and one night to 
 
 0. **Night Division:** a skippable arrival in Rook's office, then a look around the desk: the Bell file, the case board with Vale's commendation, the dispatch log and the window, any two of them before the stairs.
 1. **Station Road:** tail the courier, choose whom or what to save, then deduce where Bell is: the station, his loft over the depot, or the hotel.
-2. **Bell's Loft:** a detour over the depot where Bell's note and his own case board explain the order, at the cost of a wrong reading.
-3. **Concourse:** three looks at the maintenance desk before the knocking takes the choice away (the order, the tape, the hatch, the departures board, a cup still warm), then a theory at the hatch. The tape shows Rook which wheel to reach for; the order is what he can put on Vale's table at The Filament; the wrong name loses the water a minute.
+2. **Bell's Loft:** a detour over the depot to look around one room: the note signed N., the route map, the photographs, the kettle and the window; then where the batteries go, at the cost of a wrong reading.
+3. **Concourse:** two looks at the maintenance desk before the knocking stops (the order, the tape, the hatch, the departures board, a cup still warm), then a theory at the hatch. The evidence points more than one way; a wrong name raises the water in the pump room, and without the tape an OUTLET wheel beside the inlet is a live, lethal choice.
 4. **Pump Room 4:** rescue Bell, then search the room he was locked in: a door bolted from outside, an inlet opened to full with its stop pin taken, four nights of knocking worn into the paint.
 5. **Rooftop:** listen to the radio, hear Nell's confession, then pursue Vale or stay with Bell.
 6. **The Last Tram:** a quiet ride across the lift bridge that decides whether Vale's man is tailing you.
 7. **Night Market:** a slip through the stalls and a keeper who saw the red car, ending in a shove and a knife.
-8. **The Filament:** the neon club where Vale's bodyguard throws a bottle. Duck, or vault the bar for the chip that ties the batteries to Vale's tables.
+8. **The Filament:** the neon club where Vale's bodyguard throws a bottle. Duck, or vault the bar and search Vale's booth before the chase: the chip case (turn a chip over for its lot and what it pays), a second glass, the phone, the back door.
 9. **Elevated Road:** the pursuit, with a lane change and a lifting bridge.
 10. **The Undercity:** the lower ramp drops into the storm drains, where a fork decides the arrest.
-11. **Substation Nine:** the loading dock where the Board's countersignature hangs on a rack, a breaker to throw, and dawn coming up across the basin.
-12. **Interview Room:** name who signed above Vale, with whoever the night left in the chair.
+11. **Substation Nine:** the loading dock where the Board's countersignature hangs on a rack, a breaker to throw, and then the hall to search: the manifest (turn it over for the signatures) or its ash, the dock, the chains, Krane's tin and the breaker's log.
+12. **Interview Room:** everything the night turned up on the table, and one warrant to write, with whoever the night left in the chair.
 13. **Canal:** an ending derived from the evidence, the witnesses, the pursuit and the name on the warrant.
 
 Six missed beats are deaths that spend a lamp and rewind the night; three are survivable with a worse story. With no lamp left the case goes cold and the chapter can be restarted. Staying with Bell on the roof skips the pursuit and reaches the interview room by the tram and the station. The case is complete and replayable; it is the foundation for a larger game, not a store-ready release.
