@@ -175,7 +175,7 @@ function geometry(){
 }
 let spriteRects=[];
 // renderMs eases down slowly so one cheap frame does not hide a slow run; lastMs is the frame just drawn.
-function render(){const t0=clockMs();renderInner();lastMs=clockMs()-t0;renderMs=Math.max(lastMs,renderMs*.85);}
+function render(){const t0=clockMs();renderInner();lastMs=clockMs()-t0;renderMs=Math.max(lastMs,renderMs*.85);avgMs=avgMs?avgMs*.8+lastMs*.2:lastMs;}
 // One surface into the grid: backface and frustum tests on its bounding sphere, then transform, clip and raster.
 function rasterSurface(s,tx,ty,kx,ky,id){
   const v=s.v,a=v[0],f=s.n[0]*(camera.x-a[0])+s.n[1]*(camera.y-a[1])+s.n[2]*(camera.z-a[2]);if(f<-.01&&s.mat.kind!=='cable')return;
@@ -448,10 +448,12 @@ let renderMs=0,lastMs=0,densityCeil=saveStore.readDensity(),overBudget=0,underBu
 // only drifts, so it is allowed a cinematic twenty-five and keeps its dense grid wherever the machine can draw it.
 const budgetMs=()=>session.menu?40:24;
 const wantedDensity=()=>Math.min(sets[sceneName]?.density||1,densityCeil);
-// The gap between drawn frames: about twice what the last frame cost, so the loop spends under half its time drawing.
-// Cheap frames run at 30 a second; expensive ones back off instead of saturating the thread, so a prompt's keypress and
-// tap are still handled at once on a slow device.
-const frameGap=()=>Math.max(33,Math.min(120,renderMs*1.7));
+// The gap between drawn frames: a fifth more than a frame usually costs, so the thread keeps room for input and the
+// browser's own drawing, and cheap frames run at 30 a second. It follows the average cost, not the slowest recent frame,
+// so one hitch does not stretch the next several gaps: an uneven cadence reads as stutter even at a good frame rate.
+// Input never waits on the gap, only on the frame being drawn, so a keypress or tap is handled at once either way.
+let avgMs=0;
+const frameGap=()=>Math.max(33,Math.min(120,avgMs*1.2));
 // A frame over budget on a dense grid lowers the density and re-sizes; the picture keeps its framing and its field of
 // view, and the cost falls with the cell count, the square of the density, so the drop goes straight to the step that
 // fits rather than one at a time.
@@ -470,13 +472,13 @@ function easeDensity(){
   if(density<=1||((!warm||lastMs<budget*2)&&++overBudget<2))return false;
   const fits=density*Math.sqrt(budget*.8/lastMs);
   densityCeil=DENSITY_STEPS.filter(s=>s<density&&s<=fits).pop()||1;
-  overBudget=0;settled=settled||raised;saveStore.saveDensity(densityCeil);renderMs=0;resize();return true;
+  overBudget=0;settled=settled||raised;saveStore.saveDensity(densityCeil);renderMs=avgMs=0;resize();return true;
  }
  overBudget=0;
  const next=DENSITY_STEPS.find(s=>s>density);
  if(!warm||settled||!next||next>wanted||densityCeil>=wanted||renderMs*(next/density)**2>budget*.8){underBudget=0;return false;}
  if(++underBudget<90)return false;
- underBudget=0;raised=true;densityCeil=next>=wanted?Infinity:next;saveStore.saveDensity(densityCeil);renderMs=0;resize();return true;
+ underBudget=0;raised=true;densityCeil=next>=wanted?Infinity:next;saveStore.saveDensity(densityCeil);renderMs=avgMs=0;resize();return true;
 }
 function stageArea(){
  if(typeof window.innerHeight!=='number'||typeof window.innerWidth!=='number')return null;
