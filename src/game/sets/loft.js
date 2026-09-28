@@ -59,7 +59,7 @@ registerSet('loft',{
    const a=look(-2.4,1.6,1.2,.5,1.2,4.5),b=look(-2,1.6,2,-2.9,2,7);
    return state.event<4?a:reduce?b:loftBlend(a,b,smooth(clamp((state.event-4)/3,0,1)));
   }
-  if(p==='loftTable')return look(-2.9,1.7,.4,-1.2,1.1,5.2);
+  if(p==='loftTable'||p==='loftRoom')return look(-2.9,1.7,.4,-1.2,1.1,5.2);
   if(p==='loftNote')return look(-.75,1.4,2.05,-.2,1.08,3);
   if(p==='loftBoard')return look(.9,1.7,3,3.5,1.9,7);
   // The man under the window: Rook's own eyes at the sill, looking down at the lamp pool on the street four units below.
@@ -69,11 +69,14 @@ registerSet('loft',{
   const a=look(-.2,1.5,4.2,0,7.5,22),b=look(0,1.5,5.6,0,7.5,22);
   return reduce?b:loftBlend(a,b,smooth(clamp((state.event-1.5)/2.5,0,1)));
  },
- ease(p){return {loftEntry:4,loftTable:4,loftNote:4,loftBoard:5,loftStair:4,loftLeave:4}[p]||1.5;},
+ ease(p){return {loftEntry:4,loftTable:4,loftRoom:3,loftNote:4,loftBoard:5,loftStair:4,loftLeave:4}[p]||1.5;},
  blocking(p){
   // Entry: in through the door and along the table to its far end, where he stands for the table beat. The note and the
   // window are Rook's own eyes (the camera stands where he does), the prints are read over his shoulder from the bench.
   const u=p==='loftEntry'&&!reduce?span(5):1;
+  // The look-around: at the table by default; the note is his own eyes, the prints are read at the bench, the window from the sill.
+  const spot=p==='loftRoom'?investigateSpot()?.id:'';
+  if(p==='loftRoom')return{rook:spot==='note'?null:spot==='photos'?{x:3.5,z:5,pose:'read'}:spot==='window'?{x:1.1,z:6.4,pose:'watch'}:{x:-1.1,z:5.2,pose:'watch'},courier:null,others:[]};
   const rook=p==='loftEntry'?{x:mix(-2.7,-1.1,u),z:mix(1.9,5.2,u),pose:u<1?'walk':'watch'}:p==='loftTable'?{x:-1.1,z:5.2,pose:'watch'}:p==='loftNote'?null:p==='loftBoard'?{x:3.5,z:5,pose:'read'}:{x:1.1,z:6.4,pose:'watch'};
   // Vale under the depot lamp on the street four units down, looking up at the lit window, for the stair beat only.
   const others=p==='loftStair'?[{x:-3,y:-4,z:12,pose:'stand',who:'vale'}]:[];
@@ -89,15 +92,36 @@ registerSet('loft',{
  },
  labels(p){
   if(p==='loftEntry')worldLabel([-2.15,1.9,-.2],'BELL',6);
-  if(p==='loftBoard'){worldLabel([2.25,1.35,6.9],'FILAMENT',3);worldLabel([3.15,1.35,6.9],'BOARD VAN',4);worldLabel([4.05,1.35,6.9],'DIVISION',0);}
+  if(p==='loftBoard'||p==='loftRoom'&&investigateSpot()?.id==='photos'){worldLabel([2.25,1.35,6.9],'FILAMENT',3);worldLabel([3.15,1.35,6.9],'BOARD VAN',4);worldLabel([4.05,1.35,6.9],'DIVISION',0);}
  },
  exit(){return [0,1.9,7.05];},
  preview(){Object.assign(state,{choice:'book',clues:['Scene preview: the dispatch entry named Pump Room 4; the lantern was stencilled BELL / DEPOT LOFT.']});return 'loftEntry';}
 });
 registerPhases('loft',{
- loftEntry:{kind:'cutscene',title:'01b / THE DEPOT LOFT',duration:7,next:'loftTable',
+ loftEntry:{kind:'cutscene',title:'01b / THE DEPOT LOFT',duration:7,next:'loftRoom',
   enter:()=>{state.loftSeen=true;},
   caption:()=>'One room over the lamp depot: a cot, a kettle still warm, route maps pinned with battery tags. Rook: "Bell kept his work up here, and I have two minutes."'},
+ // One room over the depot, looked over in any order; the way on waits on the photographs, since the deduction after is
+ // about them. (loftTable and loftNote stay for checkpoints taken before the look-around.)
+ loftRoom:{kind:'investigate',title:'ONE ROOM OVER THE DEPOT',field:'loftLooked',need:2,gate:4,step:'Searched Bell\'s loft',
+  caption:()=>'A cot, a kettle, a map on the wall and prints pinned beside it. Rook has two minutes, and Bell kept everything he knew in this room.',
+  spots:[
+   {id:'note',bit:1,at:()=>[-.2,1.4,3],label:'[1] THE NOTE',ease:3,shot:()=>look(-.75,1.4,2.05,-.2,1.08,3),
+    enter:()=>{state.note=true;card('NOTED','hit',1.6);},
+    clue:'A note in Bell\'s loft, signed N.: the maintenance call that put Bell at the station was made by someone who wanted the Board to log him there.',
+    look:()=>state.officeLooked&4?'The note, in a quick hand: "Ivo. I called it in so the Board would log you at the station. Forgive me. N." The same call Rook saw in the dispatch log, 00:17.':'The note, in a quick hand: "Ivo. I called it in so the Board would log you at the station. I did not think. Forgive me. N." Rook keeps it.'},
+   {id:'map',bit:2,at:()=>[-3.1,3.1,6.9],label:'[2] THE ROUTE MAP',ease:3,shot:()=>look(-2.9,1.9,4.6,-3.1,2,7),
+    clue:'Bell\'s route map: lamps 14 to 19 tagged RESERVE PULLED / ORDER 7731 / A.V.',
+    look:()=>'Bell\'s route map. Lamps 14 to 19 crossed out in red and tagged RESERVE PULLED / ORDER 7731 / A.V. Six lamps, six reserve cells, one order number.'+(state.lanternLooked&4?' The number on the cell in his lantern.':'')},
+   {id:'photos',bit:4,at:()=>[3.15,2.6,6.9],label:'[3] THE PHOTOGRAPHS',ease:4,shot:()=>look(.9,1.7,3,3.5,1.9,7),
+    look:()=>'Three prints. A red car at a loading bay under a neon sign, THE FILAMENT. A Lumen Board van. A man in a Division greatcoat, not looking at the camera.'},
+   {id:'kettle',bit:8,at:()=>[.7,1.9,3.4],label:'[4] THE KETTLE',ease:3,shot:()=>look(-.3,1.5,2.2,.7,1.1,3.4),
+    clue:'Someone with a key was in Bell\'s loft within the hour and did not stay.',
+    look:()=>'The kettle is warm, the mug beside it rinsed. Someone with a key was here inside the hour and did not sit down. N., or the man on the order.'},
+   {id:'window',bit:16,at:()=>[0,3.3,6.9],label:'[5] THE WINDOW',ease:4,shot:()=>look(-.2,1.5,4.2,0,7.5,22),
+    look:()=>'Through the window, the station clock: five past midnight. Bell\'s job is still open. On the street under the depot lamp, nobody yet.'}
+  ],
+  exit:{label:'[WHERE ARE THE BATTERIES GOING?]',next:'loftBoard'}},
  loftTable:{kind:'quiet',title:'THE TABLE UNDER THE LAMP',
   caption:()=>'On the table, a note under a lamp key. On the wall, Bell\'s route map: lamps 14 to 19 crossed out in red, tagged RESERVE PULLED / ORDER 7731 / A.V.',
   buttons:b=>{b('[READ THE NOTE]',()=>enter('loftNote'));b('[STUDY THE MAP AND PHOTOGRAPHS]',()=>enter('loftBoard'));}},
