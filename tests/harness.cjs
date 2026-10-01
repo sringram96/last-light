@@ -7,8 +7,9 @@ function memoryStorage(){const values=new Map();return{values,getItem:key=>value
 // width: the canvas's clientWidth (the fixed rule, as the reference test measures it). innerWidth/innerHeight and stage
 // {width,height} (the picture area's clientWidth/clientHeight) make layout() run the fill rule instead; without them the
 // harness has no stage and resize() keeps the original rule.
-function game({width=320,reduced=false,storage=memoryStorage(),script,innerWidth,innerHeight,stage}={}){
- let callback,clock=0,layoutCb=()=>{};
+// frameMs: what each drawn frame costs by the game's own clock (0 by default), for a device too slow for its grid.
+function game({width=320,reduced=false,storage=memoryStorage(),script,innerWidth,innerHeight,stage,frameMs=0}={}){
+ let callback,clock=0,layoutCb=()=>{},timings=0;
  // The canvas as the game leaves it: glyphs indexed by row, so a rectangle clears what is under it and a glyph drawn on
  // a cell replaces what was there, as on a real canvas that is not cleared between frames.
  let rows=new Map();
@@ -31,8 +32,8 @@ function game({width=320,reduced=false,storage=memoryStorage(),script,innerWidth
  const window={matchMedia:()=>({matches:reduced}),devicePixelRatio:1};
  if(innerWidth!==undefined)window.innerWidth=innerWidth;if(innerHeight!==undefined)window.innerHeight=innerHeight;
  // The game's clock is the harness clock, so frame pacing never depends on how fast this machine renders: a run is the
- // same frames every time.
- const environment={document,localStorage:storage,window,performance:{now:()=>clock},requestAnimationFrame:f=>{callback=f},ResizeObserver:class{constructor(f){layoutCb=f}observe(){layoutCb()}},console};
+ // same frames every time. The frame timer reads it in pairs around a render, so each pair is frameMs apart.
+ const environment={document,localStorage:storage,window,performance:{now:()=>clock+Math.ceil(timings++/2)*frameMs},requestAnimationFrame:f=>{callback=f},ResizeObserver:class{constructor(f){layoutCb=f}observe(){layoutCb()}},console};
  vm.runInNewContext(script||fs.readFileSync(path.join(__dirname,'../dist/game.js'),'utf8'),environment);
  const audit=()=>JSON.parse(JSON.stringify(root.cinemaAudit()));
  const click=(part,group='actions')=>{const button=elements['.lc-'+group].children.find(b=>b.textContent.includes(part));assert(button,`Missing ${group} action: ${part}`);button.click();};

@@ -174,7 +174,8 @@ function geometry(){
  return a;
 }
 let spriteRects=[];
-function render(){const t0=clockMs();renderInner();renderMs=Math.max(clockMs()-t0,renderMs*.85);}
+// renderMs eases down slowly so one cheap frame does not hide a slow run; lastMs is the frame just drawn.
+function render(){const t0=clockMs();renderInner();lastMs=clockMs()-t0;renderMs=Math.max(lastMs,renderMs*.85);avgMs=avgMs?avgMs*.8+lastMs*.2:lastMs;}
 // One surface into the grid: backface and frustum tests on its bounding sphere, then transform, clip and raster.
 function rasterSurface(s,tx,ty,kx,ky,id){
   const v=s.v,a=v[0],f=s.n[0]*(camera.x-a[0])+s.n[1]*(camera.y-a[1])+s.n[2]*(camera.z-a[2]);if(f<-.01&&s.mat.kind!=='cable')return;
@@ -436,36 +437,48 @@ const FILL_FX=180/(2*Math.tan(78*Math.PI/360)),FILL_FY=FILL_FX/1.72;
 // the scene changes. Only the fill rule reads it: without a stage (the harness) the original rule stands at density 1.
 let density=1,densityFor=1;
 // What a frame costs here, and what this device can afford. A set asks for a density; a device that cannot draw it in the
-// budget has it lowered once and keeps the lower one, so a phone is never asked to draw the menu's dense grid twice.
+// budget has it lowered and keeps the lower one, on this visit and the next, so a phone is not asked to draw the menu's dense
+// grid again.
 const hasClock=typeof performance!=='undefined'&&!!performance.now;
 const clockMs=()=>hasClock?performance.now():Date.now();
-let renderMs=0,densityCeil=Infinity,overBudget=0,underBudget=0;
+// The ceiling this device settled on last time is where it starts, so a phone that could not draw the dense grid does not
+// spend its first seconds finding that out again.
+let renderMs=0,lastMs=0,densityCeil=saveStore.readDensity(),overBudget=0,underBudget=0,raised=false,settled=false;
 // What a frame may cost before the picture is eased. A story beat is played, so it is held to a smooth thirty; the menu
 // only drifts, so it is allowed a cinematic twenty-five and keeps its dense grid wherever the machine can draw it.
 const budgetMs=()=>session.menu?40:24;
 const wantedDensity=()=>Math.min(sets[sceneName]?.density||1,densityCeil);
-// The gap between drawn frames: about twice what the last frame cost, so the loop spends under half its time drawing.
-// Cheap frames run at 30 a second; expensive ones back off instead of saturating the thread, so a prompt's keypress and
-// tap are still handled at once on a slow device.
-const frameGap=()=>Math.max(33,Math.min(120,renderMs*1.7));
-// A frame over budget on a dense grid drops the density a step and re-sizes; the picture keeps its framing and its field
-// of view, and the cost falls with the cell count.
-// The first frames of a page are its slowest (fonts, layout, a cold compile), so the picture is judged only once the
-// loop has warmed up. Three slow frames running lower the density a step; a long, comfortable run raises it back, so a
-// hitch at the door does not cost the whole session its detail.
-const WARM_FRAMES=12;
+// The gap between drawn frames: a fifth more than a frame usually costs, so the thread keeps room for input and the
+// browser's own drawing, and cheap frames run at 30 a second. It follows the average cost, not the slowest recent frame,
+// so one hitch does not stretch the next several gaps: an uneven cadence reads as stutter even at a good frame rate.
+// Input never waits on the gap, only on the frame being drawn, so a keypress or tap is handled at once either way.
+let avgMs=0;
+const frameGap=()=>Math.max(33,Math.min(120,avgMs*1.2));
+// A frame over budget on a dense grid lowers the density and re-sizes; the picture keeps its framing and its field of
+// view, and the cost falls with the cell count, the square of the density, so the drop goes straight to the step that
+// fits rather than one at a time.
+// The first frame of a page pays for fonts and is not judged; the next few pay for a cold compile, up to twice a warm
+// frame, so until the loop has warmed up only two frames running at two and a half times the budget count: that is the
+// device, not the compile, and waiting out the warm-up would show seconds of it. Once warm, a frame at twice the budget
+// is acted on at once and one just over waits for a second to agree. A long, comfortable run raises the density back if
+// the next step is predicted to fit, so a hitch at the door does not cost the whole session its detail; a drop after a
+// raise settles it, so the grid never see-saws.
+const COLD_FRAMES=1,WARM_FRAMES=12,DENSITY_STEPS=[1,1.5,2];
 function easeDensity(){
- if(!hasClock||frame<WARM_FRAMES)return false;
- if(renderMs>budgetMs()){
+ if(!hasClock||frame<COLD_FRAMES)return false;
+ const budget=budgetMs(),wanted=sets[sceneName]?.density||1,warm=frame>=WARM_FRAMES;
+ if(lastMs>budget*(warm?1:2.5)){
   underBudget=0;
-  if(density<=1||++overBudget<3)return false;
-  overBudget=0;densityCeil=density>1.5?1.5:1;resize();return true;
+  if(density<=1||((!warm||lastMs<budget*2)&&++overBudget<2))return false;
+  const fits=density*Math.sqrt(budget*.8/lastMs);
+  densityCeil=DENSITY_STEPS.filter(s=>s<density&&s<=fits).pop()||1;
+  overBudget=0;settled=settled||raised;saveStore.saveDensity(densityCeil);renderMs=avgMs=0;resize();return true;
  }
  overBudget=0;
- // Room to spare for a sustained stretch: give a step back, and let the next slow run take it away again.
- if(renderMs>budgetMs()*.5||densityCeil>=(sets[sceneName]?.density||1))return false;
+ const next=DENSITY_STEPS.find(s=>s>density);
+ if(!warm||settled||!next||next>wanted||densityCeil>=wanted||renderMs*(next/density)**2>budget*.8){underBudget=0;return false;}
  if(++underBudget<90)return false;
- underBudget=0;densityCeil=densityCeil<1.5?1.5:Infinity;resize();return true;
+ underBudget=0;raised=true;densityCeil=next>=wanted?Infinity:next;saveStore.saveDensity(densityCeil);renderMs=avgMs=0;resize();return true;
 }
 function stageArea(){
  if(typeof window.innerHeight!=='number'||typeof window.innerWidth!=='number')return null;
